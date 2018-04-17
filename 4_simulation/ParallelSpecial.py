@@ -187,6 +187,7 @@ def simulation(x):
 ################################################################################
 exectime = time.time()
 models = ['cross', 'simpleT', 'twinT', 'corridor']
+models = []
 tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
 #tlControllers = ['HVA', 'HVAbias']
 CAVratios = np.linspace(0, 1, 11)
