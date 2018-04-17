@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="typeHuman" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="25" guiShape="passenger" color="1,1,0" departLane="best" departSpeed="max">
+    </vType>
+
+    <vType id="typeITSCV" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="25" guiShape="passenger" color="1,0,0" departLane="best" departSpeed="max">
+        <carFollowing-Krauss tau="1.0"/>
+    </vType>
+
+    <route id="0" edges="a1:b1 b1:b2 b2:a2"/>
+    <route id="1" edges="a1:b1 b1:b2 b2:b3 b3:b4"/>
+    <route id="2" edges="a1:b1 b1:c1 c1:c0"/>
+    <route id="3" edges="a1:b1 b1:c1 c1:d1 d1:e1"/>
+    <route id="4" edges="a1:b1 b1:c1 c1:d1 d1:d2 d2:d3 d3:d4"/>
+    <route id="5" edges="a1:b1 b1:c1 c1:d1 d1:d2 d2:d3 d3:e3"/>
+    <route id="6" edges="a3:b3 b3:c3 c3:c2 c2:b2 b2:a2"/>
+    <route id="7" edges="a3:b3 b3:b4"/>
+    <route id="8" edges="a3:b3 b3:c3 c3:c2 c2:c1 c1:c0"/>
+    <route id="9" edges="a3:b3 b3:c3 c3:c2 c2:c1 c1:d1 d1:e1"/>
+    <route id="10" edges="a3:b3 b3:c3 c3:d3 d3:d4"/>
+    <route id="11" edges="a3:b3 b3:c3 c3:d3 d3:e3"/>
+    <route id="12" edges="b0:b1 b1:b2 b2:a2"/>
+    <route id="13" edges="b0:b1 b1:b2 b2:b3 b3:b4"/>
+    <route id="14" edges="b0:b1 b1:c1 c1:c0"/>
+    <route id="15" edges="b0:b1 b1:c1 c1:d1 d1:e1"/>
+    <route id="16" edges="b0:b1 b1:c1 c1:d1 d1:d2 d2:d3 d3:d4"/>
+    <route id="17" edges="b0:b1 b1:c1 c1:d1 d1:d2 d2:d3 d3:e3"/>
+    <route id="18" edges="c4:c3 c3:c2 c2:b2 b2:a2"/>
+    <route id="19" edges="c4:c3 c3:c2 c2:b2 b2:b3 b3:b4"/>
+    <route id="20" edges="c4:c3 c3:c2 c2:c1 c1:c0"/>
+    <route id="21" edges="c4:c3 c3:c2 c2:c1 c1:d1 d1:e1"/>
+    <route id="22" edges="c4:c3 c3:d3 d3:d4"/>
+    <route id="23" edges="c4:c3 c3:d3 d3:e3"/>
+    <route id="24" edges="d0:d1 d1:d2 d2:c2 c2:b2 b2:a2"/>
+    <route id="25" edges="d0:d1 d1:d2 d2:c2 c2:b2 b2:b3 b3:b4"/>
+    <route id="26" edges="d0:d1 d1:d2 d2:c2 c2:c1 c1:c0"/>
+    <route id="27" edges="d0:d1 d1:e1"/>
+    <route id="28" edges="d0:d1 d1:d2 d2:d3 d3:d4"/>
+    <route id="29" edges="d0:d1 d1:d2 d2:d3 d3:e3"/>
+    <route id="30" edges="e2:d2 d2:c2 c2:b2 b2:a2"/>
+    <route id="31" edges="e2:d2 d2:c2 c2:b2 b2:b3 b3:b4"/>
+    <route id="32" edges="e2:d2 d2:c2 c2:c1 c1:c0"/>
+    <route id="33" edges="e2:d2 d2:c2 c2:c1 c1:d1 d1:e1"/>
+    <route id="34" edges="e2:d2 d2:d3 d3:d4"/>
+    <route id="35" edges="e2:d2 d2:d3 d3:e3"/>
+</routes>

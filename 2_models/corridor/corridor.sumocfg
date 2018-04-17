@@ -1,0 +1,25 @@
+<configuration>
+    <input>
+        <net-file value="corridor.net.xml"/>
+        <route-files value="../vtypes.rou.xml"/>
+    </input>
+    <time>
+        <begin value="0"/>
+        <step-length value="0.1"/>
+    </time>
+    <processing>
+        <!--TURN OFF TELEPORTING-->
+        <time-to-teleport value="-1"/>
+    </processing>
+    <random_number>
+        <seed value="5"/>
+    </random_number>
+    <report>
+        <no-step-log value="true"/>
+        <error-log value="logfile.txt"/>
+    </report>
+    <traci_server>
+        <remote-port value="8857"/>
+    </traci_server>
+
+</configuration>

@@ -1,0 +1,16 @@
+<flows>
+    <interval begin="0" end="10800">     
+        <flow id="1" from="1:0" to="0:2" number="240"/>
+        <flow id="2" from="1:0" to="0:3" number="600"/>
+        <flow id="3" from="1:0" to="0:4" number="240"/>
+        <flow id="4" from="2:0" to="0:1" number="240"/>
+        <flow id="5" from="2:0" to="0:3" number="240"/>
+        <flow id="6" from="2:0" to="0:4" number="600"/>
+        <flow id="7" from="3:0" to="0:1" number="600"/>
+        <flow id="8" from="3:0" to="0:2" number="240"/>
+        <flow id="9" from="3:0" to="0:4" number="240"/>
+        <flow id="10" from="4:0" to="0:1" number="240"/>
+        <flow id="11" from="4:0" to="0:2" number="600"/>
+        <flow id="12" from="4:0" to="0:3" number="240"/>
+    </interval>
+</flows>

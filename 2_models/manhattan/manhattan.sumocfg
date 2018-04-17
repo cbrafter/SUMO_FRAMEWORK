@@ -1,0 +1,32 @@
+<configuration>
+    <input>
+        <net-file value="manhattan.net.xml"/>
+        <route-files value="manhattan.rou.xml"/>
+        <!--<gui-settings-file value="gui-settings.cfg"/>-->
+        <additional-files value="manhattan.det.xml"/>
+    </input>
+    <output>
+        <!--<summary-output value="../../simple/summary000_015.xml"/>-->
+        <tripinfo-output value="../../simple/tripinfo000_015.xml"/>
+        <!--<vehroute-output value="../../simple/vehroute000_015.xml"/-->
+        <queue-output value="../../simple/queuedata000_015.xml"/>
+    </output>
+    <time>
+        <begin value="0"/>
+        <step-length value="0.1"/>
+    </time>
+    <processing>
+        <!--TURN OFF TELEPORTING-->
+        <time-to-teleport value="-1"/>
+    </processing>
+    <random_number>
+        <seed value="15"/>
+    </random_number>
+    <report>
+        <no-step-log value="true"/>
+        <error-log value="logfile.txt"/>
+    </report>
+    <traci_server>
+        <remote-port value="8857"/>
+    </traci_server>
+</configuration>

@@ -1,0 +1,6 @@
+*.pyc
+*loops.out
+*logfile.txt
+4_simulation/results
+4_simulation/simple
+testing

@@ -1,0 +1,33 @@
+<configuration>
+    <input>
+        <net-file value="simpleT.net.xml"/>
+        <route-files value="../ROUTEFILES/simpleT_R005_CVP000.rou.xml"/>
+        <!--<gui-settings-file value="gui-settings.cfg"/>-->
+        <additional-files value="simpleT.det.xml"/>
+    </input>
+    <output>
+        <!--<summary-output value="../../4_simulation/simple/summary000_005.xml"/>-->
+        <tripinfo-output value="../../4_simulation/simple/tripinfo000_005.xml"/>
+        <!--<vehroute-output value="../../4_simulation/simple/vehroute000_005.xml"/-->
+        <queue-output value="../../4_simulation/simple/queuedata000_005.xml"/>
+    </output>
+    <time>
+        <begin value="0"/>
+        <step-length value="0.1"/>
+    </time>
+    <processing>
+        <!--TURN OFF TELEPORTING-->
+        <time-to-teleport value="-1"/>
+    </processing>
+    <random_number>
+        <seed value="5"/>
+    </random_number>
+    <report>
+        <no-step-log value="true"/>
+        <error-log value="logfile.txt"/>
+    </report>
+    <traci_server>
+        <remote-port value="8857"/>
+    </traci_server>
+
+</configuration>

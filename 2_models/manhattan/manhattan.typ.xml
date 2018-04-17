@@ -1,0 +1,4 @@
+<types>
+   <type id="uMajor" priority="3" numLanes="4" speed="11.176"/>
+   <type id="uMinor" priority="2" numLanes="1" speed="11.176"/>
+</types>
