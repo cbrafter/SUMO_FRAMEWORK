@@ -5,6 +5,8 @@ import numpy as np
 import subprocess
 import shlex
 import re
+import multiprocessing as mp
+import time
 
 
 def vehicleDistribution(cvp):
@@ -62,32 +64,47 @@ def vehicleDistribution(cvp):
            cbus=Pbus*cvp/100.0)
     return vtype
 
-models = ['cross', 'simpleT', 'twinT', 'corridor']
-cvpRatios = np.linspace(0, 100, 21).astype(int)
-runs = 100
-configs = itertools.product(models, range(runs))
 
-for model, run in configs:
-    flowFile = './FLOWFILES/{}_flows.xml'.format(model)
-    routeFile = '/hardmem/ROUTEFILES/{}_R{:03d}.rou.xml'.format(model, run)
-    
+def makeRoutes(config):
+    flowPrefix, run = config
+    model = flowPrefix if 'selly' not in flowPrefix else 'sellyOak'
+    cvpRatios = np.linspace(0, 100, 21).astype(int)
+
+    flowFile = './FLOWFILES/{}_flows.xml'.format(flowPrefix)
+    routeFile = '/hardmem/ROUTEFILES/{}_R{:03d}.rou.xml'.format(flowPrefix,
+                                                                run)
+
     command = 'duarouter '\
               '--route-files {} '.format(flowFile) +\
               '-n ./{m}/{m}.net.xml '.format(m=model) +\
               '-o {} --randomize-flows --seed {} '.format(routeFile, run) +\
               '--departlane "best" --departspeed "max"'
     p = subprocess.call(shlex.split(command))
+    if p > 0:
+        print('ERROR: DUAROUTER could not process:\n\t' + command)
 
-    # get route file and insert vehicle type distribution and references 
+    # get route file and insert vehicle type distribution and references
     # in the trips
     with open(routeFile, 'r') as f:
         content = f.readlines()
 
     for cvp in cvpRatios:
         finalFile = '/hardmem/ROUTEFILES/{}_R{:03d}_CVP{:03d}.rou.xml'\
-            .format(model, run, cvp)
+            .format(flowPrefix, run, cvp)
         with open(finalFile, 'w') as f:
             for line in content:
                 f.write(re.sub('<vehicle', '<vehicle type="vDist"', line))
                 if '<routes' in line:
                     f.write(vehicleDistribution(cvp))
+
+models = ['cross', 'simpleT', 'twinT', 'corridor',
+          'sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
+runs = 100
+configs = itertools.product(models, range(runs))
+nproc = 7
+print('Starting route building on {} cores'.format(nproc)+' '+time.ctime())
+# define work pool
+workpool = mp.Pool(processes=nproc)
+# Run simualtions in parallel
+result = workpool.map(makeRoutes, configs, chunksize=20)
+print('DONE: '+time.ctime())
