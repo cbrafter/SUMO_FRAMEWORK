@@ -1,0 +1,71 @@
+<additional>
+    <!--TAZ A-->
+    <inductionLoop id="0" lane="edge247_0" pos="185" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="62" lane="edge247_1" pos="185" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="1" lane="edge141_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="2" lane="edge141_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="3" lane="edge115_0" pos="2" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="4" lane="edge115_1" pos="2" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="5" lane="edge112_0" pos="2" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="6" lane="edge112_1" pos="2" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="7" lane="edge111_0" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="8" lane="edge111_1" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="9" lane="edge218_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="10" lane="edge218_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="11" lane="edge45_0" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="12" lane="edge45_1" pos="30" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="13" lane="edge221_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="14" lane="edge221_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="15" lane="edge107_0" pos="55" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="16" lane="edge107_1" pos="55" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="17" lane="edge190_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="18" lane="edge190_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="19" lane="edge128_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="20" lane="edge128_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="21" lane="edge183_0" pos="20" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="22" lane="edge183_1" pos="20" freq="300" file="loops.out.xml"/>
+    <!--TAZ B-->
+    <inductionLoop id="23" lane="edge62_0" pos="10" freq="300" file="loops.out.xml" color="1,0,0"/>
+    <inductionLoop id="24" lane="edge62_1" pos="10" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="25" lane="edge101_0" pos="10" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="26" lane="edge101_1" pos="10" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="27" lane="edge204_0" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="28" lane="edge204_1" pos="5" freq="300" file="loops.out.xml"/>
+    <!--TAZ C-->
+    <!--Not sure if this one or next one is correct-->
+    <inductionLoop id="29" lane="edge187_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="30" lane="edge187_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="31" lane="edge35_0" pos="10" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="32" lane="edge35_1" pos="10" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="33" lane="edge253_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="34" lane="edge253_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="35" lane="edge253_2" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="36" lane="edge206_0" pos="45" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="37" lane="edge206_1" pos="45" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="38" lane="edge206_2" pos="45" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="39" lane="edge210_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="40" lane="edge210_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="41" lane="edge210_2" pos="1" freq="300" file="loops.out.xml"/>
+    <!--TAZ D-->
+    <inductionLoop id="42" lane="edge212_0" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="43" lane="edge212_1" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="44" lane="edge212_2" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="45" lane="edge3020_0" pos="35" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="46" lane="edge301_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="47" lane="edge301_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="48" lane="edge301_2" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="49" lane="edge201_0" pos="5" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="50" lane="edge95_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="51" lane="edge198_0" pos="20" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="52" lane="edge198_1" pos="20" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="53" lane="edge198_2" pos="20" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="54" lane="edge143_0" pos="20" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="55" lane="edge143_1" pos="20" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="56" lane="edge264_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="57" lane="edge264_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="63" lane="edge264_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="58" lane="edge256_0" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="59" lane="edge256_1" pos="1" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="60" lane="edge266_0" pos="3" freq="300" file="loops.out.xml"/>
+    <inductionLoop id="61" lane="edge266_1" pos="3" freq="300" file="loops.out.xml"/>
+</additional>

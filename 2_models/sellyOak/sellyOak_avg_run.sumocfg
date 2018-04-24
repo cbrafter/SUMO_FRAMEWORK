@@ -1,0 +1,22 @@
+<configuration>
+    <input>
+        <net-file value="sellyOak.net.xml"/>
+        <route-files value="sellyOak_avg.rou.xml"/>
+        <gui-settings-file value="gui-settings.cfg"/>
+        <additional-files value="sellyOak.det.xml"/>
+    </input>
+    <output>
+        <tripinfo-output value="./results/tripinfo_avg.xml"/>
+    </output>
+    <time>
+        <begin value="0"/>
+        <step-length value="0.5"/>
+    </time>
+    <processing>
+        <!--TURN OFF TELEPORTING-->
+        <time-to-teleport value="-1"/>
+    </processing>
+    <random_number>
+        <seed value="10"/>
+    </random_number>
+</configuration>
