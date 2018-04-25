@@ -9,6 +9,23 @@ Parent class for signal control algorithms
 """
 import traciLink, traci
 import traci.constants as tc
+import math
+from scipy.spatial import distance
+import numpy as np
+
+
+def getIntergreen(dist):
+    # <10 & 10-18 & 19-27 & 28-37 & 38-46 & 47-55 & 56-64 & >65
+    #  5  &   6   &   7   &   8   &   9   &  10   &  11   & 12
+    diamThresholds = [10, 19, 28, 38, 47, 56, 65]
+    intergreen = 5
+    for threshold in diamThresholds:
+        if dist < threshold:
+            return intergreen
+        else:
+            intergreen += 1
+    return intergreen
+
 
 class signalControl(object):
     
@@ -23,23 +40,63 @@ class signalControl(object):
         #return traci.simulation.getCurrentTime()
         return traci.simulation.getSubscriptionResults()[tc.VAR_TIME_STEP]
 
-    def setAmberTime(self, time):
-        self.transitionObject.setAmberTime(time)
-        
+    def setAmber1Time(self, time):
+        self.transitionObject.setAmber1Time(time)
+
+    def setAmber2Time(self, time):
+        self.transitionObject.setAmber2Time(time)
+    
     def setAllRedTime(self, time):
         self.transitionObject.setAllRedTime(time)
-    
+
+    def getIntergreenTime(self, junctionID):
+        x1, y1 = traci.junction.getPosition(junctionID)
+        edges = traci.trafficlights.getControlledLinks(junctionID)
+        edges = [x for z in edges for y in z for x in y[:2]]
+        edges = list(set(edges))
+        boundingCoords = []
+        for edge in edges:
+            dMin, coordMin = 1e6, []
+            for x2, y2 in traci.lane.getShape(edge):
+                dist = math.hypot(x2-x1, y2-y1)
+                if dist < dMin:
+                    dMin, coordMin = dist, [x2, y2]
+            boundingCoords.append(coordMin)
+        # get max of closest edge pairwise distances
+        dMax = np.max(distance.cdist(boundingCoords, boundingCoords))
+        return getIntergreen(dMax)
+
+    def setTransitionTime(self, junctionID):
+        amber1 = 3
+        red = 2
+        amber2 = abs(self.getIntergreenTime(junctionID) - (amber1 + red))
+        if amber2 > 3:
+            red += amber2 - 3
+            amber2 = 3
+
+        self.setAllRedTime(red)
+        self.setAmber1Time(amber1)
+        self.setAmber2Time(amber2)
+
     
 class stageTransition(object):
         
         def __init__(self): 
-            self.setAmberTime(3)
+            self.setAmber1Time(3)
+            self.setAmber2Time(0)
             self.setAllRedTime(1)
             self.active=False
             traci.simulation.subscribe(varIDs=(tc.VAR_TIME_STEP,))
+            # current+target -> amber1,amber2,allRed
+            self.transitionDict = {'rr': 'rrr', 'GG': 'GGG', 'gg': 'ggg',
+                                   'rg': 'ryr', 'Gr': 'yrr', 'gr': 'yrr',
+                                   'rG': 'ryr', 'Gg': 'Ggg', 'gG': 'gGg'}
         
-        def setAmberTime(self, time):
-            self.amberTime = time
+        def setAmber1Time(self, time):
+            self.amber1Time = time
+
+        def setAmber2Time(self, time):
+            self.amber2Time = time
         
         def setAllRedTime(self, time):
             self.allRed = time
@@ -52,17 +109,15 @@ class stageTransition(object):
             if len(currentStageString) != len(targetStageString):
                 print("Error current stage string and target stage sting are different lengths")
             
-            self.amberStageString=""
+            self.amber1StageString=""
+            self.amber2StageString=""
             self.allRedStageString=""
-            i = 0
-            while i < len(currentStageString):
-                if targetStageString[i]=='r' and (currentStageString[i]=='G' or currentStageString[i]=='g'):
-                    self.amberStageString = self.amberStageString + 'y'
-                    self.allRedStageString = self.allRedStageString + 'r'
-                else:
-                    self.amberStageString = self.amberStageString + currentStageString[i]
-                    self.allRedStageString = self.allRedStageString + currentStageString[i]
-                i += 1
+            
+            for current, target in zip(currentStageString, targetStageString):
+                transitionString = self.transitionDict[current+target]
+                self.amber1StageString += transitionString[0]
+                self.amber2StageString += transitionString[1]
+                self.allRedStageString += transitionString[2]
             
             self.targetStageString = targetStageString
             self.junctionID = junctionID
@@ -72,10 +127,16 @@ class stageTransition(object):
         def processTransition(self, simtime=None):             
             if self.active:
                 simTime = simtime if simtime != None else self.getCurrentSUMOtime()
-                if (simTime - self.transitionStart) < (self.amberTime*1000):
-                    traci.trafficlights.setRedYellowGreenState(self.junctionID, self.amberStageString)
-                elif (simTime - self.transitionStart) < ((self.amberTime + self.allRed)*1000):
+                # First amber
+                if (simTime - self.transitionStart) < (self.amber1Time*1000):
+                    traci.trafficlights.setRedYellowGreenState(self.junctionID, self.amber1StageString)
+                # All Red
+                elif (simTime - self.transitionStart) < ((self.amber1Time + self.allRed)*1000):
                     traci.trafficlights.setRedYellowGreenState(self.junctionID, self.allRedStageString)
+                # Second Amber
+                elif (simTime - self.transitionStart) < ((self.amber1Time + self.allRed + self.amber2Time)*1000):
+                    traci.trafficlights.setRedYellowGreenState(self.junctionID, self.amber2StageString)
+                # Target Stage
                 else:
                     traci.trafficlights.setRedYellowGreenState(self.junctionID, self.targetStageString)
                     self.active=False
