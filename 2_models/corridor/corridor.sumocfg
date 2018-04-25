@@ -1,8 +1,11 @@
 <configuration>
     <input>
         <net-file value="corridor.net.xml"/>
-        <route-files value="../vtypes.rou.xml"/>
+        <route-files value="../../testing/FREEFLOW_TRIPS/freeflow_corridor.rou.xml"/>
     </input>
+    <output>
+        <tripinfo-output value="../../testing/results/corridor_freeflow_tripinfo.xml"/>
+    </output>
     <time>
         <begin value="0"/>
         <step-length value="0.1"/>
