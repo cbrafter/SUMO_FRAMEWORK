@@ -13,6 +13,7 @@ class fixedTimeControl(signalControl.signalControl):
     def __init__(self, junctionData):
         super(fixedTimeControl, self).__init__()
         self.junctionData = junctionData
+        super(fixedTimeControl, self).setTransitionTime(self.junctionData.id)
         self.firstCalled = self.getCurrentSUMOtime()
         self.lastCalled = self.getCurrentSUMOtime()
         self.lastStageIndex = 0
@@ -30,22 +31,13 @@ class fixedTimeControl(signalControl.signalControl):
             # Before the period of the next stage
             pass
         else:
-            # Not active, not in offset, stage not finished
-            if len(self.junctionData.stages) != (self.lastStageIndex)+1:
-                # Loop from final stage to first stage
-                self.transitionObject.newTransition(
-                    self.junctionData.id, 
-                    self.junctionData.stages[self.lastStageIndex].controlString,
-                    self.junctionData.stages[self.lastStageIndex+1].controlString)
-                self.lastStageIndex += 1
-            else:
-                # Proceed to next stage
-                #print(0.001*(self.getCurrentSUMOtime() - self.lastCalled))
-                self.transitionObject.newTransition(
-                    self.junctionData.id, 
-                    self.junctionData.stages[self.lastStageIndex].controlString,
-                    self.junctionData.stages[0].controlString)
-                self.lastStageIndex = 0
+            nextStageIndex = (self.lastStageIndex + 1) %\
+                             len(self.junctionData.stages)
+            self.transitionObject.newTransition(
+                self.junctionData.id, 
+                self.junctionData.stages[self.lastStageIndex].controlString,
+                self.junctionData.stages[nextStageIndex].controlString)
+            self.lastStageIndex = nextStageIndex
 
             self.lastCalled = self.getCurrentSUMOtime()
                 
