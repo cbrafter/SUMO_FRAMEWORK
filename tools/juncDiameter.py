@@ -5,7 +5,8 @@ Created on Fri Mar 16 12:04:15 2018
 @author: craig
 """
 
-import os, sys
+import os
+import sys
 tools = os.path.join('/usr/share/sumo', 'tools')
 sys.path.append(tools)
 import sumolib
@@ -27,11 +28,11 @@ def getIntergreen(dist):
     return intergreen
 
 
-net = sumolib.net.readNet('sellyOak.net.xml')
+net = sumolib.net.readNet('../2_models/corridor/corridor.net.xml')
 tls = [n for n in net.getNodes() if n.getType() == 'traffic_light']
 tlsDist = {}
 for tl in tls:
-    x1, y1 = tl.getCoord() # tl center
+    x1, y1 = tl.getCoord()  # tl center
     edges = tl.getIncoming() + tl.getOutgoing()
     boundingCoords = []
     # find edge closest to center
@@ -42,7 +43,7 @@ for tl in tls:
             if dist < dMin:
                 dMin, coordMin = dist, [x2, y2]
         boundingCoords.append(coordMin)
-    # get max of closest edge pairwise distances 
+    # get max of closest edge pairwise distances
     dMax = np.max(distance.cdist(boundingCoords, boundingCoords))
     print(tl.getID(), dMax, getIntergreen(dMax))
     tlsDist = {tl.getID(): dMax}

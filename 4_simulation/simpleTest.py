@@ -52,7 +52,7 @@ exectime = time.time()
 controller = fixedTimeControl.fixedTimeControl
 #controller = GPSControl.GPSControl
 # Define road model directory
-modelname = 'corridor'
+modelname = 'cross'
 model = '../2_models/{}/'.format(modelname)
 # Generate new routes
 stepSize = 0.1
