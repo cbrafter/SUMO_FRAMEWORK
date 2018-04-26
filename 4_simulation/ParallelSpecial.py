@@ -184,11 +184,9 @@ def simulation(x):
 exectime = time.time()
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
-
 tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
-#tlControllers = ['HVA', 'HVAbias']
 CAVratios = np.linspace(0, 1, 11)
-#CAVratios = [0.2,0.4,0.5,0.6]
+
 if len(sys.argv) >= 3:
     runArgs = sys.argv[1:3]
     runArgs = [int(arg) for arg in runArgs]
