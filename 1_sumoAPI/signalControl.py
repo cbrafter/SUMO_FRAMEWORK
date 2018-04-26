@@ -151,6 +151,8 @@ class stageTransition(object):
             pass
     
     def makeTransition(self, transitionStageString):
+        # API Calls are expensive so only call if needed to change stage 
+        # the first time
         if self.stageString != transitionStageString:
             traci.trafficlights.setRedYellowGreenState(self.junctionID,
                                                        transitionStageString)

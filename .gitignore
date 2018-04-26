@@ -1,5 +1,5 @@
 *.pyc
-*loops.out
+*loops.out*
 *logfile.txt
 4_simulation/results
 4_simulation/simple

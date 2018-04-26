@@ -15,10 +15,15 @@ def sumoConfigGen(modelname='simpleT',
                   run=0,
                   port=8813,
                   seed=23423):
+    if 'selly' in modelname:
+        routename = modelname
+        modelname = modelname.split('_')[0]
+    else:
+        routename = modelname
     configData = """<configuration>
     <input>
         <net-file value="{model}.net.xml"/>
-        <route-files value="/hardmem/ROUTEFILES/{model}_R{Nrun:03d}_CVP{cvp:03d}.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/{route}_R{Nrun:03d}_CVP{cvp:03d}.rou.xml"/>
         <!--<gui-settings-file value="gui-settings.cfg"/>-->
         <additional-files value="{model}.det.xml"/>
     </input>
@@ -47,6 +52,7 @@ def sumoConfigGen(modelname='simpleT',
         <remote-port value="{SUMOport}"/>
     </traci_server>
 """.format(model=modelname,
+           route=routename, 
            expPath=exportPath,
            cvp=int(CVP*100),
            stepSz=stepSize,

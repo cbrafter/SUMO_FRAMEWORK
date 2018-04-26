@@ -52,15 +52,16 @@ exectime = time.time()
 controller = fixedTimeControl.fixedTimeControl
 #controller = GPSControl.GPSControl
 # Define road model directory
-modelname = 'cross'
-model = '../2_models/{}/'.format(modelname)
+modelname = 'sellyOak_lo'
+modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
+model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
 CVP = 0.0
 seed = 5
 
 # Edit the the output filenames in sumoConfig
-configFile = model + modelname + ".sumocfg"
+configFile = model + modelBase + ".sumocfg"
 exportPath = '../../4_simulation/simple/'
 if not os.path.exists(model+exportPath): # this is relative to cfg
     os.makedirs(model+exportPath)
@@ -71,13 +72,13 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(model + modelname + ".sumocfg",
+connector = sumoConnect.sumoConnect(configFile,
                                     gui=True, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 
 # Get junction data
-jd = readJunctionData.readJunctionData(model + modelname + ".jcn.xml")
+jd = readJunctionData.readJunctionData(model + modelBase + ".jcn.xml")
 junctionsList = jd.getJunctionData()
 
 # Add controller models to junctions
