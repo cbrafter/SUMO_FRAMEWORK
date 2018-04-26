@@ -12,8 +12,8 @@ from sumoConfigGen import sumoConfigGen
 from stripXML import stripXML
 import multiprocessing as mp
 from glob import glob
-#os.chdir(os.path.dirname(sys.argv[0]))
-sys.path.insert(0, '../sumoAPI')
+sys.path.insert(0, '../1_sumoAPI')
+sys.path.insert(0, '../3_signalControllers')
 import GPSControl
 import fixedTimeControl
 import actuatedControl
@@ -36,11 +36,10 @@ def simulation(x):
     # Define Simulation Params
     modelName, tlLogic, CAVratio, run = x
     procID = 1
-    model = './models/{}_{}/'.format(modelName, procID)
+    model = '../2_models/{}_{}/'.format(modelName, procID)
     simport = 8812 + procID
-    N = 500  # Last time to insert vehicle at
     stepSize = 0.1
-    CAVtau = 1.0
+    CVP = 0.0
     configFile = model + modelName + ".sumocfg"
     # Configure the Map of controllers to be run
     tlControlMap = {'fixedTime': fixedTimeControl.fixedTimeControl,
@@ -48,32 +47,33 @@ def simulation(x):
                     'GPSVA': GPSControl.GPSControl,
                     'HVA': HybridVAControl.HybridVAControl}
     tlController = tlControlMap[tlLogic]
-
+    print('Initial setup complete'); sys.stdout.flush()
+    
     exportPath = '/hardmem/results/' + tlLogic + '/' + modelName + '/'
-    print(exportPath + str(os.path.exists(exportPath)))
+    print(exportPath + ' Exists: ' + str(os.path.exists(exportPath))); sys.stdout.flush()
+    
     # Check if model copy for this process exists
     if not os.path.isdir(model):
-        shutil.copytree('./models/{}/'.format(modelName), model)
+        shutil.copytree('../2_models/{}/'.format(modelName), model)
 
     # this is relative to script not cfg file
     if not os.path.exists(exportPath):
-        print('MADE PATH')
+        print('MADE PATH'); sys.stdout.flush()
         os.makedirs(exportPath)
 
-    #seed = int(sum([ord(X) for x in modelName + tlLogic]) + int(10*CAVratio) + run)
-    seed = int(sum([ord(c) for c in modelName + tlLogic]) + run)
-    vehNr, lastVeh = routeGen(N, CAVratio, CAVtau,
-                              routeFile=model + modelName + '.rou.xml',
-                              seed=seed)
+    seed = 5
 
     # Edit the the output filenames in sumoConfig
-    sumoConfigGen(modelName, configFile, exportPath,
-                  CAVratio, stepSize, run, simport)
+    sumoConfigGen(modelName, configFile, exportPath, 
+                  CVP=CVP, stepSize=stepSize, 
+                  run=seed, port=simport, seed=seed)
 
+    print('configuration complete'); sys.stdout.flush()
     # Connect to model
     connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
     connector.launchSumoAndConnect()
 
+    print('connection made'); sys.stdout.flush()
     # Get junction data
     jd = readJunctionData.readJunctionData(model + modelName + ".jcn.xml")
     junctionsList = jd.getJunctionData()
@@ -83,6 +83,7 @@ def simulation(x):
     for junction in junctionsList:
         controllerList.append(tlController(junction))
 
+    print('Controllers set, running sim...'); sys.stdout.flush()
     # Step simulation while there are vehicles
     while traci.simulation.getMinExpectedNumber():
         # connector.runSimulationForSeconds(1)
@@ -92,13 +93,7 @@ def simulation(x):
 
     # Disconnect from current configuration
     connector.disconnect()
-
-    # Strip unused data from results file
-    ext = '{AVR:03d}_{Nrun:03d}.xml'.format(AVR=int(CAVratio*100), Nrun=run)
-    for filename in ['tripinfo']:
-        target = exportPath+filename+ext
-        stripXML(target)
-
+    print('Sim complete'); sys.stdout.flush()
     runtime = time.gmtime(time.time() - runtime)
     print('DONE: {}, {}, Run: {:03d}, AVR: {:03d}%, Runtime: {}\n'
         .format(modelName, tlLogic, run, int(CAVratio*100), 

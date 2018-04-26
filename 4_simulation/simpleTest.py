@@ -6,7 +6,8 @@
 
 test Miller's algorithm
 """
-import sys, os
+import sys
+import os
 sys.path.insert(0, '../1_sumoAPI')
 sys.path.insert(0, '../3_signalControllers')
 import fixedTimeControl
@@ -52,7 +53,7 @@ exectime = time.time()
 controller = fixedTimeControl.fixedTimeControl
 #controller = GPSControl.GPSControl
 # Define road model directory
-modelname = 'sellyOak_lo'
+modelname = 'cross'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
@@ -72,8 +73,7 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile,
-                                    gui=True, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 

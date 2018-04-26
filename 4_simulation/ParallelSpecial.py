@@ -51,13 +51,14 @@ def simulation(x):
         assert len(x) == 4
         runtime = time.time()
         # Define Simulation Params
-        modelName, tlLogic, CAVratio, run = x
+        modelName, tlLogic, CVP, run = x
+        modelBase  = modelName if 'selly' not in modelName else modelName.split('_')[0]
         procID = int(mp.current_process().name[-1])
-        model = '../2_models/{}_{}/'.format(modelName, procID)
+        model = '../2_models/{}_{}/'.format(modelBase, procID)
         simport = 8812 + procID
         seed = int(run)
         stepSize = 0.1
-        configFile = model + modelName + ".sumocfg"
+        configFile = model + modelBase + ".sumocfg"
 
         # Configure the Map of controllers to be run
         tlControlMap = {'fixedTime': fixedTimeControl.fixedTimeControl,
@@ -73,14 +74,14 @@ def simulation(x):
 
         # Check if model copy for this process exists
         if not os.path.isdir(model):
-            shutil.copytree('./models/{}/'.format(modelName), model)
+            shutil.copytree('../2_models/{}/'.format(modelBase), model)
 
         # this is relative to script not cfg file
         if not os.path.exists(exportPath):
             os.makedirs(exportPath)
 
         # Edit the the output filenames in sumoConfig
-        sumoConfigGen(modelname, configFile, exportPath, 
+        sumoConfigGen(modelName, configFile, exportPath, 
               CVP=CVP, stepSize=stepSize, 
               run=seed, port=simport, seed=seed)
 
@@ -89,12 +90,13 @@ def simulation(x):
         connector.launchSumoAndConnect()
 
         # Get junction data
-        jd = readJunctionData.readJunctionData(model + modelName + ".jcn.xml")
+        jd = readJunctionData.readJunctionData(model + modelBase + ".jcn.xml")
         junctionsList = jd.getJunctionData()
 
         # Add controller models to junctions
         controllerList = []
-        loopIO = True if CAVratio < 0.5 else False
+        # Turn loops off if CAV ratio > 50%
+        # loopIO = True if CAVratio < 0.5 else False
         for junction in junctionsList:
             if 'HVA' in tlLogic: 
                 if 'slow' in tlLogic:
@@ -116,12 +118,13 @@ def simulation(x):
 
         # Step simulation while there are vehicles
         i, flag = 1, True
-        subKey = traci.edge.getIDList()[0]
-        traci.edge.subscribeContext(subKey, 
-            tc.CMD_GET_VEHICLE_VARIABLE, 
-            1000000, 
-            varIDs=(tc.VAR_SPEED,))
-        stopCounter = stopDict()
+        timeLimit = 10*60*60  # 10 hours in seconds for time limit
+        # subKey = traci.edge.getIDList()[0]
+        # traci.edge.subscribeContext(subKey, 
+        #     tc.CMD_GET_VEHICLE_VARIABLE, 
+        #     1000000, 
+        #     varIDs=(tc.VAR_SPEED,))
+        # stopCounter = stopDict()
 
         # Flush print buffer
         sys.stdout.flush()
@@ -131,14 +134,14 @@ def simulation(x):
             traci.simulationStep()
             for controller in controllerList:
                 controller.process()
-            stopCounter = getStops(stopCounter, subKey)
+            # stopCounter = getStops(stopCounter, subKey)
             i += 1
             # reduce calls to traci to 1 per sec to impove performance
             if not i%200: 
                 flag = traci.simulation.getMinExpectedNumber()
-                # stop sim to free resources if taking longer than ~7 hours
+                # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
-                if i > 300000:
+                if time.time()-runtime > timeLimit:
                     connector.disconnect()
                     raise RuntimeError("RuntimeError: GRIDLOCK")
             else: 
@@ -148,6 +151,7 @@ def simulation(x):
         connector.disconnect()
 
         # save stops file
+        '''
         stopfilename = exportPath+'stops{:03d}_{:03d}.csv'.format(int(CAVratio*100), seed)
         with open(stopfilename, 'w') as f:
             f.write('vehID,stops\n')
@@ -156,20 +160,12 @@ def simulation(x):
             #vehIDs = map(str, vehIDs)
             for vehID in stopCounter.keys():
                 f.write('{},{}\n'.format(vehID, stopCounter[vehID][0]))
-
-
-        # Strip unused data from results file
-        ext = '{AVR:03d}_{Nrun:03d}.xml'.format(AVR=int(CAVratio*100), Nrun=run)
-        # datafiles = ['queuedata', 'tripinfo']
-        datafiles = ['tripinfo']
-        for filename in datafiles:
-            target = exportPath+filename+ext
-            stripXML(target)
+        '''
 
         runtime = time.gmtime(time.time() - runtime)
         runtime = time.strftime("%H:%M:%S", runtime)
         print('DONE: {}, {}, Run: {:03d}, AVR: {:03d}%, Runtime: {}, Date: {}'
-            .format(modelName, tlLogic, run, int(CAVratio*100), 
+            .format(modelName, tlLogic, run, int(CVP*100), 
                     runtime , time.ctime()))
         sys.stdout.flush()
         return True
@@ -186,8 +182,9 @@ def simulation(x):
 # MAIN SIMULATION DEFINITION
 ################################################################################
 exectime = time.time()
-models = ['cross', 'simpleT', 'twinT', 'corridor']
-models = []
+models = ['cross', 'simpleT', 'twinT', 'corridor',
+          'sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
+
 tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
 #tlControllers = ['HVA', 'HVAbias']
 CAVratios = np.linspace(0, 1, 11)
@@ -214,24 +211,24 @@ configs += list(itertools.product(models[::-1],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-#configs += list(itertools.product(models, ['HVA', 'HVA1'], CAVratios[::-1], runIDs))
-#configs += list(itertools.product(models[1:], ['HVA'], CAVratios[::-1], runIDs))
-#configs += list(itertools.product(models, ['HVA'], [0.1], [11]))
-print(len(configs))
+configs = list(itertools.product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
+
+
+print('# simulations: '+str(len(configs)))
 
 # define number of processors to use (avg of logical and physical cores)
 nproc = np.mean([psutil.cpu_count(), 
                  psutil.cpu_count(logical=False)], 
                  dtype=int)
 
-nproc=8
+nproc = 6
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())  
 # define work pool
 workpool = mp.Pool(processes=nproc)
 # Run simualtions in parallel
 result = workpool.map(simulation, configs, chunksize=1)
 # remove spawned model copies
-for rmdir in glob('./models/*_*'):
+for rmdir in glob('../2_models/*_*'):
     if os.path.isdir(rmdir):
         shutil.rmtree(rmdir)
 
