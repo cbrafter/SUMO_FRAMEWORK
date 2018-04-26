@@ -4,6 +4,7 @@ LABEL Description="Docker Container Simulation of Urban MObility(SUMO) + Python 
 
 # Environment Variables
 ENV SUMO_VERSION 0.30.0
+ENV SUMO_HOME /usr/share/sumo/
 
 # Updates system 
 RUN apt-get update -y
@@ -32,8 +33,8 @@ RUN tar -xvf sumo-all-$SUMO_VERSION.tar.gz
 WORKDIR /sumo-$SUMO_VERSION
 RUN ./configure
 RUN make install
-RUN mkdir -p /usr/share/sumo/tools/
-RUN cp -r /sumo-$SUMO_VERSION/tools/ /usr/share/sumo/
+RUN mkdir -p $SUMO_HOME/tools/
+RUN cp -r /sumo-$SUMO_VERSION/tools/ $SUMO_HOME
 WORKDIR /
 
 # Post install clean-up
