@@ -1,10 +1,15 @@
 <configuration>
     <input>
         <net-file value="sellyOak.net.xml"/>
-        <route-files value="../../testing/FREEFLOW_TRIPS/freeflow_sellyOak.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/sellyOak_lo_R005_CVP000.rou.xml"/>
+        <!--<gui-settings-file value="gui-settings.cfg"/>-->
+        <additional-files value="sellyOak.det.xml"/>
     </input>
     <output>
-        <tripinfo-output value="../../testing/results/sellyOak_freeflow_tripinfo.xml"/>
+        <!--<summary-output value="../../4_simulation/simple/summary_R005_CVP000.xml"/>-->
+        <tripinfo-output value="../../4_simulation/simple/tripinfo_R005_CVP000.xml"/>
+        <!--<vehroute-output value="../../4_simulation/simple/vehroute_R005_CVP000.xml"/-->
+        <queue-output value="../../4_simulation/simple/queuedata_R005_CVP000.xml"/>
     </output>
     <time>
         <begin value="0"/>
