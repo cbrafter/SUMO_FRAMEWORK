@@ -1,4 +1,4 @@
-# Makefile to build on Linux
+# Makefile to build docker and run simulations on Linux
 
 VMNAME = sumovm
 ESCPATH = $(shell printf "%q\n" "$(shell pwd)")
@@ -16,33 +16,38 @@ DOCKER_ARGS = \
 START ?= 1
 END ?= 11
 
+# Make the docker container
 build:
 	docker build -t $(VMNAME) .
 
+# Run the script that performs all simulations
 runAll: 
 	mkdir -p $(RESULTPATH)
 	docker run $(DOCKER_ARGS) $(VMNAME) \
 		python parallelRun.py $(START) $(END)
 
+# Run the script that performs a special test case
 special:
 	mkdir -p $(RESULTPATH)
 	docker run $(DOCKER_ARGS) $(VMNAME) \
 		python ParallelSpecial.py $(START) $(END)
 
+# Run the test case to see if docker works
 test:
 	mkdir -p $(RESULTPATH)
 	docker run $(DOCKER_ARGS) $(VMNAME) \
 		python dockerTest.py $(START) $(END)
 
-
+# Docker hello world test
 hello_world:
 	docker run $(DOCKER_ARGS) $(VMNAME) \
 		python -c "print('Hello world :)')"
 
-
+# Check to see if command args and escaped folder string work 
 echo_test:
 	echo $(UESCPATH) $(START) $(END)
 
+# delete the docker container completely
 prune:
 	docker system prune
 	docker container prune
