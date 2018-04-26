@@ -218,7 +218,6 @@ print('# simulations: '+str(len(configs)))
 nproc = np.mean([psutil.cpu_count(), 
                  psutil.cpu_count(logical=False)], 
                  dtype=int)
-
 nproc = 6
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())  
 # define work pool
