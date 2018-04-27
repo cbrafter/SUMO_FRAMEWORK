@@ -18,6 +18,7 @@ class fixedTimeControl(signalControl.signalControl):
         self.firstCalled = self.currentTime
         self.lastCalled = self.currentTime
         self.lastStageIndex = 0
+        self.Nstages = len(self.junctionData.stages)
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.lastStageIndex].controlString)
         
@@ -33,8 +34,7 @@ class fixedTimeControl(signalControl.signalControl):
             # Before the period of the next stage
             pass
         else:
-            nextStageIndex = (self.lastStageIndex + 1) %\
-                             len(self.junctionData.stages)
+            nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
             self.transitionObject.newTransition(
                 self.junctionData.id, 
                 self.junctionData.stages[self.lastStageIndex].controlString,
