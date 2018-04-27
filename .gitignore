@@ -3,5 +3,6 @@
 *logfile.txt
 2_models/*_*
 4_simulation/results
+4_simulation/test_results
 4_simulation/simple
 testing
