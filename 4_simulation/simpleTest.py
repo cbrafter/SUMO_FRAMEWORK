@@ -53,13 +53,13 @@ exectime = time.time()
 controller = fixedTimeControl.fixedTimeControl
 #controller = GPSControl.GPSControl
 # Define road model directory
-modelname = 'cross'
+modelname = 'corridor'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
 CVP = 0.0
-seed = 5
+seed = 10
 
 # Edit the the output filenames in sumoConfig
 configFile = model + modelBase + ".sumocfg"

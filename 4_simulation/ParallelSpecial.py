@@ -209,7 +209,7 @@ configs += list(itertools.product(models[::-1],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-configs = list(itertools.product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
+configs = list(itertools.product(models[:4], tlControllers[:1], CAVratios[:1], runIDs))
 
 
 print('# simulations: '+str(len(configs)))
