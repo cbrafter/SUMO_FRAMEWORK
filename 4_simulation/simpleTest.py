@@ -63,7 +63,7 @@ seed = 5
 
 # Edit the the output filenames in sumoConfig
 configFile = model + modelBase + ".sumocfg"
-exportPath = '../../4_simulation/simple/'
+exportPath = '../../4_simulation/test_results/'
 if not os.path.exists(model+exportPath): # this is relative to cfg
     os.makedirs(model+exportPath)
 
@@ -73,7 +73,7 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=True, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 

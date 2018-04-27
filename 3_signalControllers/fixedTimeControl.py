@@ -13,7 +13,7 @@ class fixedTimeControl(signalControl.signalControl):
     def __init__(self, junctionData):
         super(fixedTimeControl, self).__init__()
         self.junctionData = junctionData
-        super(fixedTimeControl, self).setTransitionTime(self.junctionData.id)
+        self.setTransitionTime(self.junctionData.id)
         self.currentTime = self.getCurrentSUMOtime()
         self.firstCalled = self.currentTime
         self.lastCalled = self.currentTime
@@ -43,7 +43,7 @@ class fixedTimeControl(signalControl.signalControl):
 
             self.lastCalled = self.currentTime
                 
-        super(fixedTimeControl, self).process()
+        super(fixedTimeControl, self).process(self.currentTime)
 
     def getTimeToSignalChange(self):
         return (self.junctionData.stages[self.lastStageIndex].period*1000 - 
