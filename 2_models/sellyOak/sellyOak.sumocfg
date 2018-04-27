@@ -1,15 +1,15 @@
 <configuration>
     <input>
         <net-file value="sellyOak.net.xml"/>
-        <route-files value="/hardmem/ROUTEFILES/sellyOak_lo_R005_CVP000.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/sellyOak_hi_R001_CVP000.rou.xml"/>
         <!--<gui-settings-file value="gui-settings.cfg"/>-->
         <additional-files value="sellyOak.det.xml"/>
     </input>
     <output>
-        <!--<summary-output value="../../4_simulation/simple/summary_R005_CVP000.xml"/>-->
-        <tripinfo-output value="../../4_simulation/simple/tripinfo_R005_CVP000.xml"/>
-        <!--<vehroute-output value="../../4_simulation/simple/vehroute_R005_CVP000.xml"/-->
-        <queue-output value="../../4_simulation/simple/queuedata_R005_CVP000.xml"/>
+        <!--<summary-output value="../../4_simulation/test_results/summary_R001_CVP000.xml"/>-->
+        <tripinfo-output value="../../4_simulation/test_results/tripinfo_R001_CVP000.xml"/>
+        <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R001_CVP000.xml"/-->
+        <queue-output value="../../4_simulation/test_results/queuedata_R001_CVP000.xml"/>
     </output>
     <time>
         <begin value="0"/>
@@ -20,7 +20,7 @@
         <time-to-teleport value="-1"/>
     </processing>
     <random_number>
-        <seed value="5"/>
+        <seed value="1"/>
     </random_number>
     <report>
         <no-step-log value="true"/>
