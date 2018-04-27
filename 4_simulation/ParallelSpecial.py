@@ -118,7 +118,7 @@ def simulation(x):
 
         # Step simulation while there are vehicles
         i, flag = 1, True
-        timeLimit = 10*60*60  # 10 hours in seconds for time limit
+        timeLimit = 20*60*60  # 10 hours in seconds for time limit
         # subKey = traci.edge.getIDList()[0]
         # traci.edge.subscribeContext(subKey, 
         #     tc.CMD_GET_VEHICLE_VARIABLE, 
@@ -209,7 +209,7 @@ configs += list(itertools.product(models[::-1],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-configs = list(itertools.product(models[:4], tlControllers[:1], CAVratios[:1], runIDs))
+configs = list(itertools.product(models, tlControllers[:1], CAVratios[:1], runIDs))
 
 
 print('# simulations: '+str(len(configs)))
@@ -218,7 +218,7 @@ print('# simulations: '+str(len(configs)))
 nproc = np.mean([psutil.cpu_count(), 
                  psutil.cpu_count(logical=False)], 
                  dtype=int)
-nproc = 6
+nproc = 7
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())  
 # define work pool
 workpool = mp.Pool(processes=nproc)

@@ -48,6 +48,8 @@ echo_test:
 	echo $(UESCPATH) $(START) $(END)
 
 # delete the docker container completely
+# sudo docker images
+# sudo docker rmi $REPO_HASH
 prune:
 	docker system prune
 	docker container prune
