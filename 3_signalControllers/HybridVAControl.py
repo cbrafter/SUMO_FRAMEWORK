@@ -8,7 +8,7 @@ class for fixed time signal control
 
 """
 import signalControl, readJunctionData, traci
-from math import atan2, degrees, ceil
+from math import atan2, degrees, ceil, hypot
 import numpy as np
 from collections import defaultdict
 import traci.constants as tc
@@ -254,7 +254,7 @@ class HybridVAControl(signalControl.signalControl):
 
 
     def _isInRange(self, vehPosition):
-        distance = np.linalg.norm(vehPosition - self.jcnPosition)
+        distance = hypot(*(vehPosition - self.jcnPosition))
         if (distance < self.scanRange 
             and self.jcnCtrlRegion['W'] <= vehPosition[0] <= self.jcnCtrlRegion['E']
             and self.jcnCtrlRegion['S'] <= vehPosition[1] <= self.jcnCtrlRegion['N']):
@@ -268,7 +268,7 @@ class HybridVAControl(signalControl.signalControl):
     #         oldX = np.array(self.CamRxData[vehID]['pos'])
     #         newX = np.array(vehPosition)
 
-    #         dx = np.linalg.norm(newX - oldX)
+    #         dx = hypot(*(newX - oldX))
     #         dt = Tdetect - self.CamRxData[vehID][3]
     #         velocity = dx/dt
 
@@ -296,9 +296,9 @@ class HybridVAControl(signalControl.signalControl):
         RxKeys = self.CamRxData.keys()
         for vehID in GenKeys:
             if vehID in RxKeys:
-                x1 = np.array(self.CamRxData[vehID]['pos'])
-                x2 = np.array(self.CamGenData[vehID]['pos'])
-                dx = np.linalg.norm(x1 - x2)
+                x1, y1 = self.CamRxData[vehID]['pos']
+                x2, y2 = self.CamGenData[vehID]['pos']
+                dx = hypot(x1-x2, y1-y2)
                 dh = abs(self.CamRxData[vehID]['h'] - self.CamGenData[vehID]['h'])
                 dv = abs(self.CamRxData[vehID]['v'] - self.CamGenData[vehID]['v'])
                 dt = self.TIME_SEC - self.CamRxData[vehID]['Tgen']
@@ -337,7 +337,7 @@ class HybridVAControl(signalControl.signalControl):
                 # check the sub result has vehicle data (not loop data)
                 if tc.VAR_POSITION in self.subResults[vehID].keys():
                     vehPosition = self.subResults[vehID][tc.VAR_POSITION]
-                    if self.subResults[vehID][tc.VAR_TYPE] == 'typeITSCV' and self._isInRange(vehPosition):
+                    if 'c_' in self.subResults[vehID][tc.VAR_TYPE] and self._isInRange(vehPosition):
                         vehHeading = self.subResults[vehID][tc.VAR_ANGLE]
                         vehVelocity = self.subResults[vehID][tc.VAR_SPEED]
                         if vehID in compareKeys:
@@ -446,7 +446,7 @@ class HybridVAControl(signalControl.signalControl):
         speedLimit = self.speedLims[self.activeLanes[self.lastStageIndex][0]]
         for ID in vehIDs:
             vehPosition = np.array(self.CamRxData[ID]['pos'])
-            distance = np.linalg.norm(vehPosition - self.jcnPosition)
+            distance = hypot(*(vehPosition - self.jcnPosition))
             if distance > maxDistance and self.CamRxData[ID]['v'] < 0.05*speedLimit:
                 furthestID = ID
                 maxDistance = distance
@@ -460,7 +460,7 @@ class HybridVAControl(signalControl.signalControl):
         
         for ID in vehIDs:
             vehPosition = np.array(self.CamRxData[ID]['pos'])
-            distance = np.linalg.norm(vehPosition - self.jcnPosition)
+            distance = hypot(*(vehPosition - self.jcnPosition))
             if distance < minDistance:
                 nearestID = ID
                 minDistance = distance
