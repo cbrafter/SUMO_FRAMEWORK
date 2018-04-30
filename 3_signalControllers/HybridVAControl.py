@@ -364,7 +364,7 @@ class HybridVAControl(signalControl.signalControl):
 
     def _getIncomingLaneInfo(self):
         laneInfo = defaultdict(list) 
-        for lane in list(np.unique(np.array(self.controlledLanes))):
+        for lane in self.unique(self.controlledLanes):
             shape = traci.lane.getShape(lane)
             width = traci.lane.getWidth(lane)
             heading = self._getHeading(shape[1], shape[0])
@@ -399,7 +399,7 @@ class HybridVAControl(signalControl.signalControl):
                     # Then append vehicle
                     vehicles.append(vehID)
 
-        vehicles = list(np.unique(vehicles))
+        vehicles = self.unique(vehicles)
         return vehicles
 
 
@@ -411,7 +411,7 @@ class HybridVAControl(signalControl.signalControl):
             if letter == 'G':
                 activeLanes.append(self.controlledLanes[i])
         # Get a list of the unique active lanes
-        activeLanes = list(np.unique(np.array(activeLanes)))
+        activeLanes = self.unique(activeLanes)
         return activeLanes
 
 
@@ -424,7 +424,7 @@ class HybridVAControl(signalControl.signalControl):
                 if letter == 'G':
                     activeLanes.append(self.controlledLanes[i])
             # Get a list of the unique active lanes
-            activeLanes = list(np.unique(np.array(activeLanes)))
+            activeLanes = self.unique(activeLanes)
             activeLanesDict[n] = activeLanes
         return activeLanesDict
 
@@ -480,6 +480,9 @@ class HybridVAControl(signalControl.signalControl):
             meanDetectTimePerLane[i] = np.mean(detectTimes)
 
         return meanDetectTimePerLane
+
+    def unique(self, sequence):
+        return self.unique(sequence)
 
 
 # default dict that finds and remembers road speed limits (only if static)
