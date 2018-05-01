@@ -55,3 +55,6 @@ prune:
 	docker container prune
 	docker volume prune
 	docker image prune
+
+clean_models:
+	rm -rf 2_models/*_*
