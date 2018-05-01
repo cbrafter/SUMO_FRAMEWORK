@@ -40,6 +40,8 @@ def sumoConfigGen(modelname='simpleT',
     <processing>
         <!--TURN OFF TELEPORTING-->
         <time-to-teleport value="-1"/>
+        <ignore-junction-blocker value="60"/>
+        <!--no-internal-links value="true"/-->
     </processing>
     <random_number>
         <seed value="{seed}"/>
