@@ -53,13 +53,13 @@ exectime = time.time()
 controller = fixedTimeControl.fixedTimeControl
 #controller = GPSControl.GPSControl
 # Define road model directory
-modelname = 'corridor'
+modelname = 'sellyOak_hi'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
 CVP = 0.0
-seed = 10
+seed = 1
 
 # Edit the the output filenames in sumoConfig
 configFile = model + modelBase + ".sumocfg"
@@ -97,6 +97,7 @@ juncPos = [traci.junction.getPosition(juncID) for juncID in juncIDs]
 
 # Step simulation while there are vehicles
 i, flag = 1, True
+timeLimit = 3*60*60  # 10 hours in seconds for time limit
 '''
 subKey = traci.edge.getIDList()[0]
 traci.edge.subscribeContext(subKey, 
@@ -114,7 +115,15 @@ while flag:
     i += 1
 
     # reduce calls to traci to 1 per sec to impove performance
-    flag = traci.simulation.getMinExpectedNumber() if not i%100 else True
+    if not i%200: 
+        flag = traci.simulation.getMinExpectedNumber()
+        # stop sim to free resources if taking longer than ~10 hours
+        # i.e. the sim is gridlocked
+        if time.time()-exectime > timeLimit:
+            connector.disconnect()
+            raise RuntimeError("RuntimeError: GRIDLOCK")
+    else: 
+        flag = True
 
 '''
 stopfilename = exportPath[4:]+'stops{:03d}_{:03d}.csv'.format(int(CVP*100), seed)
