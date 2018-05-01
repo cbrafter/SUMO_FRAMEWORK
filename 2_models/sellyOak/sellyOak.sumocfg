@@ -9,7 +9,7 @@
         <!--<summary-output value="../../4_simulation/test_results/summary_R001_CVP000.xml"/>-->
         <tripinfo-output value="../../4_simulation/test_results/tripinfo_R001_CVP000.xml"/>
         <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R001_CVP000.xml"/-->
-        <queue-output value="../../4_simulation/test_results/queuedata_R001_CVP000.xml"/>
+        <!--queue-output value="../../4_simulation/test_results/queuedata_R001_CVP000.xml"/-->
     </output>
     <time>
         <begin value="0"/>
@@ -18,6 +18,8 @@
     <processing>
         <!--TURN OFF TELEPORTING-->
         <time-to-teleport value="-1"/>
+        <ignore-junction-blocker value="60"/>
+        <!--no-internal-links value="true"/-->
     </processing>
     <random_number>
         <seed value="1"/>
