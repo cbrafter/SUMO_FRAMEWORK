@@ -61,6 +61,16 @@ def parser(fileName):
             data = convertTripData(data)
             df.loc[len(df.index)] = [controller, model, run, cvp] + data
     file.close()
+    # calculate delay
+    df['journeyTime'] = df['duration'] + df['departDelay']
+    # determine if vehicle connected or not and remove appending 'c_'
+    df['connected'] = df['vType'].apply(lambda x: int('c_' in x))
+    df['vType'] = df['vType'].apply(filtervType)
+    # remove lane number from origin and destination
+    df['origin'] = df['origin'].apply(lambda x: x.split('_')[0])
+    df['destination'] = df['destination'].apply(lambda x: x.split('_')[0])
+    # get freeFlow time
+    df['delay'] = df.apply(getDelay, axis=1)
     return df
 
 dataFolder = '/hardmem/results_test/'
@@ -78,20 +88,6 @@ workpool = mp.Pool(processes=nproc)
 resultDFs = workpool.map(parser, resultFiles, chunksize=1)
 allData = pd.concat(resultDFs, ignore_index=True)
 resultDFs = 0  # dereference to save memory
-print('Calculating new columns')
-
-# calculate delay
-allData['journeyTime'] = allData['duration'] + allData['departDelay']
-# determine if vehicle connected or not and remove appending 'c_'
-allData['connected'] = allData['vType'].apply(lambda x: int('c_' in x))
-allData['vType'] = allData['vType'].apply(filtervType)
-
-# remove lane number from origin and destination
-allData['origin'] = allData['origin'].apply(lambda x: x.split('_')[0])
-allData['destination'] = allData['destination'].apply(lambda x:
-                                                      x.split('_')[0])
-# get freeFlow time
-allData['delay'] = allData.apply(getDelay, axis=1)
 
 print('Saving data')
 allData.to_csv(outputCSV, index=False)
