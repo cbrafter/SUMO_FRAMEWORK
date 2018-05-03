@@ -46,6 +46,7 @@ def parser(fileName):
             'departDelay="(.+?)" arrival="(.+?)" arrivalLane="(.+?)" ' + \
             '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
             'timeLoss="(.+?)" .+? vType="(.+?)" speedFactor="(.+?)" .+?/>'
+    regex = re.compile(regex)
 
     cols = ['controller', 'model', 'run', 'cvp', "depart", "origin",
             "departDelay", "arrival", "destination", "duration",
@@ -56,7 +57,7 @@ def parser(fileName):
     # don't use readlines to save memory
     for line in file:
         if '<tripinfo ' in line:
-            data = re.match(regex, line.strip()).groups()
+            data = regex.match(line.strip()).groups()
             data = convertTripData(data)
             df.loc[len(df.index)] = [controller, model, run, cvp] + data
     file.close()
@@ -92,5 +93,6 @@ allData['destination'] = allData['destination'].apply(lambda x:
 # get freeFlow time
 allData['delay'] = allData.apply(getDelay, axis=1)
 
+print('Saving data')
 allData.to_csv(outputCSV, index=False)
 print('~DONE~')
