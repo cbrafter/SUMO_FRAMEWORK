@@ -8,10 +8,14 @@ import pandas as pd
 
 
 class freeflowStore(object):
-    def __init__(self):
-        cols = ['type', 'model', 'origin', 'destination',
-                'distance', 'duration']
-        self.data = pd.DataFrame(columns=cols)
+    def __init__(self, fileName=None):
+        if fileName is not None:
+            self.data = pd.read_csv(fileName)
+        else:
+            cols = ['type', 'model', 'origin', 'destination',
+                    'distance', 'duration']
+            self.data = pd.DataFrame(columns=cols)
+
 
     def addEntry(self, vType, model, orig, dest, dist, freeflowTime):
         newIndex = len(self.data.index)
@@ -19,13 +23,18 @@ class freeflowStore(object):
                                    dest, dist, freeflowTime]
 
     def getTime(self, vType, model, orig, dest):
-        mask = (self.data.model == model) & (self.data.type == vType) &\
+        vehType = vType if 'c_' not in vType else vType.split('_')[1]
+        mask = (self.data.model == model) & (self.data.type == vehType) &\
                (self.data.origin == orig) & (self.data.destination == dest)
-        return self.data[mask].duration.tolist()[0]
+        freeflowTime = self.data[mask].duration.tolist()
+        if len(freeflowTime) == 0:
+            raise ValueError('ValueError: failed on {}'.format([vehType, model, orig, dest])) 
+        return freeflowTime[0]
 
     def getDistance(self, vType, model, orig, dest):
-        mask = (self.data.model == model) & (self.data.type == vType) &\
+        vehType = vType if 'c_' not in vType else vType.split('_')[1]
+        mask = (self.data.model == model) & (self.data.type == vehType) &\
                (self.data.origin == orig) & (self.data.destination == dest)
         return self.data[mask].distance.tolist()[0]
 
-freeflows = pd.read_csv('./freeflows.csv')
+freeflows = freeflowStore('./freeflows.csv')
