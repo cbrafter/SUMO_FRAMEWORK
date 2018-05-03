@@ -77,6 +77,7 @@ workpool = mp.Pool(processes=nproc)
 resultDFs = workpool.map(parser, resultFiles, chunksize=1)
 allData = pd.concat(resultDFs, ignore_index=True)
 resultDFs = 0  # dereference to save memory
+print('Calculating new columns')
 
 # calculate delay
 allData['journeyTime'] = allData['duration'] + allData['departDelay']
