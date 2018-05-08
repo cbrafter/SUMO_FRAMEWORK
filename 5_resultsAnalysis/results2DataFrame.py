@@ -5,12 +5,12 @@ Created on Thu May  3 09:52:21 2018
 @author: craig
 """
 
-import pandas as pd
 import re
 from glob import glob
 import multiprocessing as mp
 from freeflows import freeflows
 import sys
+
 
 def convertTripData(data):
     newData = []
@@ -29,15 +29,21 @@ def filtervType(x):
         return x
 
 
-def getDelay(x):
-    freeflowTime = freeflows.getTime(x['vType'], x['model'],
-                                     x['origin'], x['destination'])
-    return abs(x['journeyTime'] - freeflowTime)
+def getDelay(vType, netModel, origin, destination, journeyTime):
+    try:
+        model = netModel if 'selly' not in netModel \
+                         else netModel.split('_')[0]
+        freeflowTime = freeflows.getTime(vType, model,
+                                         origin, destination)
+        assert freeflowTime is not None
+        return abs(journeyTime - freeflowTime)
+    except:
+        return -1
 
 
 def parser(fileName):
     controller, model, fileTxt = fileName.split('/')[-3:]
-    print('PARSING: '+fileTxt)
+    print('PARSING: '+fileName)
     sys.stdout.flush()
     run, cvp = [int(x) for x in re.match('.+?R(.+?)_CVP(.+?).xml',
                                          fileTxt).groups()]
@@ -47,31 +53,37 @@ def parser(fileName):
             '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
             'timeLoss="(.+?)" .+? vType="(.+?)" speedFactor="(.+?)" .+?/>'
     regex = re.compile(regex)
-
-    cols = ['controller', 'model', 'run', 'cvp', "depart", "origin",
-            "departDelay", "arrival", "destination", "duration",
-            "routeLength", "timeLoss", "vType", "speedFactor"]
-    df = pd.DataFrame(columns=cols)
     file = open(fileName, 'r')
-
     # don't use readlines to save memory
+    i = 0
+    results = []
     for line in file:
         if '<tripinfo ' in line:
             data = regex.match(line.strip()).groups()
             data = convertTripData(data)
-            df.loc[len(df.index)] = [controller, model, run, cvp] + data
+            depart, origin, departDelay, arrival, destination,\
+                duration, routeLength, timeLoss, vType,\
+                speedFactor = data
+            # total journey time
+            journeyTime = duration + departDelay
+            # bool for if vehicle connected or not
+            connected = int('c_' in vType)
+            # remove connectivity indicator from vType
+            vType = filtervType(vType)
+            # only edge id for origin and destination
+            origin = origin.split('_')[0]
+            destination = destination.split('_')[0]
+            # calculate delay
+            delay = getDelay(vType, model, origin, destination, journeyTime)
+            data = [controller, model, run, cvp, depart, origin,
+                    departDelay, arrival, destination, duration,
+                    routeLength, timeLoss, vType, speedFactor,
+                    journeyTime, connected, delay]
+            data = ','.join(str(x) for x in data) + '\n'
+            results.append(data)
+            i += 1
     file.close()
-    # calculate delay
-    df['journeyTime'] = df['duration'] + df['departDelay']
-    # determine if vehicle connected or not and remove appending 'c_'
-    df['connected'] = df['vType'].apply(lambda x: int('c_' in x))
-    df['vType'] = df['vType'].apply(filtervType)
-    # remove lane number from origin and destination
-    df['origin'] = df['origin'].apply(lambda x: x.split('_')[0])
-    df['destination'] = df['destination'].apply(lambda x: x.split('_')[0])
-    # get freeFlow time
-    df['delay'] = df.apply(getDelay, axis=1)
-    return df
+    return results
 
 dataFolder = '/hardmem/results_test/'
 outputCSV = dataFolder + 'allTripInfo.csv'
@@ -79,16 +91,23 @@ outputCSV = dataFolder + 'allTripInfo.csv'
 # recursive glob using ** notation to expand folders
 resultFiles = glob(dataFolder+'**/*.xml', recursive=True)
 resultFiles.sort()
-
+resultFiles = [x for x in resultFiles if 'GPSVA/sellyOak_hi' not in x]
 print('~Parsing Tripfiles~')
 # define work pool
-nproc = 8
+nproc = 2
 workpool = mp.Pool(processes=nproc)
-# Run simualtions in parallel
-resultDFs = workpool.map(parser, resultFiles, chunksize=1)
-allData = pd.concat(resultDFs, ignore_index=True)
-resultDFs = 0  # dereference to save memory
+# Run parsers in parallel
+resultData = workpool.map(parser, resultFiles, chunksize=1)
+resultData = [line for file in resultData for line in file]
 
 print('Saving data')
-allData.to_csv(outputCSV, index=False)
+with open(outputCSV, 'w') as ofile:
+    cols = ['controller', 'model', 'run', 'cvp', "depart", "origin",
+            "departDelay", "arrival", "destination", "duration",
+            "routeLength", "timeLoss", "vType", "speedFactor",
+            "journeyTime", "connected", "delay"]
+    ofile.write(','.join(cols) + '\n')
+    for line in resultData:
+        ofile.write(line)
+
 print('~DONE~')
