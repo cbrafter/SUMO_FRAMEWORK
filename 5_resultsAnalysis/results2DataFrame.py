@@ -43,7 +43,7 @@ def getDelay(vType, netModel, origin, destination, journeyTime):
 
 def parser(fileName):
     controller, model, fileTxt = fileName.split('/')[-3:]
-    print('PARSING: '+fileName)
+    # print('PARSING: '+fileName)
     sys.stdout.flush()
     run, cvp = [int(x) for x in re.match('.+?R(.+?)_CVP(.+?).xml',
                                          fileTxt).groups()]
