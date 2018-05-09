@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 import sys, os
 import sumoDict 
 
-# Use T1 fonts for plots not bitmap
+# Use T1 fonts for plots not bitmap
 rcParams['ps.useafm'] = True
 rcParams['pdf.use14corefonts'] = True
 rcParams['text.usetex'] = True
@@ -51,7 +51,7 @@ limDict = {'simpleT':[[19, 27],[0,100], 0.5, 1], 'twinT':[[0,1100], [0,1000], 50
     'corridor':[[62,100], [0,800], 1, 1], 'manhattan':[[80,210], [0,900], 5, 1]}
 ctrlDict={'fixedTime':'FT', 'VA':'VA', 'GPSVA':'GPS-VA', 'HVA':'HVA', 'HVA1':'HVA1', 'HVAbias':'HVAbias'}
 
-# Run index and AV ration definitions
+# Run index and AV ration definitions
 runs = np.arange(1, 16)
 AVratios = np.linspace(0, 1, 11)
 pctAVR = 100*AVratios
@@ -120,7 +120,7 @@ for i, model in enumerate(models):
         meanTravelTimePerMeter = np.mean(travelData, 0)
         meanDelayTravelTimePerMeter = np.mean(delayData, 0)
 
-        # Standard Deviations
+        # Standard Deviations
         stdTravelTimePerMeter = np.mean(stdDevTravel, 0)
         stdDelayTravelTimePerMeter = np.mean(stdDevDelay, 0)
 
@@ -129,10 +129,10 @@ for i, model in enumerate(models):
             meanTravelTimePerMeter *= np.ones_like(pctAVR)
             meanDelayTravelTimePerMeter *= np.ones_like(pctAVR)
         
-        # Plot Results
+        # Plot Results
         print('\nRendering {} Plots...'.format(controller+'_'+model))
 
-        # AVR vs. Mean Travel Time + Delay Per Meter
+        # AVR vs. Mean Travel Time + Delay Per Meter
         ax = fig.add_subplot(pltID+idx)
         yeTop, yeBottom = plotPercentile(delayData, pctAVR, lineStyle[controller], alpha_val=0.7)
         nn = meanDelayTravelTimePerMeter
