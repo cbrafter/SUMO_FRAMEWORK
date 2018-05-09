@@ -53,14 +53,14 @@ def parser(fileName):
             '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
             'timeLoss="(.+?)" .+? vType="(.+?)" speedFactor="(.+?)" .+?/>'
     regex = re.compile(regex)
-    file = open(fileName, 'r')
     # don't use readlines to save memory
-    i = 0
     results = []
-    for line in file:
-        if '<tripinfo ' in line:
-            data = regex.match(line.strip()).groups()
-            data = convertTripData(data)
+    with open(fileName, 'r') as file:
+        for line in file:
+            data = regex.match(line.strip())
+            if data is None:
+                continue
+            data = convertTripData(data.groups())
             depart, origin, departDelay, arrival, destination,\
                 duration, routeLength, timeLoss, vType,\
                 speedFactor = data
@@ -81,8 +81,6 @@ def parser(fileName):
                     journeyTime, connected, delay]
             data = ','.join(str(x) for x in data) + '\n'
             results.append(data)
-            i += 1
-    file.close()
     return results
 
 dataFolder = '/hardmem/results_test/'
