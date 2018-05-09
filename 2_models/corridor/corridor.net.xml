@@ -327,25 +327,39 @@
 
     <tlLogic id="0" type="static" programID="0" offset="0">
         <phase duration="30" state="GGGrrrrrrrrrrr"/>
+        <phase duration="3" state="yyyrrrrrrrrrrr"/>
         <phase duration="30" state="rrrGGGgrrrrrrr"/>
+        <phase duration="3" state="rrryyyyrrrrrrr"/>
         <phase duration="30" state="rrrrrrrGGGrrrr"/>
+        <phase duration="3" state="rrrrrrryyyrrrr"/>
         <phase duration="30" state="rrrrrrrrrrGGGg"/>
+        <phase duration="3" state="rrrrrrrrrryyyy"/>
     </tlLogic>
     <tlLogic id="1" type="static" programID="0" offset="0">
         <phase duration="30" state="GGrrrrrr"/>
+        <phase duration="3" state="yyrrrrrr"/>
         <phase duration="30" state="rrGGGrrr"/>
+        <phase duration="3" state="rryyyrrr"/>
         <phase duration="30" state="rrrrrGGG"/>
+        <phase duration="3" state="rrrrryyy"/>
     </tlLogic>
     <tlLogic id="2" type="static" programID="0" offset="0">
         <phase duration="30" state="rrrGGrrr"/>
+        <phase duration="3" state="rrryyrrr"/>
         <phase duration="30" state="GGGrrrrr"/>
+        <phase duration="3" state="yyyrrrrr"/>
         <phase duration="30" state="rrrrrGGG"/>
+        <phase duration="3" state="rrrrryyy"/>
     </tlLogic>
     <tlLogic id="3" type="static" programID="0" offset="0">
         <phase duration="30" state="GGGrrrrrrrrrrr"/>
+        <phase duration="3" state="yyyrrrrrrrrrrr"/>
         <phase duration="30" state="rrrGGGgrrrrrrr"/>
+        <phase duration="3" state="rrryyyyrrrrrrr"/>
         <phase duration="30" state="rrrrrrrrrrGGGg"/>
+        <phase duration="3" state="rrrrrrrrrryyyy"/>
         <phase duration="30" state="rrrrrrrGGGrrrr"/>
+        <phase duration="3" state="rrrrrrryyyrrrr"/>
     </tlLogic>
 
     <junction id="0" type="traffic_light" x="150.00" y="150.00" incLanes="10:0_0 1:0_0 1:0_1 8:0_0 4:0_0 4:0_1" intLanes=":0_0_0 :0_1_0 :0_2_0 :0_3_0 :0_4_0 :0_4_1 :0_6_0 :0_7_0 :0_8_0 :0_9_0 :0_10_0 :0_11_0 :0_11_1 :0_13_0" shape="146.75,141.95 153.25,141.95 154.75,143.45 154.75,156.55 153.25,158.05 146.75,158.05 145.25,156.55 145.25,143.45">
