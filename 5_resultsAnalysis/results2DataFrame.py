@@ -55,32 +55,33 @@ def parser(fileName):
     regex = re.compile(regex)
     # don't use readlines to save memory
     results = []
-    with open(fileName, 'r') as file:
-        for line in file:
-            data = regex.match(line.strip())
-            if data is None:
-                continue
-            data = convertTripData(data.groups())
-            depart, origin, departDelay, arrival, destination,\
-                duration, routeLength, timeLoss, vType,\
-                speedFactor = data
-            # total journey time
-            journeyTime = duration + departDelay
-            # bool for if vehicle connected or not
-            connected = int('c_' in vType)
-            # remove connectivity indicator from vType
-            vType = filtervType(vType)
-            # only edge id for origin and destination
-            origin = origin.split('_')[0]
-            destination = destination.split('_')[0]
-            # calculate delay
-            delay = getDelay(vType, model, origin, destination, journeyTime)
-            data = [controller, model, run, cvp, depart, origin,
-                    departDelay, arrival, destination, duration,
-                    routeLength, timeLoss, vType, speedFactor,
-                    journeyTime, connected, delay]
-            data = ','.join(str(x) for x in data) + '\n'
-            results.append(data)
+    file = open(fileName, 'r')
+    for line in file:
+        data = regex.match(line.strip())
+        if data is None:
+            continue
+        data = convertTripData(data.groups())
+        depart, origin, departDelay, arrival, destination,\
+            duration, routeLength, timeLoss, vType,\
+            speedFactor = data
+        # total journey time
+        journeyTime = duration + departDelay
+        # bool for if vehicle connected or not
+        connected = int('c_' in vType)
+        # remove connectivity indicator from vType
+        vType = filtervType(vType)
+        # only edge id for origin and destination
+        origin = origin.split('_')[0]
+        destination = destination.split('_')[0]
+        # calculate delay
+        delay = getDelay(vType, model, origin, destination, journeyTime)
+        data = [controller, model, run, cvp, depart, origin,
+                departDelay, arrival, destination, duration,
+                routeLength, timeLoss, vType, speedFactor,
+                journeyTime, connected, delay]
+        data = ','.join(str(x) for x in data) + '\n'
+        results.append(data)
+    file.close()
     return results
 
 dataFolder = '/hardmem/results_test/'
