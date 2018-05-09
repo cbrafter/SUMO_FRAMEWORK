@@ -99,12 +99,12 @@ def makeRoutes(config):
 
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
-runs = 100
-configs = itertools.product(models, range(runs))
-nproc = 7
+runs = 25
+configs = itertools.product(models, range(runs+1))
+nproc = 10
 print('Starting route building on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
 # Run simualtions in parallel
-result = workpool.map(makeRoutes, configs, chunksize=20)
+result = workpool.map(makeRoutes, configs, chunksize=5)
 print('DONE: '+time.ctime())
