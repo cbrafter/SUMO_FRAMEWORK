@@ -482,9 +482,18 @@ class HybridVAControl(signalControl.signalControl):
         return meanDetectTimePerLane
 
     def unique(self, sequence):
-        return self.unique(sequence)
+        return list(set(sequence))
 
+    def getInductors(self):
+        links = traci.trafficlights.getControlledLinks(self.junctionData.id)
+        self.incomingLanes = [x[0][0] for x in links]
+        self.outgoingLanes = [x[0][1] for x in links]
+        self.incomingLanes = [x.split('_')[0] for x in self.incomingLanes]
+        self.outgoingLanes = [x.split('_')[0] for x in self.outgoingLanes]
+        self.incomingLanes = self.unique(self.incomingLanes)
+        self.outgoingLanes = self.unique(self.outgoingLanes)
 
+        
 # default dict that finds and remembers road speed limits (only if static)
 # needs to be updated otherwise
 class speedLimDict(defaultdict):
