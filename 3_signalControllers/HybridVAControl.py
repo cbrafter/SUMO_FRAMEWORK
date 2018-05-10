@@ -8,6 +8,7 @@ class for fixed time signal control
 
 """
 import signalControl, readJunctionData, traci
+import signalTools as sigTools
 from math import atan2, degrees, ceil, hypot
 import numpy as np
 from collections import defaultdict
@@ -30,7 +31,7 @@ class HybridVAControl(signalControl.signalControl):
         self.jcnCtrlRegion = self._getJncCtrlRegion()
         self.controlledLanes = traci.trafficlights.getControlledLanes(self.junctionData.id)
         # dict[laneID] = [heading, shape]
-        self.laneDetectionInfo = self._getIncomingLaneInfo()
+        self.laneDetectionInfo = sigTools.getIncomingLaneInfo(self.controlledLanes)
         self.stageTime = 0.0
         self.minGreenTime = minGreenTime
         self.maxGreenTime = maxGreenTime
@@ -122,12 +123,12 @@ class HybridVAControl(signalControl.signalControl):
                 nearestVeh = self._getNearestVehicle(oncomingVeh)
                 # nV[1] is its velocity
                 # If a vehicle detected and within catch distance
-                if nearestVeh[0] != '' and nearestVeh[1] <= self.nearVehicleCatchDistance:
+                if nearestVeh['id'] != '' and nearestVeh['distance'] <= self.nearVehicleCatchDistance:
                     # if not invalid and travelling faster than SPM velocity
-                    if (self.CamRxData[nearestVeh[0]]['v'] > 1.0/self.secondsPerMeterTraffic):
-                        gpsExtend = nearestVeh[1]/self.CamRxData[nearestVeh[0]]['v']
+                    if (self.CamRxData[nearestVeh['id']]['v'] > 1.0/self.secondsPerMeterTraffic):
+                        gpsExtend = nearestVeh['distance']/self.CamRxData[nearestVeh['id']]['v']
                     else:
-                        gpsExtend = self.secondsPerMeterTraffic*nearestVeh[1]
+                        gpsExtend = self.secondsPerMeterTraffic*nearestVeh['distance']
 
                     if gpsExtend > 2*self.threshold:
                         gpsExtend = 0.0
@@ -163,9 +164,6 @@ class HybridVAControl(signalControl.signalControl):
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
             pass
-        # elif (self.TIME_MS - self.firstCalled) < (self.junctionData.offset*1000):
-        #     # Process offset first
-        #     pass
         elif (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
             # Before the period of the next stage
             pass
@@ -178,16 +176,14 @@ class HybridVAControl(signalControl.signalControl):
                 self.junctionData.stages[nextStageIndex].controlString, 
                 self.TIME_MS)
             self.lastStageIndex = nextStageIndex
-            #print(self.stageTime)
+            print(self.stageTime)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
         super(HybridVAControl, self).process(self.TIME_MS)
 
-
     def _getSubscriptionResults(self):
         self.subResults = traci.junction.getContextSubscriptionResults(self.junctionData.id)
-
 
     def updateStageTime(self, updateTime):
         elapsedTime = 0.001*(self.TIME_MS - self.lastCalled)
@@ -195,27 +191,6 @@ class HybridVAControl(signalControl.signalControl):
         self.stageTime = elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime) 
-
-
-    def _getHeading(self, currentLoc, prevLoc):
-        dy = currentLoc[1] - prevLoc[1]
-        dx = currentLoc[0] - prevLoc[0]
-        if currentLoc[1] == prevLoc[1] and currentLoc[0] == prevLoc[0]:
-            heading = -1
-        else:
-            if dy >= 0:
-                heading = degrees(atan2(dy, dx))
-            else:
-                heading = 360 + degrees(atan2(dy, dx))
-        
-        # Map angle to make compatible with SUMO heading
-        if 0 <= heading <= 90:
-            heading = 90 - heading
-        elif 90 < heading < 360:
-            heading = 450 - heading
-
-        return heading
-
 
     def _getJncCtrlRegion(self):
         jncPosition = traci.junction.getPosition(self.junctionData.id)
@@ -252,7 +227,6 @@ class HybridVAControl(signalControl.signalControl):
 
         return ctrlRegion
 
-
     def _isInRange(self, vehPosition):
         distance = hypot(*(vehPosition - self.jcnPosition))
         if (distance < self.scanRange 
@@ -261,21 +235,6 @@ class HybridVAControl(signalControl.signalControl):
             return True
         else:
             return False
-
-
-    # def _getVelocity(self, vehID, vehPosition, Tdetect):
-    #     if vehID in self.CamRxData.keys():
-    #         oldX = np.array(self.CamRxData[vehID]['pos'])
-    #         newX = np.array(vehPosition)
-
-    #         dx = hypot(*(newX - oldX))
-    #         dt = Tdetect - self.CamRxData[vehID][3]
-    #         velocity = dx/dt
-
-    #         return velocity
-    #     else:
-    #         return 1e6
-
 
     def _getCAMinfo(self):
         # Get data off "channel"
@@ -356,63 +315,55 @@ class HybridVAControl(signalControl.signalControl):
 
 
     def _TGC(self, vData):
+        # Time to Generate CAM
         if vData['NGC'] > self.NGenCamMax:
             return self.TGenCamMax
         else:
             return self.TIME_SEC - vData['Tgen']
 
 
-    def _getIncomingLaneInfo(self):
-        laneInfo = defaultdict(list) 
-        for lane in self.unique(self.controlledLanes):
-            shape = traci.lane.getShape(lane)
-            width = traci.lane.getWidth(lane)
-            heading = self._getHeading(shape[1], shape[0])
-            x1, y1 = shape[0]
-            x2, y2 = shape[1]
-            dx = abs(x2 - x1) 
-            dy = abs(y2 - y1)
-            if dx > dy:
-                roadBounds = ((x1, y1 + width), (x2, y2 - width))
-            else: 
-                roadBounds = ((x1 + width, y1), (x2 - width, y2))
-            laneInfo[lane] = [heading, roadBounds]
-
-        return laneInfo
-
-
-    def _getOncomingVehicles(self):
+    def _getOncomingVehicles(self, headingTol=10):
         # Oncoming if (in active lane & heading matches oncoming heading & 
         # is in lane bounds)
         vehicles = []
         for lane in self.activeLanes[self.lastStageIndex]:
+            laneHeading = self.laneDetectionInfo[lane]['heading']
+            headingUpper = laneHeading + headingTol
+            headingLower = laneHeading - headingTol
+            laneBounds = self.laneDetectionInfo[lane]['bounds']
+            lowerXBound = min(laneBounds['x1'], laneBounds['x2'])
+            lowerYBound = min(laneBounds['y1'], laneBounds['y2'])
+            upperXBound = max(laneBounds['x1'], laneBounds['x2'])
+            upperYBound = max(laneBounds['y1'], laneBounds['y2'])
             for vehID in self.CamRxData.keys():
+                vehicleXcoord = self.CamRxData[vehID]['pos'][0]
+                vehicleYcoord = self.CamRxData[vehID]['pos'][1]
                 # If on correct heading pm 10deg
-                if (np.isclose(self.CamRxData[vehID]['h'], self.laneDetectionInfo[lane][0], atol=10)
-                    # If in lane x bounds
-                    and min(self.laneDetectionInfo[lane][1][0][0], self.laneDetectionInfo[lane][1][1][0]) < 
-                    self.CamRxData[vehID]['pos'][0] < 
-                    max(self.laneDetectionInfo[lane][1][0][0], self.laneDetectionInfo[lane][1][1][0])
-                    # If in lane y bounds
-                    and min(self.laneDetectionInfo[lane][1][0][1], self.laneDetectionInfo[lane][1][1][1]) < 
-                    self.CamRxData[vehID]['pos'][1] < 
-                    max(self.laneDetectionInfo[lane][1][0][1], self.laneDetectionInfo[lane][1][1][1])):
-                    # Then append vehicle
+                if (headingLower < laneHeading < headingUpper
+                  # If in lane x bounds
+                  and lowerXBound < vehicleXcoord < upperXBound
+                  # If in lane y bounds
+                  and lowerYBound < vehicleYcoord < upperYBound):
+                  # Then append vehicle
                     vehicles.append(vehID)
 
-        vehicles = self.unique(vehicles)
+        vehicles = sigTools.unique(vehicles)
         return vehicles
 
 
     def _getActiveLanes(self):
         # Get the current control string to find the green lights
-        stageCtrlString = self.junctionData.stages[self.lastStageIndex].controlString
-        activeLanes = []
-        for i, letter in enumerate(stageCtrlString):
-            if letter == 'G':
-                activeLanes.append(self.controlledLanes[i])
+        stageCtrlString = self.junctionData\
+                              .stages[self.lastStageIndex]\
+                              .controlString
+        try:
+            # search dict to see if stage known already, if not work it out
+            activeLanes = self.activeLanes[stageCtrlString]
+        except KeyError:
+            activeLanes = self.getLanesFromString(stageCtrlString)
+            self.activeLanes[stageCtrlString] = activeLanes
         # Get a list of the unique active lanes
-        activeLanes = self.unique(activeLanes)
+        # activeLanes = sigTools.unique(activeLanes)
         return activeLanes
 
 
@@ -420,15 +371,19 @@ class HybridVAControl(signalControl.signalControl):
         # Get the current control string to find the green lights
         activeLanesDict = {}
         for n, stage in enumerate(self.junctionData.stages):
-            activeLanes = []
-            for i, letter in enumerate(stage.controlString):
-                if letter == 'G':
-                    activeLanes.append(self.controlledLanes[i])
+            activeLanes = self.getLanesFromString(stage.controlString)
             # Get a list of the unique active lanes
-            activeLanes = self.unique(activeLanes)
+            # activeLanes = sigTools.unique(activeLanes)
             activeLanesDict[n] = activeLanes
+            activeLanesDict[stage.controlString] = activeLanes
         return activeLanesDict
 
+    def getLanesFromString(self, ctrlString):
+        activeLanes = []
+        for i, letter in enumerate(ctrlString):
+            if letter == 'G' and self.controlledLanes[i] not in activeLanes:
+                activeLanes.append(self.controlledLanes[i])
+        return activeLanes
 
     def _getLaneInductors(self):
         laneInductors = defaultdict(list)
@@ -444,11 +399,13 @@ class HybridVAControl(signalControl.signalControl):
     def _getFurthestStationaryVehicle(self, vehIDs):
         furthestID = ''
         maxDistance = -1
-        speedLimit = self.speedLims[self.activeLanes[self.lastStageIndex][0]]
+        haltVelocity = 0.01 
         for ID in vehIDs:
             vehPosition = np.array(self.CamRxData[ID]['pos'])
             distance = hypot(*(vehPosition - self.jcnPosition))
-            if distance > maxDistance and self.CamRxData[ID]['v'] < 0.05*speedLimit:
+            # sumo defines a vehicle as halted if v< 0.01 m/s
+            if distance > maxDistance \
+              and self.CamRxData[ID]['v'] < haltVelocity:
                 furthestID = ID
                 maxDistance = distance
 
@@ -466,7 +423,7 @@ class HybridVAControl(signalControl.signalControl):
                 nearestID = ID
                 minDistance = distance
 
-        return [nearestID, minDistance]
+        return {'id': nearestID, 'distance': minDistance}
 
 
     def _getLaneDetectTime(self):
@@ -482,11 +439,6 @@ class HybridVAControl(signalControl.signalControl):
 
         return meanDetectTimePerLane
 
-    def unique(self, sequence):
-        return list(set(sequence))
-
-    def mean(self, x):
-        return sum(x)/float(len(x))
 
     def getInductors(self):
         links = traci.trafficlights.getControlledLinks(self.junctionData.id)
@@ -494,8 +446,8 @@ class HybridVAControl(signalControl.signalControl):
         self.outgoingLanes = [x[0][1] for x in links]
         self.incomingLanes = [x.split('_')[0] for x in self.incomingLanes]
         self.outgoingLanes = [x.split('_')[0] for x in self.outgoingLanes]
-        self.incomingLanes = self.unique(self.incomingLanes)
-        self.outgoingLanes = self.unique(self.outgoingLanes)
+        self.incomingLanes = sigTools.unique(self.incomingLanes)
+        self.outgoingLanes = sigTools.unique(self.outgoingLanes)
 
         
 # default dict that finds and remembers road speed limits (only if static)
