@@ -368,13 +368,14 @@ class HybridVAControl(signalControl.signalControl):
             shape = traci.lane.getShape(lane)
             width = traci.lane.getWidth(lane)
             heading = self._getHeading(shape[1], shape[0])
-
-            dx = shape[0][0] - shape[1][0] 
-            dy = shape[0][1] - shape[1][1]
-            if abs(dx) > abs(dy):
-                roadBounds = ((shape[0][0], shape[0][1] + width), (shape[1][0], shape[1][1] - width))
+            x1, y1 = shape[0]
+            x2, y2 = shape[1]
+            dx = abs(x2 - x1) 
+            dy = abs(y2 - y1)
+            if dx > dy:
+                roadBounds = ((x1, y1 + width), (x2, y2 - width))
             else: 
-                roadBounds = ((shape[0][0] + width, shape[0][1]), (shape[1][0] - width, shape[1][1]))
+                roadBounds = ((x1 + width, y1), (x2 - width, y2))
             laneInfo[lane] = [heading, roadBounds]
 
         return laneInfo
@@ -477,12 +478,15 @@ class HybridVAControl(signalControl.signalControl):
                 # if self.subResults != None and self.subResults[loop] != None:
                     #print(traci.inductionloop.getTimeSinceDetection(loop))
                 detectTimes.append(self.subResults[loop][tc.LAST_STEP_TIME_SINCE_DETECTION])
-            meanDetectTimePerLane[i] = np.mean(detectTimes)
+            meanDetectTimePerLane[i] = self.mean(detectTimes)
 
         return meanDetectTimePerLane
 
     def unique(self, sequence):
         return list(set(sequence))
+
+    def mean(self, x):
+        return sum(x)/float(len(x))
 
     def getInductors(self):
         links = traci.trafficlights.getControlledLinks(self.junctionData.id)
