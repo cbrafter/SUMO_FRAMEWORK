@@ -229,12 +229,12 @@ class HybridVAControl(signalControl.signalControl):
 
     def _isInRange(self, vehPosition):
         distance = hypot(*(vehPosition - self.jcnPosition))
-        if (distance < self.scanRange 
-            and self.jcnCtrlRegion['W'] <= vehPosition[0] <= self.jcnCtrlRegion['E']
-            and self.jcnCtrlRegion['S'] <= vehPosition[1] <= self.jcnCtrlRegion['N']):
-            return True
-        else:
-            return False
+        c1 = distance < self.scanRange
+        # shorten variable name and check box is in bounds
+        JCR = self.jcnCtrlRegion
+        c2 = JCR['W'] <= vehPosition[0] <= JCR['E']
+        c3 = JCR['S'] <= vehPosition[1] <= JCR['N']
+        return (c1 and c2 and c3)
 
     def _getCAMinfo(self):
         # Get data off "channel"
