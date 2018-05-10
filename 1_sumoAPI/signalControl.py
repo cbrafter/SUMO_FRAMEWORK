@@ -12,19 +12,7 @@ import traci.constants as tc
 import math
 from scipy.spatial import distance
 import numpy as np
-
-
-def getIntergreen(dist):
-    # <10 & 10-18 & 19-27 & 28-37 & 38-46 & 47-55 & 56-64 & >65
-    #  5  &   6   &   7   &   8   &   9   &  10   &  11   & 12
-    diamThresholds = [10, 19, 28, 38, 47, 56, 65]
-    intergreen = 5
-    for threshold in diamThresholds:
-        if dist < threshold:
-            return intergreen
-        else:
-            intergreen += 1
-    return intergreen
+import signalTools as sigTools
 
 
 class signalControl(object):
@@ -49,27 +37,10 @@ class signalControl(object):
     def setAllRedTime(self, time):
         self.transitionObject.setAllRedTime(time)
 
-    def getIntergreenTime(self, junctionID):
-        x1, y1 = traci.junction.getPosition(junctionID)
-        edges = traci.trafficlights.getControlledLinks(junctionID)
-        edges = [x for z in edges for y in z for x in y[:2]]
-        edges = list(set(edges))
-        boundingCoords = []
-        for edge in edges:
-            dMin, coordMin = 1e6, []
-            for x2, y2 in traci.lane.getShape(edge):
-                dist = math.hypot(x2-x1, y2-y1)
-                if dist < dMin:
-                    dMin, coordMin = dist, [x2, y2]
-            boundingCoords.append(coordMin)
-        # get max of closest edge pairwise distances
-        dMax = np.max(distance.cdist(boundingCoords, boundingCoords))
-        return getIntergreen(dMax)
-
     def setTransitionTime(self, junctionID):
         amber1 = 3
         red = 2
-        amber2 = abs(self.getIntergreenTime(junctionID) - (amber1 + red))
+        amber2 = abs(sigTools.getIntergreenTime(junctionID) - (amber1 + red))
         if amber2 > 3:
             red += amber2 - 3
             amber2 = 3
