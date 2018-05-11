@@ -176,7 +176,7 @@ class HybridVAControl(signalControl.signalControl):
                 self.junctionData.stages[nextStageIndex].controlString, 
                 self.TIME_MS)
             self.lastStageIndex = nextStageIndex
-            print(self.stageTime)
+            # print(self.stageTime)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
