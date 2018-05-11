@@ -10,6 +10,9 @@ class for fixed time signal control
 import traci
 from collections import defaultdict
 from math import atan2, degrees, ceil, hypot
+import re
+from glob import glob
+import os
 
 
 def getIntergreen(dist):
@@ -93,3 +96,24 @@ def getIncomingLaneInfo(controlledLanes):
                          }
 
     return laneInfo
+
+
+def getRouteDict():
+    fileNames = glob('../2_models/VALIDROUTES/*.rou.xml')
+    models = []
+    regex = re.compile('.+edges="(.+?)"')
+    routeDict = {}
+
+    for fileName in fileNames:
+        file = open(fileName, 'r')
+        model = os.path.basename(fileName).split('_')[0]
+        routeDict[model] = []
+        for line in file:
+            match = regex.match(line)
+            if not match:
+                continue
+            else:
+                routeDict[model].append(match.groups()[0].split())
+        file.close()
+
+    return routeDict
