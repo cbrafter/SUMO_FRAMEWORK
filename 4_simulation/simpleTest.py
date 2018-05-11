@@ -46,20 +46,17 @@ def getStops(stopStore, subKey):
 
 
 exectime = time.time()
-#controller = HybridVAControl.HybridVAControl
-#controller = HVAskip.HybridVAControl
+controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-#controller = VAskip.actuatedControl
-controller = fixedTimeControl.fixedTimeControl
-#controller = GPSControl.GPSControl
+#controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'sellyOak_hi'
+modelname = 'twinT'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = 0.0
-seed = 1
+CVP = 1.0
+seed = 8
 
 # Edit the the output filenames in sumoConfig
 configFile = model + modelBase + ".sumocfg"
@@ -87,6 +84,12 @@ minGreenTime = 10
 maxGreenTime = 60
 for junction in junctionsList:
     controllerList.append(controller(junction))
+
+# Work out loop associations
+for controller in controllerList:
+    if hasattr(controller, 'laneInductors'):
+        controller.setModelName(modelBase)
+        # WORK OUT LOOP ASSOCIATIONS
 
 print('Junctions and controllers acquired')
 
