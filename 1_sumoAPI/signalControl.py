@@ -49,6 +49,9 @@ class signalControl(object):
         self.setAmber1Time(amber1)
         self.setAmber2Time(amber2)
 
+    def setModelName(self, model):
+        self.modelName = model
+
     
 class stageTransition(object):
     def __init__(self): 
