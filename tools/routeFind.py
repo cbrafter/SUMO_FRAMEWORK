@@ -39,6 +39,7 @@ DUAROUTER = sumolib.checkBinary('duarouter')
 # import net file
 netfilename = sys.argv[1]
 net = sumolib.net.readNet(netfilename)
+model = os.path.basename(netfilename).split('.')[0]
 
 # find the fringe edges and see if it's a starting/ending edge
 startEdges = []
@@ -103,7 +104,7 @@ routeTree = ET.parse(routefilename)
 routes = routeTree.getroot()
 validRoutes = [r[0].items()[0][1] for r in routes]
 
-routefile = open('valid_' + routefilename, 'w')
+routefile = open(model+'_valid_'+routefilename, 'w')
 
 routefile.write("""<?xml version="1.0" encoding="UTF-8"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
@@ -113,4 +114,7 @@ for idx, route in enumerate(validRoutes):
 
 routefile.write('</routes>\n')
 routefile.close()
+os.remove(tripfilename)
+os.remove(routefilename)
+os.remove('routes.rou.alt.xml')
 print('Route generation complete!')
