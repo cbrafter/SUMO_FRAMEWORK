@@ -195,10 +195,6 @@ class HybridVAControl(signalControl.signalControl):
                         ctrlRegion['N'] = min(pos[1] - TOL, ctrlRegion['N'])
                     elif dy > TOL:
                         ctrlRegion['S'] = max(pos[1] + TOL, ctrlRegion['S'])
-                    else:
-                        pass
-                else:
-                    pass
 
                 # East/West Boundary
                 if abs(dx) < self.scanRange:
@@ -206,10 +202,6 @@ class HybridVAControl(signalControl.signalControl):
                         ctrlRegion['E'] = min(pos[0] - TOL, ctrlRegion['E'])
                     elif dx > TOL:
                         ctrlRegion['W'] = max(pos[0] + TOL, ctrlRegion['W'])
-                    else:
-                        pass
-                else:
-                    pass
 
         return ctrlRegion
 
