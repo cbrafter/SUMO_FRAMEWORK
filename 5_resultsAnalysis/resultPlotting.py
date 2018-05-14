@@ -70,7 +70,7 @@ lines = []
 labels = []
 cvp = data.groupby('cvp').delay.mean().index.values
 i = 0
-for model in models[:-1]:
+for model in models:
     fig = plt.figure(figsize=(16, 9))
     lines = []
     labels = []
@@ -105,14 +105,17 @@ for model in models[:-1]:
         # order of magnitude of the max point
         magnitude = 10**int(log10(max(meanDelay)))
         # set x and y lims with some space around the max and min values
-        yMin = -0.3*magnitude
+        plt.xticks(cvp, fontsize=ticksize, fontweight='bold')
         yMax = roundUp(meanDelay[0], 0.5*magnitude)
+        # double the ytick interval
+        if magnitude < 10000:
+            newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
+        else:
+            newYticks = np.arange(0, yMax+1, 0.2*magnitude, dtype=int)
+        plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
+        yMin = -0.5*newYticks[1]
         plt.ylim([yMin, yMax])
         plt.xlim([-3, 103])
-        plt.xticks(cvp, fontsize=ticksize, fontweight='bold')
-        # double the ytick interval
-        newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
-        plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
         plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1)
     savePDF(figuresPDF, fig)
     i += 1

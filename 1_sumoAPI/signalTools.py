@@ -117,3 +117,28 @@ def getRouteDict():
         file.close()
 
     return routeDict
+
+
+def isInRange(vehPosition, scanRange, jcnGeometry):
+    center, JCR = jcnGeometry # jcnPos, jcnCtrlRegion
+    distance = hypot(*(vehPosition - center))
+    c1 = distance < scanRange
+    # shorten variable name and check box is in bounds
+    c2 = JCR['W'] <= vehPosition[0] <= JCR['E']
+    c3 = JCR['S'] <= vehPosition[1] <= JCR['N']
+    return (c1 and c2 and c3)
+
+
+# default dict that finds and remembers road speed limits (only if static)
+# needs to be updated otherwise
+class speedLimDict(defaultdict):
+    def __missing__(self, key):
+        self[key] = traci.lane.getMaxSpeed(key)
+        return self[key]
+
+# defaultdict that finds and remembers vehicle types (only if static)
+# needs to be updated otherwise
+class vTypeDict(defaultdict):
+    def __missing__(self, key):
+        self[key] = traci.vehicle.getTypeID(key)
+        return self[key]

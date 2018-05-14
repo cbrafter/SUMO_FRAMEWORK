@@ -1,10 +1,15 @@
 <configuration>
     <input>
         <net-file value="twinT.net.xml"/>
-        <route-files value="../../testing/FREEFLOW_TRIPS/freeflow_twinT.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/twinT_R008_CVP100.rou.xml"/>
+        <!--<gui-settings-file value="gui-settings.cfg"/>-->
+        <additional-files value="twinT.det.xml"/>
     </input>
     <output>
-        <tripinfo-output value="../../testing/results/twinT_freeflow_tripinfo.xml"/>
+        <!--<summary-output value="../../4_simulation/test_results/summary_R008_CVP100.xml"/>-->
+        <tripinfo-output value="../../4_simulation/test_results/tripinfo_R008_CVP100.xml"/>
+        <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R008_CVP100.xml"/-->
+        <!--queue-output value="../../4_simulation/test_results/queuedata_R008_CVP100.xml"/-->
     </output>
     <time>
         <begin value="0"/>
@@ -13,9 +18,12 @@
     <processing>
         <!--TURN OFF TELEPORTING-->
         <time-to-teleport value="-1"/>
+        <ignore-junction-blocker value="60"/>
+        <!--collision.mingap-factor value="0"/-->
+        <!--no-internal-links value="true"/-->
     </processing>
     <random_number>
-        <seed value="5"/>
+        <seed value="8"/>
     </random_number>
     <report>
         <no-step-log value="true"/>

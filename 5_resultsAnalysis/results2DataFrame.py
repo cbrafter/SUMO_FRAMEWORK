@@ -90,10 +90,10 @@ outputCSV = dataFolder + 'allTripInfo.csv'
 # recursive glob using ** notation to expand folders
 resultFiles = glob(dataFolder+'**/*.xml', recursive=True)
 resultFiles.sort()
-resultFiles = [x for x in resultFiles if 'GPSVA/sellyOak_hi' not in x]
+# resultFiles = [x for x in resultFiles if 'GPSVA/sellyOak_hi' not in x]
 print('~Parsing Tripfiles~')
 # define work pool
-nproc = 2
+nproc = 8
 workpool = mp.Pool(processes=nproc)
 # Run parsers in parallel
 resultData = workpool.map(parser, resultFiles, chunksize=1)

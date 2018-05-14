@@ -60,6 +60,10 @@ def simulation(x):
         stepSize = 0.1
         configFile = model + modelBase + ".sumocfg"
 
+        print('STARTING: {}, {}, Run: {:03d}, AVR: {:03d}%, Date: {}'
+            .format(modelName, tlLogic, run, int(CVP*100), time.ctime()))
+        sys.stdout.flush()
+        
         # Configure the Map of controllers to be run
         tlControlMap = {'fixedTime': fixedTimeControl.fixedTimeControl,
                         'VA': actuatedControl.actuatedControl,
@@ -118,7 +122,7 @@ def simulation(x):
 
         # Step simulation while there are vehicles
         i, flag = 1, True
-        timeLimit = 20*60*60  # 10 hours in seconds for time limit
+        timeLimit = 10*60*60  # 10 hours in seconds for time limit
         # subKey = traci.edge.getIDList()[0]
         # traci.edge.subscribeContext(subKey, 
         #     tc.CMD_GET_VEHICLE_VARIABLE, 
@@ -177,13 +181,15 @@ def simulation(x):
         print(str(e))
         sys.stdout.flush()
         return False
+    finally:
+        sys.stdout.flush()
 
 ################################################################################
 # MAIN SIMULATION DEFINITION
 ################################################################################
 exectime = time.time()
 models = ['cross', 'simpleT', 'twinT', 'corridor',
-          'sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
+          'sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
 tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
 CAVratios = np.linspace(0, 1, 11)
 
@@ -209,7 +215,8 @@ configs += list(itertools.product(models[::-1],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-configs = list(itertools.product(models, tlControllers[:1], CAVratios[:1], runIDs))
+#configs = list(itertools.product(models, tlControllers[:1], CAVratios[:1], runIDs))
+configs = list(itertools.product(models[-1:], ['GPSVA'], CAVratios[0:2][::-1], runIDs))
 
 
 print('# simulations: '+str(len(configs)))
@@ -218,7 +225,7 @@ print('# simulations: '+str(len(configs)))
 nproc = np.mean([psutil.cpu_count(), 
                  psutil.cpu_count(logical=False)], 
                  dtype=int)
-nproc = 7
+nproc = 6
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())  
 # define work pool
 workpool = mp.Pool(processes=nproc)

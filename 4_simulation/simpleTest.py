@@ -50,7 +50,7 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'twinT'
+modelname = 'simpleT'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes

@@ -13,6 +13,7 @@ from math import atan2, degrees, ceil, hypot
 import numpy as np
 from collections import defaultdict
 import traci.constants as tc
+from cooperativeAwarenessMessage import CAMChannel
 
 class HybridVAControl(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
@@ -46,27 +47,12 @@ class HybridVAControl(signalControl.signalControl):
         self.loopIO = loopIO
         self.threshold = 2.5
         self.activeLanes = self._getActiveLanesDict()
-        self.speedLims = speedLimDict()
-        self.vTypeIndex = vTypeDict()
+        # self.speedLims = sigTools.speedLimDict()
+        # self.vTypeIndex = sigTools.vTypeDict()
 
-        # CAM Params from ETSI standard
-        self.TGenCamMin = 0.1 # Min time for CAM generation 10Hz/100ms/0.1sec
-        self.TGenCamMax = 1.0 # Max time for CAM generation 1Hz/1000ms/1sec
-        self.TGenCamDCC = 0.1 # CAM generation time under channel congestion
-        self.TGenCam = self.TGenCamMax # current upper lim for CAM generation
-        self.NGenCamMax = 3
-        self.Nsubcarriers = 52 # Num of 802.11p subcarriers
-        # Adapt CAM generation based on channel state from ETSI CAM DP2 mode
-        self.DCCstate = {'RELAXED':  CAMoverride if CAMoverride else self.TGenCamMin,
-                         'ACTIVE': CAMoverride if CAMoverride else 0.2,
-                         'RESRICTIVE':  CAMoverride if CAMoverride else 0.25}
-        # linear function for active = lambda x: round(numCAVs*0.0155-0.612, 1)
-        # for linear increase in DDC time from 0.9*Nsubcarriers and 3*Nsubcarriers
-        # dict[vehID] = [position (x), heading(h), velocity(v), TGenCam(TGC), NGenCam (NGC)]
-        # where TGenCam is the time the CAM was generated
-        self.CamGenData = {} # CAM generated at vehicle T=0
-        self.CamChannelData = {} # CAM info in transit T=0.1
-        self.CamRxData = {} # CAM info at Junction receiver T=0.2
+        # setup CAM channel
+        self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
+                              self.scanRange, CAMoverride)
 
         # subscribe to vehicle params
         traci.junction.subscribeContext(self.junctionData.id, 
@@ -91,13 +77,13 @@ class HybridVAControl(signalControl.signalControl):
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
         self._getSubscriptionResults()
-        self._getCAMinfo()
+        self.CAM.channelUpdate(self.subResults, self.TIME_SEC)
         # else:
         #     self.CAMactive = False
 
         # Update stage decisions
         # If there's no ITS enabled vehicles present use VA ctrl
-        numCAVs = len(self.CamRxData)
+        numCAVs = len(self.CAM.receiveData)
         isControlInterval = not self.TIME_MS % 1000
         elapsedTime = 0.001*(self.TIME_MS - self.lastCalled)
         Tremaining = self.stageTime - elapsedTime
@@ -125,8 +111,8 @@ class HybridVAControl(signalControl.signalControl):
                 # If a vehicle detected and within catch distance
                 if nearestVeh['id'] != '' and nearestVeh['distance'] <= self.nearVehicleCatchDistance:
                     # if not invalid and travelling faster than SPM velocity
-                    if (self.CamRxData[nearestVeh['id']]['v'] > 1.0/self.secondsPerMeterTraffic):
-                        gpsExtend = nearestVeh['distance']/self.CamRxData[nearestVeh['id']]['v']
+                    if (self.CAM.receiveData[nearestVeh['id']]['v'] > 1.0/self.secondsPerMeterTraffic):
+                        gpsExtend = nearestVeh['distance']/self.CAM.receiveData[nearestVeh['id']]['v']
                     else:
                         gpsExtend = self.secondsPerMeterTraffic*nearestVeh['distance']
 
@@ -227,101 +213,6 @@ class HybridVAControl(signalControl.signalControl):
 
         return ctrlRegion
 
-    def _isInRange(self, vehPosition):
-        distance = hypot(*(vehPosition - self.jcnPosition))
-        c1 = distance < self.scanRange
-        # shorten variable name and check box is in bounds
-        JCR = self.jcnCtrlRegion
-        c2 = JCR['W'] <= vehPosition[0] <= JCR['E']
-        c3 = JCR['S'] <= vehPosition[1] <= JCR['N']
-        return (c1 and c2 and c3)
-
-    def _getCAMinfo(self):
-        # Get data off "channel"
-        self.CamRxData = self.CamChannelData.copy()
-        
-        # Set DCC time based on channel state
-        numCAVs = len(self.CamRxData)
-        if numCAVs <= 0.75*self.Nsubcarriers:
-            self.TGenCamDCC = self.DCCstate['RELAXED']
-        elif numCAVs >= 1.5*self.Nsubcarriers:
-            self.TGenCamDCC = self.DCCstate['RESRICTIVE']
-        else:
-            self.TGenCamDCC = self.DCCstate['ACTIVE']
-
-        # Put the last CAMs on the channel
-        self.CamChannelData = {}
-        GenKeys = self.CamGenData.keys()
-        RxKeys = self.CamRxData.keys()
-        for vehID in GenKeys:
-            if vehID in RxKeys:
-                x1, y1 = self.CamRxData[vehID]['pos']
-                x2, y2 = self.CamGenData[vehID]['pos']
-                dx = hypot(x1-x2, y1-y2)
-                dh = abs(self.CamRxData[vehID]['h'] - self.CamGenData[vehID]['h'])
-                dv = abs(self.CamRxData[vehID]['v'] - self.CamGenData[vehID]['v'])
-                dt = self.TIME_SEC - self.CamRxData[vehID]['Tgen']
-                TGC = self._TGC(self.CamRxData[vehID])
-            # No data for this vehicle received yet, force trigger onto channel
-            else:
-                dx = 5
-                dh = 5
-                dv = 1
-                dt = self.TGenCamMax + self.TGenCamMin
-                TGC = self.TGenCamMax + self.TGenCamMin
-            
-            # CAM trigger condition 1 data to channel, NGC=0
-            # change in: Position change > 4m, heading > 4deg, or speed > 0.5m/s
-            if (dx > 4 or dh > 4 or dv > 0.5) and dt >= self.TGenCamDCC:
-                self.CamChannelData[vehID] = self.CamGenData[vehID].copy()
-                self.CamChannelData[vehID]['NGC'] = 0
-                #if vehID == '8': print('C1')
-            # CAM trigger condition 2 - data to channel, NGC++
-            elif dt >= self.TGenCamDCC or dt >= TGC:
-                self.CamChannelData[vehID] = self.CamGenData[vehID].copy()
-                self.CamChannelData[vehID]['NGC'] += 1
-                #if vehID == '8': print('C2', self.CamChannelData[vehID]['NGC'], dt, TGC)
-            # No change in CAM information, same as what was previously on channel
-            else:
-                self.CamChannelData[vehID] = self.CamRxData[vehID].copy()
-                #if vehID == '8': print('NOCH')
-                
-
-        # Get new data for the vehicles
-        self.CamGenData = {}
-        compareKeys = self.CamChannelData.keys()
-        # check subscription has data
-        if self.subResults != None:
-            for vehID in self.subResults.keys():
-                # check the sub result has vehicle data (not loop data)
-                if tc.VAR_POSITION in self.subResults[vehID].keys():
-                    vehPosition = self.subResults[vehID][tc.VAR_POSITION]
-                    if 'c_' in self.subResults[vehID][tc.VAR_TYPE] and self._isInRange(vehPosition):
-                        vehHeading = self.subResults[vehID][tc.VAR_ANGLE]
-                        vehVelocity = self.subResults[vehID][tc.VAR_SPEED]
-                        if vehID in compareKeys:
-                            nextNGC = self.CamChannelData[vehID]['NGC']
-                            self.CamGenData[vehID] = {'pos': vehPosition,
-                                                      'h': vehHeading,
-                                                      'v': vehVelocity,
-                                                      'Tgen': self.TIME_SEC,
-                                                      'NGC': nextNGC}
-                        else:
-                            self.CamGenData[vehID] = {'pos': vehPosition,
-                                                      'h': vehHeading,
-                                                      'v': vehVelocity,
-                                                      'Tgen': self.TIME_SEC,
-                                                      'NGC': 0}
-
-
-    def _TGC(self, vData):
-        # Time to Generate CAM
-        if vData['NGC'] > self.NGenCamMax:
-            return self.TGenCamMax
-        else:
-            return self.TIME_SEC - vData['Tgen']
-
-
     def _getOncomingVehicles(self, headingTol=10):
         # Oncoming if (in active lane & heading matches oncoming heading & 
         # is in lane bounds)
@@ -335,9 +226,9 @@ class HybridVAControl(signalControl.signalControl):
             lowerYBound = min(laneBounds['y1'], laneBounds['y2'])
             upperXBound = max(laneBounds['x1'], laneBounds['x2'])
             upperYBound = max(laneBounds['y1'], laneBounds['y2'])
-            for vehID in self.CamRxData.keys():
-                vehicleXcoord = self.CamRxData[vehID]['pos'][0]
-                vehicleYcoord = self.CamRxData[vehID]['pos'][1]
+            for vehID in self.CAM.receiveData.keys():
+                vehicleXcoord = self.CAM.receiveData[vehID]['pos'][0]
+                vehicleYcoord = self.CAM.receiveData[vehID]['pos'][1]
                 # If on correct heading pm 10deg
                 if (headingLower < laneHeading < headingUpper
                   # If in lane x bounds
@@ -395,36 +286,33 @@ class HybridVAControl(signalControl.signalControl):
             
         return laneInductors
 
-
     def _getFurthestStationaryVehicle(self, vehIDs):
         furthestID = ''
         maxDistance = -1
         haltVelocity = 0.01 
         for ID in vehIDs:
-            vehPosition = np.array(self.CamRxData[ID]['pos'])
+            vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
             distance = hypot(*(vehPosition - self.jcnPosition))
             # sumo defines a vehicle as halted if v< 0.01 m/s
             if distance > maxDistance \
-              and self.CamRxData[ID]['v'] < haltVelocity:
+              and self.CAM.receiveData[ID]['v'] < haltVelocity:
                 furthestID = ID
                 maxDistance = distance
 
         return [furthestID, maxDistance]
 
-
     def _getNearestVehicle(self, vehIDs):
         nearestID = ''
-        minDistance = self.nearVehicleCatchDistance + 1
+        minDistance = self.nearVehicleCatchDistance
         
         for ID in vehIDs:
-            vehPosition = np.array(self.CamRxData[ID]['pos'])
+            vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
             distance = hypot(*(vehPosition - self.jcnPosition))
             if distance < minDistance:
                 nearestID = ID
                 minDistance = distance
 
         return {'id': nearestID, 'distance': minDistance}
-
 
     def _getLaneDetectTime(self):
         activeLanes = self._getActiveLanes()
@@ -439,7 +327,6 @@ class HybridVAControl(signalControl.signalControl):
 
         return meanDetectTimePerLane
 
-
     def getInductors(self):
         links = traci.trafficlights.getControlledLinks(self.junctionData.id)
         self.incomingLanes = [x[0][0] for x in links]
@@ -448,24 +335,3 @@ class HybridVAControl(signalControl.signalControl):
         self.outgoingLanes = [x.split('_')[0] for x in self.outgoingLanes]
         self.incomingLanes = sigTools.unique(self.incomingLanes)
         self.outgoingLanes = sigTools.unique(self.outgoingLanes)
-
-        
-# default dict that finds and remembers road speed limits (only if static)
-# needs to be updated otherwise
-class speedLimDict(defaultdict):
-    def __missing__(self, key):
-        self[key] = traci.lane.getMaxSpeed(key)
-        return self[key]
-
-# defaultdict that finds and remembers vehicle types (only if static)
-# needs to be updated otherwise
-class vTypeDict(defaultdict):
-    def __missing__(self, key):
-        self[key] = traci.vehicle.getTypeID(key)
-        return self[key]
-
-# # default dict that collects subsciptions for each vehicle in the network
-# class vehSubDict(defaultdict):
-#     def __missing__(self, key):
-
-#         self[key] = traci.vehicle.subcribe(key, varIDs=(tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED))
