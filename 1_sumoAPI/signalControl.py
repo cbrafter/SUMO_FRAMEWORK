@@ -13,7 +13,7 @@ import math
 from scipy.spatial import distance
 import numpy as np
 import signalTools as sigTools
-
+import re
 
 class signalControl(object):
     
@@ -51,6 +51,19 @@ class signalControl(object):
 
     def setModelName(self, model):
         self.modelName = model
+
+    def getModelRoutes(self):
+        file = open('../2_models/VALIDROUTES/{}_valid_routes.rou.xml'\
+                    .format(self.modelName), 'r')
+        regex = re.compile('edges="(.+?)"')
+        routes = []
+        for line in file:
+            match  = regex.search(line)
+            if not match:
+                continue
+            else:
+                routes.append(match.groups()[0].split(' '))
+        return routes
 
     
 class stageTransition(object):
