@@ -11,7 +11,6 @@ class CAMChannel(object):
         self.TGenCamMin = 0.1 # Min time for CAM generation 10Hz/100ms/0.1sec
         self.TGenCamMax = 1.0 # Max time for CAM generation 1Hz/1000ms/1sec
         self.TGenCamDCC = 0.1 # CAM generation time under channel congestion
-        self.TGenCam = 1.0 # current upper lim for CAM generation
         self.NGenCamMax = 3
         self.Nsubcarriers = 52 # Num of 802.11p subcarriers
         # Adapt CAM generation based on channel state from ETSI CAM DP2 mode
@@ -67,11 +66,11 @@ class CAMChannel(object):
                 dh = abs(self.receiveData[vehID]['h'] - self.transmitData[vehID]['h'])
                 dv = abs(self.receiveData[vehID]['v'] - self.transmitData[vehID]['v'])
                 dt = TIME_SEC - self.receiveData[vehID]['Tgen']
-                TGC = self.getTGenCam(self.receiveData[vehID], TIME_SEC)
+                TGenCam = self.getTGenCam(self.receiveData[vehID], TIME_SEC)
             # No data for this vehicle received yet, force trigger onto channel
             else:
                 dx, dh, dv = 5, 5, 1
-                dt = TGC = self.TGenCamMax + self.TGenCamMin
+                dt = TGenCam = self.TGenCamMax + self.TGenCamMin
 
             # CAM trigger condition 1 data to channel, NGC=0
             # change in: Position change > 4m, heading > 4deg, or speed > 0.5m/s
@@ -80,10 +79,10 @@ class CAMChannel(object):
                 self.channelData[vehID]['NGC'] = 0
                 #if vehID == '8': print('C1')
             # CAM trigger condition 2 - data to channel, NGC++
-            elif dt >= self.TGenCamDCC or dt >= TGC:
+            elif dt >= self.TGenCamDCC or dt >= TGenCam:
                 self.channelData[vehID] = self.transmitData[vehID].copy()
                 self.channelData[vehID]['NGC'] += 1
-                #if vehID == '8': print('C2', self.channelData[vehID]['NGC'], dt, TGC)
+                #if vehID == '8': print('C2', self.channelData[vehID]['NGC'], dt, TGenCam)
             # No change in CAM information, same as what was previously on channel
             else:
                 self.channelData[vehID] = self.receiveData[vehID].copy()
