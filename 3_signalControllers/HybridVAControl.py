@@ -67,7 +67,6 @@ class HybridVAControl(signalControl.signalControl):
                 50, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
-
     def process(self):
         self.TIME_MS = self.getCurrentSUMOtime()
         self.TIME_SEC = 0.001 * self.TIME_MS
@@ -235,7 +234,6 @@ class HybridVAControl(signalControl.signalControl):
         vehicles = sigTools.unique(vehicles)
         return vehicles
 
-
     def _getActiveLanes(self):
         # Get the current control string to find the green lights
         stageCtrlString = self.junctionData\
@@ -250,7 +248,6 @@ class HybridVAControl(signalControl.signalControl):
         # Get a list of the unique active lanes
         # activeLanes = sigTools.unique(activeLanes)
         return activeLanes
-
 
     def _getActiveLanesDict(self):
         # Get the current control string to find the green lights
@@ -322,55 +319,6 @@ class HybridVAControl(signalControl.signalControl):
             meanDetectTimePerLane.append(sigTools.mean(detectTimes))
 
         return meanDetectTimePerLane
-
-    def getInductorMap(self):
-        otherJunctionLanes = []
-        juncIDs = traci.trafficlights.getIDList()
-        for junc in juncIDs:
-            if junc != self.junctionData.id:
-                lanes = self.getLanes(junc)
-                otherJunctionLanes += lanes['incoming'] + lanes['outgoing']
-        links = self.getLanes(self.junctionData.id)
-        linkRelation = defaultdict(list)
-        routes = self.getModelRoutes()
-        for lane in links['incoming']:
-            lanesBefore = []
-            lanesAfter = []
-            for route in routes:
-                try:
-                    rIndex = route.index(lane)
-                except ValueError:
-                    continue
-
-                if rIndex < 1:
-                        continue
-                for edgeIdx in range(rIndex-1, -1, -1):
-                    lanesBefore.append(route[edgeIdx])
-                    if route[edgeIdx] in otherJunctionLanes:
-                        break
-
-                if rIndex >= len(route)-1:
-                        continue
-                for edgeIdx in range(rIndex+1, len(route)):
-                    lanesAfter.append(route[edgeIdx])
-                    if route[edgeIdx] in otherJunctionLanes:
-                        break
-
-            linkRelation[lane] = sigTools.unique(lanesBefore+[lane]+lanesAfter)
-
-        loopRelation = {}
-        loopIDs = traci.inductionloop.getIDList()
-        loopLanes = defaultdict(list)
-        for loop in loopIDs:
-            edge = traci.inductionloop.getLaneID(loop).split('_')[0]
-            loopLanes[edge].append(loop)
-
-        for key in linkRelation.keys():
-            laneLoops = []
-            for lane in linkRelation[key]:
-                laneLoops += loopLanes[lane]
-            loopRelation[key] = laneLoops
-        return loopRelation
 
     def getLanes(self, junctionID):
         links = traci.trafficlights.getControlledLinks(junctionID)
