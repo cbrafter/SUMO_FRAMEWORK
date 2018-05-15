@@ -17,7 +17,7 @@ from cooperativeAwarenessMessage import CAMChannel
 
 class HybridVAControl(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
-                 scanRange=250, loopIO=False, CAMoverride=False):
+                 scanRange=250, loopIO=False, CAMoverride=False, model='simpleT'):
         super(HybridVAControl, self).__init__()
         self.junctionData = junctionData
         self.Nstages = len(self.junctionData.stages)
@@ -26,7 +26,7 @@ class HybridVAControl(signalControl.signalControl):
         self.lastStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.lastStageIndex].controlString)
-        
+        self.setModelName(model)
         self.scanRange = scanRange
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
         self.jcnCtrlRegion = self._getJncCtrlRegion()
@@ -39,7 +39,7 @@ class HybridVAControl(signalControl.signalControl):
         self.secondsPerMeterTraffic = 0.45
         self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
         self.extendTime = 1.0 # 5 m in 10 m/s (acceptable journey 1.333)
-        self.laneInductors = self._getLaneInductors()
+        self.laneInductors = self.getInductorMap()
 
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
@@ -91,7 +91,8 @@ class HybridVAControl(signalControl.signalControl):
         if Tremaining < 1:
             # get loop extend
             if self.loopIO:
-                detectTimePerLane = self._getLaneDetectTime()
+                detectTimePerLane = np.array(self._getLaneDetectTime())
+                print(detectTimePerLane)
                 # Set adaptive time limit
                 if np.any(detectTimePerLane < self.threshold):
                     loopExtend = self.extendTime
@@ -99,6 +100,7 @@ class HybridVAControl(signalControl.signalControl):
                     loopExtend = 0.0
             else:
                 loopExtend = 0.0
+            print('LOOPEXT: '+str(loopExtend))
 
             # get GPS extend
             if numCAVs > 0:
@@ -308,22 +310,74 @@ class HybridVAControl(signalControl.signalControl):
 
     def _getLaneDetectTime(self):
         activeLanes = self._getActiveLanes()
-        meanDetectTimePerLane = np.zeros(len(activeLanes))
-        for i, lane in enumerate(activeLanes):
+        meanDetectTimePerLane = []
+        retrievedEdges = []
+        flowConst = tc.LAST_STEP_TIME_SINCE_DETECTION
+        edges = sigTools.unique([lane.split('_')[0] for lane in activeLanes])
+        print(edges)
+        for edge in edges:
             detectTimes = []
-            for loop in self.laneInductors[lane]:
-                # if self.subResults != None and self.subResults[loop] != None:
-                    #print(traci.inductionloop.getTimeSinceDetection(loop))
-                detectTimes.append(self.subResults[loop][tc.LAST_STEP_TIME_SINCE_DETECTION])
-            meanDetectTimePerLane[i] = self.mean(detectTimes)
+            for loop in self.laneInductors[edge]:
+                detectTimes.append(self.subResults[loop][flowConst])
+            meanDetectTimePerLane.append(sigTools.mean(detectTimes))
 
         return meanDetectTimePerLane
 
-    def getInductors(self):
-        links = traci.trafficlights.getControlledLinks(self.junctionData.id)
-        self.incomingLanes = [x[0][0] for x in links]
-        self.outgoingLanes = [x[0][1] for x in links]
-        self.incomingLanes = [x.split('_')[0] for x in self.incomingLanes]
-        self.outgoingLanes = [x.split('_')[0] for x in self.outgoingLanes]
-        self.incomingLanes = sigTools.unique(self.incomingLanes)
-        self.outgoingLanes = sigTools.unique(self.outgoingLanes)
+    def getInductorMap(self):
+        otherJunctionLanes = []
+        juncIDs = traci.trafficlights.getIDList()
+        for junc in juncIDs:
+            if junc != self.junctionData.id:
+                lanes = self.getLanes(junc)
+                otherJunctionLanes += lanes['incoming'] + lanes['outgoing']
+        links = self.getLanes(self.junctionData.id)
+        linkRelation = defaultdict(list)
+        routes = self.getModelRoutes()
+        for lane in links['incoming']:
+            lanesBefore = []
+            lanesAfter = []
+            for route in routes:
+                try:
+                    rIndex = route.index(lane)
+                except ValueError:
+                    continue
+
+                if rIndex < 1:
+                        continue
+                for edgeIdx in range(rIndex-1, -1, -1):
+                    lanesBefore.append(route[edgeIdx])
+                    if route[edgeIdx] in otherJunctionLanes:
+                        break
+
+                if rIndex >= len(route)-1:
+                        continue
+                for edgeIdx in range(rIndex+1, len(route)):
+                    lanesAfter.append(route[edgeIdx])
+                    if route[edgeIdx] in otherJunctionLanes:
+                        break
+
+            linkRelation[lane] = sigTools.unique(lanesBefore+[lane]+lanesAfter)
+
+        loopRelation = {}
+        loopIDs = traci.inductionloop.getIDList()
+        loopLanes = defaultdict(list)
+        for loop in loopIDs:
+            edge = traci.inductionloop.getLaneID(loop).split('_')[0]
+            loopLanes[edge].append(loop)
+
+        for key in linkRelation.keys():
+            laneLoops = []
+            for lane in linkRelation[key]:
+                laneLoops += loopLanes[lane]
+            loopRelation[key] = laneLoops
+        return loopRelation
+
+    def getLanes(self, junctionID):
+        links = traci.trafficlights.getControlledLinks(junctionID)
+        incomingLanes = [x[0][0] for x in links]
+        outgoingLanes = [x[0][1] for x in links]
+        incomingLanes = [x.split('_')[0] for x in incomingLanes]
+        outgoingLanes = [x.split('_')[0] for x in outgoingLanes]
+        incomingLanes = sigTools.unique(incomingLanes)
+        outgoingLanes = sigTools.unique(outgoingLanes)
+        return {'incoming': incomingLanes, 'outgoing': outgoingLanes}
