@@ -50,12 +50,12 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'simpleT'
+modelname = 'corridor'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = 1.0
+CVP = 0.0
 seed = 8
 
 # Edit the the output filenames in sumoConfig
@@ -83,13 +83,12 @@ controllerList = []
 minGreenTime = 10
 maxGreenTime = 60
 for junction in junctionsList:
-    controllerList.append(controller(junction))
-
-# Work out loop associations
-for controller in controllerList:
-    if hasattr(controller, 'laneInductors'):
-        controller.setModelName(modelBase)
-        # WORK OUT LOOP ASSOCIATIONS
+    if controller == HybridVAControl.HybridVAControl:
+        print('YURT')
+        controllerList.append(controller(junction, loopIO=True, model=modelBase))
+    else:
+        print('GURT')
+        controllerList.append(controller(junction))
 
 print('Junctions and controllers acquired')
 

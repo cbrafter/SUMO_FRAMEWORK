@@ -1,7 +1,7 @@
 <configuration>
     <input>
         <net-file value="sellyOak.net.xml"/>
-        <route-files value="/hardmem/ROUTEFILES/sellyOak_hi_R008_CVP000.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/sellyOak_avg_R008_CVP000.rou.xml"/>
         <!--<gui-settings-file value="gui-settings.cfg"/>-->
         <additional-files value="sellyOak.det.xml"/>
     </input>
@@ -19,6 +19,7 @@
         <!--TURN OFF TELEPORTING-->
         <time-to-teleport value="-1"/>
         <ignore-junction-blocker value="60"/>
+        <!--collision.mingap-factor value="0"/-->
         <!--no-internal-links value="true"/-->
     </processing>
     <random_number>
