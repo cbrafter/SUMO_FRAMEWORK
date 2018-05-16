@@ -97,7 +97,6 @@ def getIncomingLaneInfo(controlledLanes):
 
     return laneInfo
 
-
 def getRouteDict():
     fileNames = glob('../2_models/VALIDROUTES/*.rou.xml')
     models = []
@@ -142,3 +141,11 @@ class vTypeDict(defaultdict):
     def __missing__(self, key):
         self[key] = traci.vehicle.getTypeID(key)
         return self[key]
+
+def getDistance(A, B):
+    x1, y1 = A
+    x2, y2 = B
+    return hypot(x1-x2, y1-y2)
+
+def flatten(ListofLists):
+    return [x for y in ListofLists for x in y]
