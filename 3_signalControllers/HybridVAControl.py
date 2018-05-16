@@ -70,7 +70,7 @@ class HybridVAControl(signalControl.signalControl):
         if self.loopIO:
             traci.junction.subscribeContext(self.junctionData.id, 
                 tc.CMD_GET_INDUCTIONLOOP_VARIABLE, 
-                100, 
+                150, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
 
@@ -255,7 +255,7 @@ class HybridVAControl(signalControl.signalControl):
         haltVelocity = 0.01 
         for ID in vehIDs:
             vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
-            distance = hypot(*(vehPosition - self.jcnPosition))
+            distance = sigTools.getDistance(vehPosition, self.jcnPosition)
             # sumo defines a vehicle as halted if v< 0.01 m/s
             if distance > maxDistance \
               and self.CAM.receiveData[ID]['v'] < haltVelocity:
@@ -270,7 +270,7 @@ class HybridVAControl(signalControl.signalControl):
         
         for ID in vehIDs:
             vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
-            distance = hypot(*(vehPosition - self.jcnPosition))
+            distance = sigTools.getDistance(vehPosition, self.jcnPosition)
             if distance < minDistance:
                 nearestID = ID
                 minDistance = distance
@@ -313,15 +313,17 @@ class HybridVAControl(signalControl.signalControl):
                 if rIndex < 1:
                         continue
                 for edgeIdx in range(rIndex-1, -1, -1):
-                    lanesBefore.append(route[edgeIdx])
-                    if route[edgeIdx] in otherJunctionLanes:
+                    if route[edgeIdx] not in otherJunctionLanes:
+                        lanesBefore.append(route[edgeIdx])
+                    else:
                         break
 
                 if rIndex >= len(route)-1:
                         continue
                 for edgeIdx in range(rIndex+1, len(route)):
-                    lanesAfter.append(route[edgeIdx])
-                    if route[edgeIdx] in otherJunctionLanes:
+                    if route[edgeIdx] not in otherJunctionLanes:
+                        lanesAfter.append(route[edgeIdx])
+                    else:
                         break
 
             linkRelation[lane] = sigTools.unique(lanesBefore+[lane]+lanesAfter)
@@ -331,7 +333,11 @@ class HybridVAControl(signalControl.signalControl):
         loopLanes = defaultdict(list)
         for loop in loopIDs:
             edge = traci.inductionloop.getLaneID(loop).split('_')[0]
-            loopLanes[edge].append(loop)
+            edgeShapes = traci.lane.getShape(edge+'_0')
+            distFromJunc = min([sigTools.getDistance(x, self.jcnPosition)\
+                                for x in edgeShapes])
+            if distFromJunc <= 100:
+                loopLanes[edge].append(loop)
 
         for key in linkRelation.keys():
             laneLoops = []
@@ -351,11 +357,16 @@ class HybridVAControl(signalControl.signalControl):
         return {'incoming': incomingLanes, 'outgoing': outgoingLanes}
 
     def getLoopExtension(self):
-        detectTimes = np.array(self._getLaneDetectTime())
+        detectTimes = sigTools.flatten(self._getLaneDetectTime())
+        detectTimes = np.array(detectTimes)
         # Set adaptive time limit
-        cond1 = np.any(detectTimes < self.threshold)
-        cond2 = np.std(detectTimes) < 2*self.threshold
-        cond3 = np.mean(detectTimes) < 3*self.threshold
+        try:
+            cond1 = np.any(detectTimes < self.threshold)
+            cond2 = np.std(detectTimes) < 2*self.threshold
+            cond3 = np.mean(detectTimes) < 3*self.threshold
+        except Exception as e:
+            print(self._getActiveLanes(), detectTimes)
+            raise(e)
         if cond1 and (cond2 or cond3):
             loopExtend = self.extendTime
         else:
