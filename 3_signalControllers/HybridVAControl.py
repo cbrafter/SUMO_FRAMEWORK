@@ -43,7 +43,6 @@ class HybridVAControl(signalControl.signalControl):
 
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
-        self.lastStepCatch = 2 # 2 sec time gap upper lim for loop continuation
         self.loopIO = loopIO
         self.threshold = 2.0
         self.activeLanes = self._getActiveLanesDict()
@@ -284,12 +283,11 @@ class HybridVAControl(signalControl.signalControl):
         retrievedEdges = []
         flowConst = tc.LAST_STEP_TIME_SINCE_DETECTION
         edges = sigTools.unique([lane.split('_')[0] for lane in activeLanes])
-        print(edges)
         for edge in edges:
             detectTimes = []
             for loop in self.laneInductors[edge]:
                 detectTimes.append(self.subResults[loop][flowConst])
-            meanDetectTimePerLane.append(sigTools.mean(detectTimes))
+            meanDetectTimePerLane.append(detectTimes)
 
         return meanDetectTimePerLane
 
@@ -353,17 +351,18 @@ class HybridVAControl(signalControl.signalControl):
         return {'incoming': incomingLanes, 'outgoing': outgoingLanes}
 
     def getLoopExtension(self):
-        detectTimePerLane = np.array(self._getLaneDetectTime())
-        print(detectTimePerLane)
+        detectTimes = np.array(self._getLaneDetectTime())
         # Set adaptive time limit
-        if np.any(detectTimePerLane < self.threshold):
+        cond1 = np.any(detectTimes < self.threshold)
+        cond2 = np.std(detectTimes) < 2*self.threshold
+        cond3 = np.mean(detectTimes) < 3*self.threshold
+        if cond1 and (cond2 or cond3):
             loopExtend = self.extendTime
         else:
             loopExtend = 0.0
         return loopExtend
 
     def getGPSextension():
-
         # If active and on the second, or transition then make stage descision
         oncomingVeh = self._getOncomingVehicles()
         # If currently staging then extend time if there are vehicles close 
@@ -382,7 +381,7 @@ class HybridVAControl(signalControl.signalControl):
 
             if gpsExtend > 2*self.threshold:
                 gpsExtend = 0.0
-        # no detectable near vehicle
+        # no detectable vehicle near
         else:
             gpsExtend = 0.0
         return gpsExtend
@@ -395,7 +394,6 @@ class HybridVAControl(signalControl.signalControl):
         secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
         if furthestVeh[0] != '':
             queueExtend = secondsPerMeterTraffic*furthestVeh[1]
-            #if self.junctionData.id == 'b2': print('{}: gpsExtend: {}'.format(self.junctionData.id, gpsExtend))
         # If we're in this state this should never happen but just in case
         else:
             queueExtend = 0.0
