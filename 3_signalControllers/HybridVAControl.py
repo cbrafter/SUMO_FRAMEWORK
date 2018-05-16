@@ -43,12 +43,19 @@ class HybridVAControl(signalControl.signalControl):
 
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
-        self.lastStepCatch = 2
+        self.lastStepCatch = 2 # 2 sec time gap upper lim for loop continuation
         self.loopIO = loopIO
-        self.threshold = 2.5
+        self.threshold = 2.0
         self.activeLanes = self._getActiveLanesDict()
-        # self.speedLims = sigTools.speedLimDict()
-        # self.vTypeIndex = sigTools.vTypeDict()
+
+        lanes = [x for x in traci.lane.getIDList() if x[0] != ':']
+        speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
+        self.nearVehicleCatchDistanceDict =\
+            {lane: 2.0*speedLimDict[lane] for lane in lanes}
+        carLen = float(traci.vehicletype.getLength('car') +
+                       traci.vehicletype.getMinGap('car'))
+        self.secondsPerMeterTrafficDict =\
+            {lane: carLen/speedLimDict[lane] for lane in lanes}
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -64,7 +71,7 @@ class HybridVAControl(signalControl.signalControl):
         if self.loopIO:
             traci.junction.subscribeContext(self.junctionData.id, 
                 tc.CMD_GET_INDUCTIONLOOP_VARIABLE, 
-                50, 
+                100, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
 
@@ -83,7 +90,7 @@ class HybridVAControl(signalControl.signalControl):
 
         # Update stage decisions
         # If there's no ITS enabled vehicles present use VA ctrl
-        numCAVs = len(self.CAM.receiveData)
+        self.numCAVs = len(self.CAM.receiveData)
         isControlInterval = not self.TIME_MS % 1000
         elapsedTime = 0.001*(self.TIME_MS - self.lastCalled)
         Tremaining = self.stageTime - elapsedTime
@@ -91,38 +98,13 @@ class HybridVAControl(signalControl.signalControl):
         if Tremaining < 1:
             # get loop extend
             if self.loopIO:
-                detectTimePerLane = np.array(self._getLaneDetectTime())
-                print(detectTimePerLane)
-                # Set adaptive time limit
-                if np.any(detectTimePerLane < self.threshold):
-                    loopExtend = self.extendTime
-                else:
-                    loopExtend = 0.0
+                loopExtend = self.getLoopExtension()
             else:
                 loopExtend = 0.0
-            print('LOOPEXT: '+str(loopExtend))
-
+            
             # get GPS extend
-            if numCAVs > 0:
-                # If active and on the second, or transition then make stage descision
-                oncomingVeh = self._getOncomingVehicles()
-                # If currently staging then extend time if there are vehicles close 
-                # to the stop line
-                nearestVeh = self._getNearestVehicle(oncomingVeh)
-                # nV[1] is its velocity
-                # If a vehicle detected and within catch distance
-                if nearestVeh['id'] != '' and nearestVeh['distance'] <= self.nearVehicleCatchDistance:
-                    # if not invalid and travelling faster than SPM velocity
-                    if (self.CAM.receiveData[nearestVeh['id']]['v'] > 1.0/self.secondsPerMeterTraffic):
-                        gpsExtend = nearestVeh['distance']/self.CAM.receiveData[nearestVeh['id']]['v']
-                    else:
-                        gpsExtend = self.secondsPerMeterTraffic*nearestVeh['distance']
-
-                    if gpsExtend > 2*self.threshold:
-                        gpsExtend = 0.0
-                # no detectable near vehicle
-                else:
-                    gpsExtend = 0.0
+            if self.numCAVs > 0:
+                gpsExtend = self.getGPSextension()
             else:
                 gpsExtend = 0.0
 
@@ -130,19 +112,9 @@ class HybridVAControl(signalControl.signalControl):
             updateTime = max(loopExtend, gpsExtend)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
-        elif elapsedTime <= 0.1 and numCAVs > 0:
-            oncomingVeh = self._getOncomingVehicles()
-            # If new stage get furthest from stop line whose velocity < 5% speed
-            # limit and determine queue length
-            furthestVeh = self._getFurthestStationaryVehicle(oncomingVeh)
-            if furthestVeh[0] != '':
-                gpsExtend = self.secondsPerMeterTraffic*furthestVeh[1]
-                #if self.junctionData.id == 'b2': print('{}: gpsExtend: {}'.format(self.junctionData.id, gpsExtend))
-            # If we're in this state this should never happen but just in case
-            else:
-                gpsExtend = 0.0
-
-            self.updateStageTime(gpsExtend)
+        elif elapsedTime <= 0.1 and self.numCAVs > 0:
+            queueExtend = self.getQueueExtension()
+            self.updateStageTime(queueExtend)
         # process stage as normal
         else:
             pass
@@ -379,3 +351,62 @@ class HybridVAControl(signalControl.signalControl):
         incomingLanes = sigTools.unique(incomingLanes)
         outgoingLanes = sigTools.unique(outgoingLanes)
         return {'incoming': incomingLanes, 'outgoing': outgoingLanes}
+
+    def getLoopExtension(self):
+        detectTimePerLane = np.array(self._getLaneDetectTime())
+        print(detectTimePerLane)
+        # Set adaptive time limit
+        if np.any(detectTimePerLane < self.threshold):
+            loopExtend = self.extendTime
+        else:
+            loopExtend = 0.0
+        return loopExtend
+
+    def getGPSextension():
+
+        # If active and on the second, or transition then make stage descision
+        oncomingVeh = self._getOncomingVehicles()
+        # If currently staging then extend time if there are vehicles close 
+        # to the stop line
+        nearestVeh = self._getNearestVehicle(oncomingVeh)
+        nearVehicleCatchDistance = self.getNearVehicleCatchDistance()
+        # nV[1] is its velocity
+        # If a vehicle detected and within catch distance
+        if nearestVeh['id'] != '' and nearestVeh['distance'] <= nearVehicleCatchDistance:
+            # if not invalid and travelling faster than SPM velocity
+            secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
+            if (self.CAM.receiveData[nearestVeh['id']]['v'] > 1.0/secondsPerMeterTraffic):
+                gpsExtend = nearestVeh['distance']/self.CAM.receiveData[nearestVeh['id']]['v']
+            else:
+                gpsExtend = secondsPerMeterTraffic*nearestVeh['distance']
+
+            if gpsExtend > 2*self.threshold:
+                gpsExtend = 0.0
+        # no detectable near vehicle
+        else:
+            gpsExtend = 0.0
+        return gpsExtend
+
+    def getQueueExtension(self):
+        oncomingVeh = self._getOncomingVehicles()
+        # If new stage get furthest from stop line whose velocity < 5% speed
+        # limit and determine queue length
+        furthestVeh = self._getFurthestStationaryVehicle(oncomingVeh)
+        secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
+        if furthestVeh[0] != '':
+            queueExtend = secondsPerMeterTraffic*furthestVeh[1]
+            #if self.junctionData.id == 'b2': print('{}: gpsExtend: {}'.format(self.junctionData.id, gpsExtend))
+        # If we're in this state this should never happen but just in case
+        else:
+            queueExtend = 0.0
+        return queueExtend
+
+    def getSecondsPerMeterTraffic(self):
+        activeLanes = self._getActiveLanes()
+        spmts = [self.secondsPerMeterTrafficDict[lane] for lane in activeLanes]
+        return max(sptms)
+
+    def getNearVehicleCatchDistance(self):
+        activeLanes = self._getActiveLanes()
+        nvcd = [self.nearVehicleCatchDistanceDict[lane] for lane in activeLanes]
+        return max(nvcd)
