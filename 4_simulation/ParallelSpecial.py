@@ -102,21 +102,12 @@ def simulation(x):
         # Turn loops off if CAV ratio > 50%
         # loopIO = True if CAVratio < 0.5 else False
         for junction in junctionsList:
-            if 'HVA' in tlLogic: 
-                if 'slow' in tlLogic:
-                    controllerList.append(tlController(junction, 
-                                                       loopIO=True,
-                                                       CAMoverride=1))
-                else:
-                    controllerList.append(tlController(junction, loopIO=True))
-            # GPSVA is just HVA with the loops turned off
-            elif 'GPSVA' in tlLogic:
-                if 'slow' in tlLogic:
-                    controllerList.append(tlController(junction, 
-                                                       loopIO=False,
-                                                       CAMoverride=1))
-                else:
-                    controllerList.append(tlController(junction, loopIO=False))
+            if tlLogic in ['HVA', 'GPSVA']: 
+                CAMmod = 1 if 'slow' in tlLogic else False
+                loopCtrl = True if 'HVA' in tlLogic else False
+                controllerList.append(tlController(junction, 
+                                                   loopIO=loopCtrl,
+                                                   CAMoverride=CAMmod))
             else:
                 controllerList.append(tlController(junction))
 
@@ -191,6 +182,7 @@ exectime = time.time()
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
 tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
+tlControllers = ['fixedTime', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
 CAVratios = np.linspace(0, 1, 11)
 
 if len(sys.argv) >= 3:
@@ -216,7 +208,10 @@ configs += list(itertools.product(models[::-1],
                                   runIDs))
 # Test configurations
 #configs = list(itertools.product(models, tlControllers[:1], CAVratios[:1], runIDs))
-configs = list(itertools.product(models[-1:], ['GPSVA'], CAVratios[0:2][::-1], runIDs))
+configs = list(itertools.product(models[:4][::-1],
+                                 tlControllers[::-1],
+                                 CAVratios[::-1],
+                                 runIDs))
 
 
 print('# simulations: '+str(len(configs)))
@@ -225,7 +220,7 @@ print('# simulations: '+str(len(configs)))
 nproc = np.mean([psutil.cpu_count(), 
                  psutil.cpu_count(logical=False)], 
                  dtype=int)
-nproc = 6
+nproc = 7
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())  
 # define work pool
 workpool = mp.Pool(processes=nproc)

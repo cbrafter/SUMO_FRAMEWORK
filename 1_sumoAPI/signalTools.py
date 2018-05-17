@@ -65,10 +65,8 @@ def getSUMOHeading(currentLoc, prevLoc):
 
     return heading
 
-
 def unique(sequence):
     return list(set(sequence))
-
 
 def mean(x):
     return sum(x)/float(len(x))
@@ -116,7 +114,6 @@ def getRouteDict():
         file.close()
 
     return routeDict
-
 
 def isInRange(vehPosition, scanRange, jcnGeometry):
     center, JCR = jcnGeometry # jcnPos, jcnCtrlRegion
