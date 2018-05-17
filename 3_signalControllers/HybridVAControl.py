@@ -394,7 +394,7 @@ class HybridVAControl(signalControl.signalControl):
             loopExtend = 0.0
         return loopExtend
 
-    def getGPSextension():
+    def getGPSextension(self):
         # If active and on the second, or transition then make stage descision
         oncomingVeh = self._getOncomingVehicles()
         # If currently staging then extend time if there are vehicles close 
@@ -434,7 +434,7 @@ class HybridVAControl(signalControl.signalControl):
     def getSecondsPerMeterTraffic(self):
         activeLanes = self._getActiveLanes()
         spmts = [self.secondsPerMeterTrafficDict[lane] for lane in activeLanes]
-        return max(sptms)
+        return max(spmts)
 
     def getNearVehicleCatchDistance(self):
         activeLanes = self._getActiveLanes()
@@ -442,28 +442,28 @@ class HybridVAControl(signalControl.signalControl):
         return max(nvcd)
 
     def sellyOakLoops(self, loopRelation):
-        if self.junctionData.id == 'junc10'
+        if self.junctionData.id == 'junc10':
             loopRelation['edge199'] = ['42', '43', '44', '54',
                                        '55', '36', '37', '38']
-        elif self.junctionData.id == 'junc11'
+        elif self.junctionData.id == 'junc11':
             loopRelation['edge281'] = ['38']
-        elif self.junctionData.id == 'junc12'
+        elif self.junctionData.id == 'junc12':
             loopRelation['edge3177'] = ['6', '5']
             loopRelation['edge3176'] = ['7', '8']
             loopRelation['edge3174'] = ['7', '8']
-        elif self.junctionData.id == 'junc3'
+        elif self.junctionData.id == 'junc3':
             loopRelation['edge3172'] = ['10', '9'], 
             loopRelation['edge3171'] = ['62', '0', '15', '16','10', '9'], 
             loopRelation['edge142'] = ['15', '16', '10', '9', '1', '2'], 
             loopRelation['edge46'] = ['15', '16', '11', '12']
-        elif self.junctionData.id == 'junc6'
+        elif self.junctionData.id == 'junc6':
             loopRelation['edge131'] = ['23', '24']
-        elif self.junctionData.id == 'junc7'
+        elif self.junctionData.id == 'junc7':
             loopRelation['edge113'] = ['6', '5']
-        elif self.junctionData.id == 'junc8'
+        elif self.junctionData.id == 'junc8':
             loopRelation['edge116'] = ['3', '4']
             loopRelation['edge117'] = ['3', '4']
-        elif self.junctionData.id == 'junc9'
+        elif self.junctionData.id == 'junc9':
             loopRelation['edge211'] = ['29', '30', '39', '40', '41']
         else:
             pass
