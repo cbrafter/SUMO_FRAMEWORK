@@ -37,8 +37,7 @@ class freeflowStore(object):
         # vehType = vType if 'c_' not in vType else vType.split('_')[1]
         try:
             # freeflowTime = self.dataMultiKey.loc[(vehType, model,
-            # orig, dest),
-            #                                     'duration']
+            # orig, dest), 'duration']
             freeflowTime = self.dataDict[vType+model+orig+dest]
             return freeflowTime
         except:
