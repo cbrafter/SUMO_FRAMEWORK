@@ -70,7 +70,7 @@ class HybridVAControl(signalControl.signalControl):
         if self.loopIO:
             traci.junction.subscribeContext(self.junctionData.id, 
                 tc.CMD_GET_INDUCTIONLOOP_VARIABLE, 
-                150, 
+                250, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
 
@@ -91,7 +91,7 @@ class HybridVAControl(signalControl.signalControl):
         # If there's no ITS enabled vehicles present use VA ctrl
         self.numCAVs = len(self.CAM.receiveData)
         isControlInterval = not self.TIME_MS % 1000
-        elapsedTime = 0.001*(self.TIME_MS - self.lastCalled)
+        elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         #if self.junctionData.id == 'b2': print elapsedTime
         if Tremaining < 1:
@@ -105,10 +105,18 @@ class HybridVAControl(signalControl.signalControl):
             if self.numCAVs > 0:
                 gpsExtend = self.getGPSextension()
             else:
-                gpsExtend = 0.0
+                gpsExtend = None
 
             # update stage time
-            updateTime = max(loopExtend, gpsExtend)
+            if loopExtend is not None and gpsExtend is not None:
+                updateTime = max(loopExtend, gpsExtend)
+            elif loopExtend is not None and gpsExtend is None:
+                updateTime = loopExtend
+            elif loopExtend is None and gpsExtend is not None:
+                updateTime = gpsExtend
+            else:
+                fixedTime = self.junctionData.stages[self.lastStageIndex].period
+                updateTime = max(0.0, fixedTime-elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
         elif elapsedTime <= 0.1 and self.numCAVs > 0:
@@ -145,17 +153,24 @@ class HybridVAControl(signalControl.signalControl):
         self.subResults = traci.junction.getContextSubscriptionResults(self.junctionData.id)
 
     def updateStageTime(self, updateTime):
-        elapsedTime = 0.001*(self.TIME_MS - self.lastCalled)
+        elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         self.stageTime = elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
-        self.stageTime = min(self.stageTime, self.maxGreenTime) 
+        self.stageTime = min(self.stageTime, self.maxGreenTime)
+
+    def getElapsedTime(self):
+        return 0.001*(self.TIME_MS - self.lastCalled)
 
     def _getJncCtrlRegion(self):
         jncPosition = traci.junction.getPosition(self.junctionData.id)
-        otherJuncPos = [traci.junction.getPosition(x) for x in traci.trafficlights.getIDList() if x != self.junctionData.id]
-        ctrlRegion = {'N':jncPosition[1]+self.scanRange, 'S':jncPosition[1]-self.scanRange, 
-            'E':jncPosition[0]+self.scanRange, 'W':jncPosition[0]-self.scanRange}
+        otherJuncPos = [traci.junction.getPosition(x)\
+                        for x in traci.trafficlights.getIDList()\
+                        if x != self.junctionData.id]
+        ctrlRegion = {'N':jncPosition[1] + self.scanRange,
+                      'S':jncPosition[1] - self.scanRange, 
+                      'E':jncPosition[0] + self.scanRange,
+                      'W':jncPosition[0] - self.scanRange}
 
         TOL = 10 # Exclusion region around junction boundary
         if otherJuncPos != []:
@@ -334,9 +349,9 @@ class HybridVAControl(signalControl.signalControl):
         for loop in loopIDs:
             edge = traci.inductionloop.getLaneID(loop).split('_')[0]
             edgeShapes = traci.lane.getShape(edge+'_0')
-            distFromJunc = min([sigTools.getDistance(x, self.jcnPosition)\
+            distFromJunc = max([sigTools.getDistance(x, self.jcnPosition)\
                                 for x in edgeShapes])
-            if distFromJunc <= 100:
+            if distFromJunc < 200:
                 loopLanes[edge].append(loop)
 
         for key in linkRelation.keys():
@@ -359,6 +374,8 @@ class HybridVAControl(signalControl.signalControl):
     def getLoopExtension(self):
         detectTimes = sigTools.flatten(self._getLaneDetectTime())
         detectTimes = np.array(detectTimes)
+        if not detectTimes.any():
+            return None
         # Set adaptive time limit
         try:
             cond1 = np.any(detectTimes < self.threshold)
@@ -419,3 +436,6 @@ class HybridVAControl(signalControl.signalControl):
         activeLanes = self._getActiveLanes()
         nvcd = [self.nearVehicleCatchDistanceDict[lane] for lane in activeLanes]
         return max(nvcd)
+
+    def sellyOakLoops(self):
+        pass
