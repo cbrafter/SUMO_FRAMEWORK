@@ -359,6 +359,10 @@ class HybridVAControl(signalControl.signalControl):
             for lane in linkRelation[key]:
                 laneLoops += loopLanes[lane]
             loopRelation[key] = laneLoops
+        
+        if 'selly' in self.modelName:
+            loopRelation = self.sellyOakLoops(loopRelation)
+
         return loopRelation
 
     def getLanes(self, junctionID):
@@ -437,5 +441,31 @@ class HybridVAControl(signalControl.signalControl):
         nvcd = [self.nearVehicleCatchDistanceDict[lane] for lane in activeLanes]
         return max(nvcd)
 
-    def sellyOakLoops(self):
-        pass
+    def sellyOakLoops(self, loopRelation):
+        if self.junctionData.id == 'junc10'
+            loopRelation['edge199'] = ['42', '43', '44', '54',
+                                       '55', '36', '37', '38']
+        elif self.junctionData.id == 'junc11'
+            loopRelation['edge281'] = ['38']
+        elif self.junctionData.id == 'junc12'
+            loopRelation['edge3177'] = ['6', '5']
+            loopRelation['edge3176'] = ['7', '8']
+            loopRelation['edge3174'] = ['7', '8']
+        elif self.junctionData.id == 'junc3'
+            loopRelation['edge3172'] = ['10', '9'], 
+            loopRelation['edge3171'] = ['62', '0', '15', '16','10', '9'], 
+            loopRelation['edge142'] = ['15', '16', '10', '9', '1', '2'], 
+            loopRelation['edge46'] = ['15', '16', '11', '12']
+        elif self.junctionData.id == 'junc6'
+            loopRelation['edge131'] = ['23', '24']
+        elif self.junctionData.id == 'junc7'
+            loopRelation['edge113'] = ['6', '5']
+        elif self.junctionData.id == 'junc8'
+            loopRelation['edge116'] = ['3', '4']
+            loopRelation['edge117'] = ['3', '4']
+        elif self.junctionData.id == 'junc9'
+            loopRelation['edge211'] = ['29', '30', '39', '40', '41']
+        else:
+            pass
+
+        return loopRelation
