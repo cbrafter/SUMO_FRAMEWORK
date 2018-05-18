@@ -20,6 +20,7 @@ class HybridVAControl(signalControl.signalControl):
                  scanRange=250, loopIO=False, CAMoverride=False, model='simpleT'):
         super(HybridVAControl, self).__init__()
         self.junctionData = junctionData
+        self.setTransitionTime(self.junctionData.id)
         self.Nstages = len(self.junctionData.stages)
         self.firstCalled = traci.simulation.getCurrentTime()
         self.lastCalled = self.firstCalled
@@ -34,8 +35,9 @@ class HybridVAControl(signalControl.signalControl):
         # dict[laneID] = [heading, shape]
         self.laneDetectionInfo = sigTools.getIncomingLaneInfo(self.controlledLanes)
         self.stageTime = 0.0
-        self.minGreenTime = minGreenTime
-        self.maxGreenTime = maxGreenTime
+        intergreen = sigTools.getIntergreenTime(self.junctionData.id)
+        self.minGreenTime = 2*intergreen
+        self.maxGreenTime = 10*intergreen
         self.secondsPerMeterTraffic = 0.45
         self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
         self.extendTime = 1.0 # 5 m in 10 m/s (acceptable journey 1.333)
@@ -397,21 +399,20 @@ class HybridVAControl(signalControl.signalControl):
     def getGPSextension(self):
         # If active and on the second, or transition then make stage descision
         oncomingVeh = self._getOncomingVehicles()
+        haltVelocity = 0.01
         # If currently staging then extend time if there are vehicles close 
         # to the stop line
         nearestVeh = self._getNearestVehicle(oncomingVeh)
         nearVehicleCatchDistance = self.getNearVehicleCatchDistance()
         # nV[1] is its velocity
         # If a vehicle detected and within catch distance
-        if nearestVeh['id'] != '' and nearestVeh['distance'] <= nearVehicleCatchDistance:
+        if (nearestVeh['id'] != '') and (nearestVeh['distance'] <= nearVehicleCatchDistance):
             # if not invalid and travelling faster than SPM velocity
-            secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
-            if (self.CAM.receiveData[nearestVeh['id']]['v'] > 1.0/secondsPerMeterTraffic):
+            if (self.CAM.receiveData[nearestVeh['id']]['v'] > haltVelocity):
                 gpsExtend = nearestVeh['distance']/self.CAM.receiveData[nearestVeh['id']]['v']
+                if gpsExtend > 2*self.threshold:
+                    gpsExtend = 0.0
             else:
-                gpsExtend = secondsPerMeterTraffic*nearestVeh['distance']
-
-            if gpsExtend > 2*self.threshold:
                 gpsExtend = 0.0
         # no detectable vehicle near
         else:
