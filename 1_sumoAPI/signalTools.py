@@ -13,6 +13,8 @@ from math import atan2, degrees, ceil, hypot
 import re
 from glob import glob
 import os
+from scipy.spatial import distance
+import numpy as np
 
 
 def getIntergreen(dist):
@@ -28,18 +30,18 @@ def getIntergreen(dist):
     return intergreen
 
 
-def getIntergreenTime(self, junctionID):
-    x1, y1 = traci.junction.getPosition(junctionID)
+def getIntergreenTime(junctionID):
+    juncPos = traci.junction.getPosition(junctionID)
     edges = traci.trafficlights.getControlledLinks(junctionID)
     edges = [x for z in edges for y in z for x in y[:2]]
     edges = list(set(edges))
     boundingCoords = []
     for edge in edges:
         dMin, coordMin = 1e6, []
-        for x2, y2 in traci.lane.getShape(edge):
-            dist = math.hypot(x2-x1, y2-y1)
+        for laneCoord in traci.lane.getShape(edge):
+            dist = getDistance(juncPos, laneCoord)
             if dist < dMin:
-                dMin, coordMin = dist, [x2, y2]
+                dMin, coordMin = dist, laneCoord
         boundingCoords.append(coordMin)
     # get max of closest edge pairwise distances
     dMax = np.max(distance.cdist(boundingCoords, boundingCoords))
