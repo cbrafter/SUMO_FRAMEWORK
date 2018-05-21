@@ -453,9 +453,9 @@ class HybridVAControl(signalControl.signalControl):
             loopRelation['edge3176'] = ['7', '8']
             loopRelation['edge3174'] = ['7', '8']
         elif self.junctionData.id == 'junc3':
-            loopRelation['edge3172'] = ['10', '9'], 
-            loopRelation['edge3171'] = ['62', '0', '15', '16','10', '9'], 
-            loopRelation['edge142'] = ['15', '16', '10', '9', '1', '2'], 
+            loopRelation['edge3172'] = ['10', '9']
+            loopRelation['edge3171'] = ['62', '0', '15', '16','10', '9'] 
+            loopRelation['edge142'] = ['15', '16', '10', '9', '1', '2'] 
             loopRelation['edge46'] = ['15', '16', '11', '12']
         elif self.junctionData.id == 'junc6':
             loopRelation['edge131'] = ['23', '24']
