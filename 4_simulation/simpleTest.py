@@ -26,37 +26,36 @@ import time
 from collections import defaultdict
 
 
-class stopDict(defaultdict):
-    def __missing__(self, key):
-        self[key] = [0, 1]
-        return self[key]
+class stopDict = defaultdict(int)
+
+def justStopped(wait, step=0.1, tol=1e-3):
+    return np.isclose(wait, step, atol=tol)
 
 def getStops(stopStore, subKey):
     subResults = traci.edge.getContextSubscriptionResults(subKey)
     vtol = 1e-3
-    if subResults not in [[], None, False, {}]:
+    wait = tc.VAR_WAITING_TIME
+    try:
         for vehID in subResults.keys():
-            if tc.VAR_SPEED in subResults[vehID].keys():
-                if stopStore[vehID][1] >= vtol and subResults[vehID][tc.VAR_SPEED] < vtol:
-                    stopStore[vehID][0] += 1
-                    stopStore[vehID][1] = subResults[vehID][tc.VAR_SPEED]
-                else:
-                    stopStore[vehID][1] = subResults[vehID][tc.VAR_SPEED]
+            if justStopped(subResults[vehID][wait]):
+                stopStore[vehID] += 1
+    except KeyError:
+        pass
     return stopStore
 
 
 exectime = time.time()
-controller = HybridVAControl.HybridVAControl
+#controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-#controller = fixedTimeControl.fixedTimeControl
+controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'corridor'
+modelname = 'simpleT'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = 0.0
-seed = 8
+CVP = np.linspace(0, 1, 11)[8]
+seed = 2
 
 # Edit the the output filenames in sumoConfig
 configFile = model + modelBase + ".sumocfg"
@@ -87,7 +86,7 @@ for junction in junctionsList:
         print('YURT')
         controllerList.append(controller(junction, loopIO=True, model=modelBase))
     else:
-        print('GURT')
+        print('GOWL')
         controllerList.append(controller(junction))
 
 print('Junctions and controllers acquired')
