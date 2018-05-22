@@ -15,6 +15,7 @@ from glob import glob
 import os
 from scipy.spatial import distance
 import numpy as np
+import traci.constants as tc
 
 
 def getIntergreen(dist):
@@ -67,8 +68,10 @@ def getSUMOHeading(currentLoc, prevLoc):
 
     return heading
 
+
 def unique(sequence):
     return list(set(sequence))
+
 
 def mean(x):
     return sum(x)/float(len(x))
@@ -97,6 +100,7 @@ def getIncomingLaneInfo(controlledLanes):
 
     return laneInfo
 
+
 def getRouteDict():
     fileNames = glob('../2_models/VALIDROUTES/*.rou.xml')
     models = []
@@ -117,6 +121,7 @@ def getRouteDict():
 
     return routeDict
 
+
 def isInRange(vehPosition, scanRange, jcnGeometry):
     center, JCR = jcnGeometry # jcnPos, jcnCtrlRegion
     distance = hypot(*(vehPosition - center))
@@ -134,6 +139,7 @@ class speedLimDict(defaultdict):
         self[key] = traci.lane.getMaxSpeed(key)
         return self[key]
 
+
 # defaultdict that finds and remembers vehicle types (only if static)
 # needs to be updated otherwise
 class vTypeDict(defaultdict):
@@ -141,10 +147,27 @@ class vTypeDict(defaultdict):
         self[key] = traci.vehicle.getTypeID(key)
         return self[key]
 
+
 def getDistance(A, B):
     x1, y1 = A
     x2, y2 = B
     return hypot(x1-x2, y1-y2)
 
+
 def flatten(ListofLists):
     return [x for y in ListofLists for x in y]
+
+
+def getStops(stopStore, subKey):
+    subResults = traci.edge.getContextSubscriptionResults(subKey)
+    vtol = 1e-3
+    wait = tc.VAR_WAITING_TIME
+    try:
+        for vehID in subResults.keys():
+            if 0.099 < subResults[vehID][wait] < 0.101:
+                stopStore[vehID] += 1
+    except KeyError:
+        pass
+    except AttributeError:
+        pass    
+    return stopStore
