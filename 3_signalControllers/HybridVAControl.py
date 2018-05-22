@@ -35,9 +35,8 @@ class HybridVAControl(signalControl.signalControl):
         # dict[laneID] = [heading, shape]
         self.laneDetectionInfo = sigTools.getIncomingLaneInfo(self.controlledLanes)
         self.stageTime = 0.0
-        intergreen = sigTools.getIntergreenTime(self.junctionData.id)
-        self.minGreenTime = 2*intergreen
-        self.maxGreenTime = 10*intergreen
+        self.minGreenTime = 2*self.intergreen
+        self.maxGreenTime = 10*self.intergreen
         self.secondsPerMeterTraffic = 0.45
         self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
         self.extendTime = 1.0 # 5 m in 10 m/s (acceptable journey 1.333)
@@ -74,7 +73,6 @@ class HybridVAControl(signalControl.signalControl):
                 tc.CMD_GET_INDUCTIONLOOP_VARIABLE, 
                 250, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
-
 
     def process(self):
         self.TIME_MS = self.getCurrentSUMOtime()
