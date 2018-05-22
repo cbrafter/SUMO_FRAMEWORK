@@ -48,6 +48,7 @@ class signalControl(object):
         self.setAllRedTime(red)
         self.setAmber1Time(amber1)
         self.setAmber2Time(amber2)
+        self.intergreen = red + amber1 + amber2
 
     def setModelName(self, model):
         self.modelName = model
