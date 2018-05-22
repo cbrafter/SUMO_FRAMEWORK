@@ -25,26 +25,6 @@ import HVA1
 import traci
 import traci.constants as tc
 
-# default dict that finds and remembers stops
-# needs to be updated otherwise
-class stopDict(defaultdict):
-    def __missing__(self, key):
-        self[key] = [0, 1]
-        return self[key]
-
-def getStops(stopStore, subKey):
-    subResults = traci.edge.getContextSubscriptionResults(subKey)
-    vtol = 1e-3
-    if subResults not in [[], None, False, {}]:
-        for vehID in subResults.keys():
-            if tc.VAR_SPEED in subResults[vehID].keys():
-                if stopStore[vehID][1] >= vtol and subResults[vehID][tc.VAR_SPEED] < vtol:
-                    stopStore[vehID][0] += 1
-                    stopStore[vehID][1] = subResults[vehID][tc.VAR_SPEED]
-                else:
-                    stopStore[vehID][1] = subResults[vehID][tc.VAR_SPEED]
-    return stopStore
-
 
 def simulation(x):
     try:
@@ -107,19 +87,20 @@ def simulation(x):
                 loopCtrl = True if 'HVA' in tlLogic else False
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
-                                                   CAMoverride=CAMmod))
+                                                   CAMoverride=CAMmod,
+                                                   model=modelBase))
             else:
                 controllerList.append(tlController(junction))
 
         # Step simulation while there are vehicles
-        i, flag = 1, True
+        i, flag = 0, True
         timeLimit = 10*60*60  # 10 hours in seconds for time limit
-        # subKey = traci.edge.getIDList()[0]
-        # traci.edge.subscribeContext(subKey, 
-        #     tc.CMD_GET_VEHICLE_VARIABLE, 
-        #     1000000, 
-        #     varIDs=(tc.VAR_SPEED,))
-        # stopCounter = stopDict()
+        subKey = traci.edge.getIDList()[0]
+        traci.edge.subscribeContext(subKey, 
+            tc.CMD_GET_VEHICLE_VARIABLE, 
+            1000000, 
+            varIDs=(tc.VAR_WAITING_TIME,))
+        stopCounter = defaultdict(int)
 
         # Flush print buffer
         sys.stdout.flush()
@@ -129,10 +110,10 @@ def simulation(x):
             traci.simulationStep()
             for controller in controllerList:
                 controller.process()
-            # stopCounter = getStops(stopCounter, subKey)
+            stopCounter = sigTools.getStops(stopCounter, subKey)
             i += 1
             # reduce calls to traci to 1 per sec to impove performance
-            if not i%200: 
+            if not i%300: 
                 flag = traci.simulation.getMinExpectedNumber()
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
@@ -146,7 +127,6 @@ def simulation(x):
         connector.disconnect()
 
         # save stops file
-        '''
         stopfilename = exportPath+'stops{:03d}_{:03d}.csv'.format(int(CAVratio*100), seed)
         with open(stopfilename, 'w') as f:
             f.write('vehID,stops\n')
@@ -155,8 +135,7 @@ def simulation(x):
             #vehIDs = map(str, vehIDs)
             for vehID in stopCounter.keys():
                 f.write('{},{}\n'.format(vehID, stopCounter[vehID][0]))
-        '''
-
+        
         runtime = time.gmtime(time.time() - runtime)
         runtime = time.strftime("%H:%M:%S", runtime)
         print('DONE: {}, {}, Run: {:03d}, AVR: {:03d}%, Runtime: {}, Date: {}'
@@ -181,7 +160,7 @@ def simulation(x):
 exectime = time.time()
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
-tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
+# tlControllers = ['fixedTime', 'VA', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
 tlControllers = ['fixedTime', 'HVA', 'GPSVA', 'HVAslow', 'GPSVAslow']
 CAVratios = np.linspace(0, 1, 11)
 
@@ -198,21 +177,20 @@ runIDs = np.arange(runStart, runEnd)
 configs = []
 # Generate all simulation configs for fixed time and VA
 configs += list(itertools.product(models[::-1],
-                                  tlControllers[:2],
+                                  tlControllers[:1],
                                   [0.],
                                   runIDs))
 # Generate runs for CAV dependent controllers
-configs += list(itertools.product(models[::-1],
-                                  tlControllers[2:],
+configs += list(itertools.product(models[:4][::-1]+models[4:],
+                                  tlControllers[1:],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
 #configs = list(itertools.product(models, tlControllers[:1], CAVratios[:1], runIDs))
-configs = list(itertools.product(models[:4][::-1],
-                                 tlControllers[::-1],
+configs = list(itertools.product(models[:1]+models[4:],
+                                 tlControllers[1:],
                                  CAVratios[::-1],
                                  runIDs))
-
 
 print('# simulations: '+str(len(configs)))
 

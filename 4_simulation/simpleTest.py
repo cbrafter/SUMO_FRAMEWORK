@@ -24,21 +24,7 @@ import numpy as np
 import traci.constants as tc
 import time
 from collections import defaultdict
-
-
-def getStops(stopStore, subKey):
-    subResults = traci.edge.getContextSubscriptionResults(subKey)
-    vtol = 1e-3
-    wait = tc.VAR_WAITING_TIME
-    try:
-        for vehID in subResults.keys():
-            if 0.099 < subResults[vehID][wait] < 0.101:
-                stopStore[vehID] += 1
-    except KeyError:
-        pass
-    except AttributeError:
-        pass    
-    return stopStore
+import signalTools as sigTools
 
 
 exectime = time.time()
@@ -46,7 +32,7 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'twinT'
+modelname = 'cross'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
@@ -94,7 +80,7 @@ juncIDs = traci.trafficlights.getIDList()
 juncPos = [traci.junction.getPosition(juncID) for juncID in juncIDs]
 
 # Step simulation while there are vehicles
-i, flag = 1, True
+i, flag = 0, True
 timeLimit = 3*60*60  # 10 hours in seconds for time limit
 subKey = traci.edge.getIDList()[0]
 traci.edge.subscribeContext(subKey, 
@@ -107,11 +93,11 @@ while flag:
     traci.simulationStep()
     for controller in controllerList:
         controller.process()
-    stopCounter = getStops(stopCounter, subKey)
+    stopCounter = sigTools.getStops(stopCounter, subKey)
     i += 1
 
     # reduce calls to traci to 1 per sec to impove performance
-    if not i%200: 
+    if not i%300: 
         flag = traci.simulation.getMinExpectedNumber()
         # stop sim to free resources if taking longer than ~10 hours
         # i.e. the sim is gridlocked
