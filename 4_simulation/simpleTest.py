@@ -26,30 +26,27 @@ import time
 from collections import defaultdict
 
 
-class stopDict = defaultdict(int)
-
-def justStopped(wait, step=0.1, tol=1e-3):
-    return np.isclose(wait, step, atol=tol)
-
 def getStops(stopStore, subKey):
     subResults = traci.edge.getContextSubscriptionResults(subKey)
     vtol = 1e-3
     wait = tc.VAR_WAITING_TIME
     try:
         for vehID in subResults.keys():
-            if justStopped(subResults[vehID][wait]):
+            if 0.099 < subResults[vehID][wait] < 0.101:
                 stopStore[vehID] += 1
     except KeyError:
         pass
+    except AttributeError:
+        pass    
     return stopStore
 
 
 exectime = time.time()
-#controller = HybridVAControl.HybridVAControl
+controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'simpleT'
+modelname = 'twinT'
 modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
@@ -69,7 +66,7 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile, gui=True, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 
@@ -86,7 +83,7 @@ for junction in junctionsList:
         print('YURT')
         controllerList.append(controller(junction, loopIO=True, model=modelBase))
     else:
-        print('GOWL')
+        print('YIP')
         controllerList.append(controller(junction))
 
 print('Junctions and controllers acquired')
@@ -99,20 +96,18 @@ juncPos = [traci.junction.getPosition(juncID) for juncID in juncIDs]
 # Step simulation while there are vehicles
 i, flag = 1, True
 timeLimit = 3*60*60  # 10 hours in seconds for time limit
-'''
 subKey = traci.edge.getIDList()[0]
 traci.edge.subscribeContext(subKey, 
     tc.CMD_GET_VEHICLE_VARIABLE, 
     1000000, 
-    varIDs=(tc.VAR_SPEED,))
-# stopCounter = stopDict()
-'''
+    varIDs=(tc.VAR_WAITING_TIME,))
+stopCounter = defaultdict(int)
+
 while flag:
-    # connector.runSimulationForSeconds(1)
     traci.simulationStep()
     for controller in controllerList:
         controller.process()
-    # stopCounter = getStops(stopCounter, subKey)
+    stopCounter = getStops(stopCounter, subKey)
     i += 1
 
     # reduce calls to traci to 1 per sec to impove performance
@@ -126,16 +121,14 @@ while flag:
     else: 
         flag = True
 
-'''
-stopfilename = exportPath[4:]+'stops{:03d}_{:03d}.csv'.format(int(CVP*100), seed)
-with open(stopfilename, 'w') as f:
+stopfilename = './test_results/stops{:03d}_{:03d}.csv'.format(int(CVP*100), seed)
+with open(stopfilename, 'w+') as f:
     f.write('vehID,stops\n')
-    vehIDs = map(int, stopCounter.keys())
+    vehIDs = stopCounter.keys()
     vehIDs.sort()
-    vehIDs = map(str, vehIDs)
     for vehID in vehIDs:
-        f.write('{},{}\n'.format(vehID, stopCounter[vehID][0]))
-'''
+        f.write('{},{}\n'.format(vehID, stopCounter[vehID]))
+
 connector.disconnect()
 exectime = time.strftime("%H:%M:%S", time.gmtime(time.time() - exectime))
 print('Simulations complete, exectime: {}, {}'.format(exectime, time.ctime()))
