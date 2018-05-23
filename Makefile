@@ -47,10 +47,6 @@ hello_world:
 echo_test:
 	echo $(UESCPATH) $(START) $(END)
 
-# stop the currently running container
-stop:
-	docker kill "$(sudo docker ps -a --format ''{{.Names}}'' | head -1)"
-
 # delete the docker container completely
 # sudo docker images
 # sudo docker rmi $REPO_HASH
