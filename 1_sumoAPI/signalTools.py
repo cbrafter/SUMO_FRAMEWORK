@@ -16,6 +16,8 @@ import os
 from scipy.spatial import distance
 import numpy as np
 import traci.constants as tc
+import time
+from psutil import cpu_count
 
 
 def getIntergreen(dist):
@@ -171,3 +173,75 @@ def getStops(stopStore, subKey):
     except AttributeError:
         pass    
     return stopStore
+
+
+def stopDict():
+    return defaultdict(int)
+
+
+def stopSubscription():
+    subKey = traci.edge.getIDList()[0]
+    traci.edge.subscribeContext(subKey, 
+                                tc.CMD_GET_VEHICLE_VARIABLE, 
+                                1000000, 
+                                varIDs=(tc.VAR_WAITING_TIME,))
+    return subKey
+
+
+def writeStops(stopCounter, filename):
+    with open(filename, 'w') as f:
+        f.write('vehID,stops\n')
+        vehIDs = stopCounter.keys()
+        vehIDs.sort()
+        for vehID in vehIDs:
+            f.write('{},{}\n'.format(vehID, stopCounter[vehID]))
+
+
+class simTimer(object):
+    def __init__(self):
+        self.startTime = 0
+        self.stopTime = 0
+        self.started = False
+        self.stopped = False
+
+    def start(self):
+        if not self.started:
+            self.startTime = time.time()
+            self.started = True
+        else:
+            print('WARNING: Timer already started')
+
+    def stop(self):
+        if self.started and not self.stopped:
+            self.stopTime = time.time()
+            self.stopped = True
+        else:
+            print('WARNING: Timer already stopped/not active')
+
+    def runtime(self):
+        if self.started and self.stopped: 
+            return self.stopTime - self.startTime
+        elif self.started and not self.stopped:
+            return time.time() - self.startTime
+        else:
+            print('WARNING: Timer not active')
+            return -1
+
+    def strTime(self):
+        return time.strftime("%H:%M:%S", time.gmtime(self.runtime()))
+
+
+def getNproc(mode='best'):
+    mode = mode.lower()
+    physical = cpu_count(logical=False)
+    logical = cpu_count()
+    if mode == 'best':
+        return np.mean([physical, logical], dtype=int)
+    elif mode in ['max', 'logical']:
+        return logical
+    elif mode in ['phy', 'physical']:
+        return physical
+    elif mode == 'low':
+        return max(1, int(physical/2.))
+    else:
+        return 1
