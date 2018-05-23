@@ -27,7 +27,8 @@ from collections import defaultdict
 import signalTools as sigTools
 
 
-exectime = time.time()
+timer = sigTools.simTimer()
+timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 controller = fixedTimeControl.fixedTimeControl
@@ -82,12 +83,9 @@ juncPos = [traci.junction.getPosition(juncID) for juncID in juncIDs]
 # Step simulation while there are vehicles
 i, flag = 0, True
 timeLimit = 3*60*60  # 10 hours in seconds for time limit
-subKey = traci.edge.getIDList()[0]
-traci.edge.subscribeContext(subKey, 
-    tc.CMD_GET_VEHICLE_VARIABLE, 
-    1000000, 
-    varIDs=(tc.VAR_WAITING_TIME,))
-stopCounter = defaultdict(int)
+subKey = sigTools.stopSubscription()
+stopCounter = sigTools.stopDict()
+oneMinute = 600  # one minute in simulation
 
 while flag:
     traci.simulationStep()
@@ -96,26 +94,20 @@ while flag:
     stopCounter = sigTools.getStops(stopCounter, subKey)
     i += 1
 
-    # reduce calls to traci to 1 per sec to impove performance
-    if not i%300: 
+    # reduce calls to traci to 1 per simulation min to improve performance
+    # flag will always be positive int while there are vehicles no need for else
+    if not i%oneMinute: 
         flag = traci.simulation.getMinExpectedNumber()
         # stop sim to free resources if taking longer than ~10 hours
         # i.e. the sim is gridlocked
-        if time.time()-exectime > timeLimit:
+        if timer.runtime() > timeLimit:
             connector.disconnect()
             raise RuntimeError("RuntimeError: GRIDLOCK")
-    else: 
-        flag = True
 
 stopfilename = './test_results/stops{:03d}_{:03d}.csv'.format(int(CVP*100), seed)
-with open(stopfilename, 'w+') as f:
-    f.write('vehID,stops\n')
-    vehIDs = stopCounter.keys()
-    vehIDs.sort()
-    for vehID in vehIDs:
-        f.write('{},{}\n'.format(vehID, stopCounter[vehID]))
+sigTools.writeStops(stopCounter, stopfilename)
 
 connector.disconnect()
-exectime = time.strftime("%H:%M:%S", time.gmtime(time.time() - exectime))
-print('Simulations complete, exectime: {}, {}'.format(exectime, time.ctime()))
+timer.stop()
+print('Simulations complete, exectime: {}, {}'.format(timer.strTime(), time.ctime()))
 print('DONE')
