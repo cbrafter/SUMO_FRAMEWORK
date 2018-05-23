@@ -27,10 +27,10 @@ runAll:
 		python parallelRun.py $(START) $(END)
 
 # Run the script that performs a special test case
-special:
+selection:
 	mkdir -p $(RESULTPATH)
 	docker run $(DOCKER_ARGS) $(VMNAME) \
-		python ParallelSpecial.py $(START) $(END)
+		python parallelSelection.py $(START) $(END)
 
 # Run the test case to see if docker works
 test:
@@ -46,6 +46,10 @@ hello_world:
 # Check to see if command args and escaped folder string work 
 echo_test:
 	echo $(UESCPATH) $(START) $(END)
+
+# stop the currently running container
+stop:
+	docker kill "$(sudo docker ps -a --format ''{{.Names}}'' | head -1)"
 
 # delete the docker container completely
 # sudo docker images
