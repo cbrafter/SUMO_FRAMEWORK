@@ -22,8 +22,8 @@ class fixedTimeControl(signalControl.signalControl):
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.lastStageIndex].controlString)
         
-    def process(self):
-        self.currentTime = self.getCurrentSUMOtime()
+    def process(self, time=None):
+        self.currentTime = self.getCurrentSUMOtime() if time is None else time
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
             pass
@@ -44,6 +44,7 @@ class fixedTimeControl(signalControl.signalControl):
             self.lastCalled = self.currentTime
                 
         super(fixedTimeControl, self).process(self.currentTime)
+        return None
 
     def getTimeToSignalChange(self):
         return (self.junctionData.stages[self.lastStageIndex].period*1000 - 

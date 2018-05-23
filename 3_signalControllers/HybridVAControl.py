@@ -74,8 +74,8 @@ class HybridVAControl(signalControl.signalControl):
                 250, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
-    def process(self):
-        self.TIME_MS = self.getCurrentSUMOtime()
+    def process(self, time=None):
+        self.TIME_MS = self.getCurrentSUMOtime() if time is None else time
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
