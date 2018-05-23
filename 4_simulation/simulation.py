@@ -83,24 +83,26 @@ def simulation(x):
                 controllerList.append(tlController(junction))
 
         # Step simulation while there are vehicles
-        i, flag = 0, True
-        timeLimit = 10*60*60  # 10 hours in seconds for time limit
-        subKey = traci.edge.getIDList()[0]
+        simTime, simActive = 0, True
+        timeLimit = 3*60*60  # 10 hours in seconds for time limit
         subKey = sigTools.stopSubscription()
         stopCounter = sigTools.stopDict()
-        oneMinute = 600
+        timeDelta = int(1000*stepSize)
+        oneMinute = 60000  # one minute in simulation 60sec im msec
+
         # Flush print buffer
         sys.stdout.flush()
 
-        while flag:
+        while simActive:
             traci.simulationStep()
             for controller in controllerList:
-                controller.process()
+                controller.process(time=simTime)
             stopCounter = sigTools.getStops(stopCounter, subKey)
-            i += 1
-            # reduce calls to traci to 1 per sim min to improve performance
-            if not i % oneMinute: 
-                flag = traci.simulation.getMinExpectedNumber()
+            simTime += timeDelta
+            # reduce calls to traci to 1 per simulation min to improve performance
+            # flag will always be positive int while there are vehicles no need for else
+            if not simTime % oneMinute: 
+                simActive = traci.simulation.getMinExpectedNumber()
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
@@ -111,7 +113,7 @@ def simulation(x):
         connector.disconnect()
 
         # save stops file
-        stopfilename = exportPath+'stops{:03d}_{:03d}.csv'.format(int(CVP*100), seed)
+        stopfilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         sigTools.writeStops(stopCounter, stopfilename)
 
         timer.stop()
