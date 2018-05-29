@@ -7,7 +7,7 @@ import traci.constants as tc
 
 class CAMChannel(object):
     def __init__(self, jcnPosition, jcnCtrlRegion,
-                 scanRange=250, CAMoverride=False):
+                 scanRange=250, CAMoverride=False, MER=0., noise=False):
         self.TGenCamMin = 0.1 # Min time for CAM generation 10Hz/100ms/0.1sec
         self.TGenCamMax = 1.0 # Max time for CAM generation 1Hz/1000ms/1sec
         self.TGenCamDCC = 0.1 # CAM generation time under channel congestion
@@ -22,6 +22,9 @@ class CAMChannel(object):
         self.transmitData = {} # CAM generated at vehicle T=0
         self.channelData = {} # CAM info in transit T=0.1
         self.receiveData = {} # CAM info at Junction receiver T=0.2
+
+        self.MER = MER  # Message Error Rate
+        self.noise = noise  # Bool whether to add noise
 
         self.scanRange = scanRange
         self.jcnGeometry = (jcnPosition, jcnCtrlRegion)
@@ -60,9 +63,8 @@ class CAMChannel(object):
         RxKeys = self.receiveData.keys()
         for vehID in chanKeys:
             if vehID in RxKeys:
-                x1, y1 = self.receiveData[vehID]['pos']
-                x2, y2 = self.transmitData[vehID]['pos']
-                dx = hypot(x1-x2, y1-y2)
+                dx = sigTools.getDistance(self.receiveData[vehID]['pos'],
+                                          self.transmitData[vehID]['pos'])
                 dh = abs(self.receiveData[vehID]['h'] - self.transmitData[vehID]['h'])
                 dv = abs(self.receiveData[vehID]['v'] - self.transmitData[vehID]['v'])
                 dt = TIME_SEC - self.receiveData[vehID]['Tgen']
