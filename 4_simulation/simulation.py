@@ -31,7 +31,7 @@ def simulation(x):
         stepSize = 0.1
         configFile = model + modelBase + ".sumocfg"
 
-        print('STARTING: {}, {}, Run: {:03d}, AVR: {:03d}%, Date: {}'
+        print('STARTING: {}, {}, Run: {:03d}, CVP: {:03d}%, Date: {}'
               .format(modelName, tlLogic, run, int(CVP*100), time.ctime()))
         sys.stdout.flush()
 
@@ -118,7 +118,7 @@ def simulation(x):
         sigTools.writeStops(stopCounter, stopfilename)
 
         timer.stop()
-        print('DONE: {}, {}, Run: {:03d}, AVR: {:03d}%, Runtime: {}, Date: {}'
+        print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Runtime: {}, Date: {}'
               .format(modelName, tlLogic, run, int(CVP*100),
                       timer.strTime(), time.ctime()))
         sys.stdout.flush()
