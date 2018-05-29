@@ -4,10 +4,11 @@
 from math import hypot
 import signalTools as sigTools
 import traci.constants as tc
+import numpy as np
 
 class CAMChannel(object):
     def __init__(self, jcnPosition, jcnCtrlRegion,
-                 scanRange=250, CAMoverride=False, MER=0., noise=False):
+                 scanRange=250, CAMoverride=False, PER=0., noise=False):
         self.TGenCamMin = 0.1 # Min time for CAM generation 10Hz/100ms/0.1sec
         self.TGenCamMax = 1.0 # Max time for CAM generation 1Hz/1000ms/1sec
         self.TGenCamDCC = 0.1 # CAM generation time under channel congestion
@@ -23,7 +24,8 @@ class CAMChannel(object):
         self.channelData = {} # CAM info in transit T=0.1
         self.receiveData = {} # CAM info at Junction receiver T=0.2
 
-        self.MER = MER  # Message Error Rate
+        self.random = np.random.RandomState(1)
+        self.PER = PER  # Packet Error Rate
         self.noise = noise  # Bool whether to add noise
 
         self.scanRange = scanRange
@@ -62,6 +64,11 @@ class CAMChannel(object):
         chanKeys = self.transmitData.keys()
         RxKeys = self.receiveData.keys()
         for vehID in chanKeys:
+            # if packet error do not update channel
+            if self.isPktError():
+                continue
+
+            # else update channel
             if vehID in RxKeys:
                 dx = sigTools.getDistance(self.receiveData[vehID]['pos'],
                                           self.transmitData[vehID]['pos'])
@@ -79,17 +86,15 @@ class CAMChannel(object):
             if (dx > 4 or dh > 4 or dv > 0.5) and dt >= self.TGenCamDCC:
                 self.channelData[vehID] = self.transmitData[vehID].copy()
                 self.channelData[vehID]['NGC'] = 0
-                #if vehID == '8': print('C1')
             # CAM trigger condition 2 - data to channel, NGC++
             elif dt >= self.TGenCamDCC or dt >= TGenCam:
                 self.channelData[vehID] = self.transmitData[vehID].copy()
                 self.channelData[vehID]['NGC'] += 1
-                #if vehID == '8': print('C2', self.channelData[vehID]['NGC'], dt, TGenCam)
             # No change in CAM information, same as what was previously on channel
             else:
-                self.channelData[vehID] = self.receiveData[vehID].copy()
-                #if vehID == '8': print('NOCH')
-                
+                # self.channelData[vehID] = self.receiveData[vehID].copy()
+                # RX = CH so we don't need to copy
+                continue
 
         # Get new data for transmission from the vehicles
         self.transmitData = {}
@@ -102,6 +107,9 @@ class CAMChannel(object):
                     continue
                 # check the sub result has vehicle data (not loop data)
                 vehPosition = vehicleData[vehID][tc.VAR_POSITION]
+                if self.noise:
+                    vehPosition = self.addGPSNoise(vehPosition)
+
                 inRange = sigTools.isInRange(vehPosition, self.scanRange,
                                              self.jcnGeometry)
                 if inRange:
@@ -116,3 +124,11 @@ class CAMChannel(object):
                                                 'v': vehVelocity,
                                                 'Tgen': TIME_SEC,
                                                 'NGC': nextNGC}
+
+    def isPktError(self):
+        return self.random.random_sample() < self.PER
+
+    def addGPSNoise(self, coord):
+        # 99.7% data within 3 sigma (std. dev) 5/3 ~ 1.67
+        xerr, yerr = self.random.normal(0, 1.67, 2)
+        return coord[0]+xerr, coord[1]+yerr
