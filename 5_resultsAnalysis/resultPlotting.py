@@ -60,7 +60,9 @@ lineStyle = {'VA': '^k',
              'HVA': 'oC3'}
 
 data = pd.read_csv('/hardmem/results_test/allTripInfo.csv')
-data['PI'] = data['delay'] + data['stops']
+W = 1.0  # delay cost per second
+K = 1.0  # cost per stop
+data['PI'] = W*data['delay'] + K*data['stops']
 models = ['sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
 controllers = ['fixedTime', 'GPSVA']
 figuresPDF = PdfPages('figures.pdf')
