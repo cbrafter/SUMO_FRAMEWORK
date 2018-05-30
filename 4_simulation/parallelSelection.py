@@ -25,8 +25,7 @@ CAVratios = np.linspace(0, 1, 11)
 if len(sys.argv) >= 3:
     runArgs = sys.argv[1:3]
     runArgs = [int(arg) for arg in runArgs]
-    runArgs.sort()
-    runStart, runEnd = runArgs
+    runStart, runEnd = sorted(runArgs)
 else:
     runStart, runEnd = [1, 11]
 
@@ -44,11 +43,12 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-#configs = list(itertools.product(models, tlControllers[:1], CAVratios[:1], runIDs))
-configs = list(itertools.product(models[:1],
-                                 tlControllers[:1],
-                                 CAVratios[:1],
-                                 runIDs[:2]))
+configs = list(itertools.product(models[3:],
+                                 tlControllers[1:2],
+                                 CAVratios[:8],
+                                 runIDs))
+# run in descending CAV ratio
+configs = sorted(configs, key=lambda x: x[2], reverse=True)
 print('# simulations: '+str(len(configs)))
 
 # nproc = sigTools.getNproc('best')
@@ -57,18 +57,20 @@ print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
 # Run simualtions in parallel
-result = workpool.map(simulation, configs, chunksize=1)
-# remove spawned model copies
-for rmdir in glob('../2_models/*_*'):
-    if os.path.isdir(rmdir):
-        shutil.rmtree(rmdir)
-
-timer.stop()
-# Inform of failed expermiments
-if all(result):
-    print('Simulations complete, no errors, exectime: '+timer.strTime())
-else:
-    print('Failed Experiment Runs:')
-    for i, j in zip(configs, result):
-        if not j:
-            print(i)
+try:
+    result = workpool.map(simulation, configs, chunksize=1)
+finally:
+    # remove spawned model copies
+    for rmdir in glob('../2_models/*_*'):
+        if os.path.isdir(rmdir):
+            shutil.rmtree(rmdir)
+    timer.stop()
+    # Inform of failed expermiments
+    if all([r[0] for r in result]):
+        print('Simulations complete, no errors, exectime: '+timer.strTime())
+    else:
+        print('Simulations aborted, exectime: '+timer.strTime())
+        print('Failed Experiment Runs:')
+        for r in result:
+            if not r[0]:
+                print(r[1])
