@@ -108,7 +108,7 @@ def simulation(x):
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
                     connector.disconnect()
-                    raise RuntimeError("RuntimeError: GRIDLOCK")
+                    raise RuntimeError("RuntimeError: TIMEOUT/GRIDLOCK")
 
         # Disconnect from current configuration
         connector.disconnect()
@@ -122,13 +122,13 @@ def simulation(x):
               .format(modelName, tlLogic, run, int(CVP*100),
                       timer.strTime(), time.ctime()))
         sys.stdout.flush()
-        return True
+        return (True, x)
     except Exception as e:
         # Print if an experiment fails and provide repr of params to repeat run
         timer.stop()
         print('***FAILURE '+timer.strTime()+', '+time.ctime()+'*** '+repr(x))
         print(str(e))
         sys.stdout.flush()
-        return False
+        return (False, x)
     finally:
         sys.stdout.flush()
