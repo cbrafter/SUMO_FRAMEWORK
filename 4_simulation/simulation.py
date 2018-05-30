@@ -23,7 +23,8 @@ def simulation(x):
         timer.start()
         # Define Simulation Params
         modelName, tlLogic, CVP, run = x
-        modelBase  = modelName if 'selly' not in modelName else modelName.split('_')[0]
+        # split returns list so whether or not selly in name right base given 
+        modelBase = modelName.split('_')[0]
         procID = int(mp.current_process().name[-1])
         model = '../2_models/{}_{}/'.format(modelBase, procID)
         simport = 8812 + procID

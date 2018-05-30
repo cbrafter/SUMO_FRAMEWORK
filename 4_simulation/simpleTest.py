@@ -31,10 +31,10 @@ timer = sigTools.simTimer()
 timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-controller = fixedTimeControl.fixedTimeControl
+#controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'twinT'
-modelBase  = modelname if 'selly' not in modelname else modelname.split('_')[0]
+modelname = 'simpleT'
+modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
@@ -57,7 +57,7 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=True, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 

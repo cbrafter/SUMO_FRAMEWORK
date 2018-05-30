@@ -15,11 +15,8 @@ def sumoConfigGen(modelname='simpleT',
                   run=0,
                   port=8813,
                   seed=23423):
-    if 'selly' in modelname:
         routename = modelname
         modelname = modelname.split('_')[0]
-    else:
-        routename = modelname
     configData = """<configuration>
     <input>
         <net-file value="{model}.net.xml"/>
