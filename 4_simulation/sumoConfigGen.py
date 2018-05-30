@@ -49,7 +49,7 @@ def sumoConfigGen(modelname='simpleT',
     </random_number>
     <report>
         <no-step-log value="true"/>
-        <error-log value="logfile.txt"/>
+        <!--error-log value="logfile.txt"/-->
     </report>
     <traci_server>
         <remote-port value="{SUMOport}"/>
