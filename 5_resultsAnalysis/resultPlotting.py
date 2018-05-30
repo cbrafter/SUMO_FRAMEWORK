@@ -60,6 +60,7 @@ lineStyle = {'VA': '^k',
              'HVA': 'oC3'}
 
 data = pd.read_csv('/hardmem/results_test/allTripInfo.csv')
+data['PI'] = data['delay'] + data['stops']
 models = ['sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
 controllers = ['fixedTime', 'GPSVA']
 figuresPDF = PdfPages('figures.pdf')
