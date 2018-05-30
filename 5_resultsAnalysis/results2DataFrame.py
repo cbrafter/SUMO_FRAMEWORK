@@ -10,6 +10,7 @@ from glob import glob
 import multiprocessing as mp
 from freeflows import freeflows
 import sys
+import os
 
 
 def convertTripData(data):
@@ -31,8 +32,7 @@ def filtervType(x):
 
 def getDelay(vType, netModel, origin, destination, journeyTime):
     try:
-        model = netModel if 'selly' not in netModel \
-                         else netModel.split('_')[0]
+        model = netModel.split('_')[0]
         freeflowTime = freeflows.getTime(vType, model,
                                          origin, destination)
         assert freeflowTime is not None
@@ -41,14 +41,25 @@ def getDelay(vType, netModel, origin, destination, journeyTime):
         return -1
 
 
+def getStopInfo(fname):
+    path, file = os.path.split(fname)
+    stopfile = re.sub('tripinfo', 'stops', file)
+    stopfile = re.sub('xml', 'csv', file)
+    stopfile = os.path.join(path, stopfile)
+    df = pd.read_csv(stopfile, dtype={'vehID':str, 'stops':int})
+    df.set_index('vehID', inplace=True)
+    return df.to_dict()['stops']
+
+
 def parser(fileName):
     controller, model, fileTxt = fileName.split('/')[-3:]
+    stopDict = getStopInfo(fileName)
     # print('PARSING: '+fileName)
     sys.stdout.flush()
     run, cvp = [int(x) for x in re.match('.+?R(.+?)_CVP(.+?).xml',
                                          fileTxt).groups()]
 
-    regex = '<tripinfo .+? depart="(.+?)" departLane="(.+?)" .+? ' + \
+    regex = '<tripinfo id="(.+?)" depart="(.+?)" departLane="(.+?)" .+? ' + \
             'departDelay="(.+?)" arrival="(.+?)" arrivalLane="(.+?)" ' + \
             '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
             'timeLoss="(.+?)" .+? vType="(.+?)" speedFactor="(.+?)" .+?/>'
@@ -60,7 +71,8 @@ def parser(fileName):
         data = regex.match(line.strip())
         if data is None:
             continue
-        data = convertTripData(data.groups())
+        vID = data.groups()[0]
+        data = convertTripData(data.groups()[1:])
         depart, origin, departDelay, arrival, destination,\
             duration, routeLength, timeLoss, vType,\
             speedFactor = data
@@ -78,7 +90,7 @@ def parser(fileName):
         data = [controller, model, run, cvp, depart, origin,
                 departDelay, arrival, destination, duration,
                 routeLength, timeLoss, vType, speedFactor,
-                journeyTime, connected, delay]
+                journeyTime, connected, delay, stopDict[vID]]
         data = ','.join(str(x) for x in data) + '\n'
         results.append(data)
     file.close()
@@ -88,7 +100,7 @@ dataFolder = '/hardmem/results_test/'
 outputCSV = dataFolder + 'allTripInfo.csv'
 
 # recursive glob using ** notation to expand folders
-resultFiles = glob(dataFolder+'**/*.xml', recursive=True)
+resultFiles = glob(dataFolder+'**/tripinfo*.xml', recursive=True)
 resultFiles.sort()
 # resultFiles = [x for x in resultFiles if 'GPSVA/sellyOak_hi' not in x]
 print('~Parsing Tripfiles~')
@@ -104,7 +116,7 @@ with open(outputCSV, 'w') as ofile:
     cols = ['controller', 'model', 'run', 'cvp', "depart", "origin",
             "departDelay", "arrival", "destination", "duration",
             "routeLength", "timeLoss", "vType", "speedFactor",
-            "journeyTime", "connected", "delay"]
+            "journeyTime", "connected", "delay", "stops"]
     ofile.write(','.join(cols) + '\n')
     for line in resultData:
         ofile.write(line)
