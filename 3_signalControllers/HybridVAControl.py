@@ -94,12 +94,12 @@ class HybridVAControl(signalControl.signalControl):
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         #if self.junctionData.id == 'b2': print elapsedTime
-        if Tremaining < 1:
+        if Tremaining <= 1:
             # get loop extend
             if self.loopIO:
                 loopExtend = self.getLoopExtension()
             else:
-                loopExtend = 0.0
+                loopExtend = None
             
             # get GPS extend
             if self.numCAVs > 0:
@@ -119,9 +119,15 @@ class HybridVAControl(signalControl.signalControl):
                 updateTime = max(0.0, fixedTime-elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
-        elif elapsedTime <= 0.1 and self.numCAVs > 0:
+        elif elapsedTime <= 0.11 and self.numCAVs > 0:
             queueExtend = self.getQueueExtension()
             self.updateStageTime(queueExtend)
+            # print(self.junctionData.id, self.stageTime)
+        # run GPS extend only to check if queue cancelation needed
+        elif elapsedTime > self.minGreenTime\
+          and np.isclose(elapsedTime%2.5, 0., atol=0.05) and self.numCAVs > 0:
+            # print('checking')
+            gpsExtend = self.getGPSextension()
         # process stage as normal
         else:
             pass
@@ -153,11 +159,20 @@ class HybridVAControl(signalControl.signalControl):
         self.subResults = traci.junction.getContextSubscriptionResults(self.junctionData.id)
 
     def updateStageTime(self, updateTime):
+        # update time is the seconds to add
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         self.stageTime = elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
+
+    def cancelQueueExtend(self):
+        # cancels queue extend if traffic queue can't move
+        elapsedTime = self.getElapsedTime()
+        if elapsedTime >= self.minGreenTime:
+            # x = self.stageTime
+            self.stageTime = elapsedTime
+            # print(self.junctionData.id, x, self.stageTime)
 
     def getElapsedTime(self):
         return 0.001*(self.TIME_MS - self.lastCalled)
@@ -411,6 +426,8 @@ class HybridVAControl(signalControl.signalControl):
                 if gpsExtend > 2*self.threshold:
                     gpsExtend = 0.0
             else:
+                # light green but queue not moving
+                self.cancelQueueExtend()
                 gpsExtend = 0.0
         # no detectable vehicle near
         else:
