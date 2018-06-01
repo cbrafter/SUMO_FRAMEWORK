@@ -85,12 +85,14 @@ def simulation(x):
                 controllerList.append(tlController(junction))
 
         # Step simulation while there are vehicles
+        # Step simulation while there are vehicles
         simTime, simActive = 0, True
-        timeLimit = 11*60*60  # 10 hours in seconds for time limit
+        timeLimit = 1*60*60  # 1 hours in seconds for time limit
+        limitExtend = 15*60 # check again in 20 mins if things seem ok
         subKey = sigTools.stopSubscription()
         stopCounter = sigTools.stopDict()
         timeDelta = int(1000*stepSize)
-        oneMinute = 60000  # one minute in simulation 60sec im msec
+        oneMinute = 60*1000  # one minute in simulation 60sec im msec
 
         # Flush print buffer
         sys.stdout.flush()
@@ -108,8 +110,11 @@ def simulation(x):
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
-                    connector.disconnect()
-                    raise RuntimeError("RuntimeError: TIMEOUT/GRIDLOCK")
+                    if sigTools.isSimGridlocked(modelBase, simTime):
+                        connector.disconnect()
+                        raise RuntimeError("RuntimeError: GRIDLOCK")
+                    else:
+                        timeLimit += limitExtend
 
         # Disconnect from current configuration
         connector.disconnect()
