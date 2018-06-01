@@ -245,3 +245,24 @@ def getNproc(mode='best'):
         return max(1, int(physical/2.))
     else:
         return 1
+
+
+def isSimGridlocked(model, timeMS):
+    timeHours = timeMS/3600000.0
+    forceSimEndTime = 36.0 if 'selly' in model else 6.0
+    if timeHours >= forceSimEndTime:
+        print('TIMEOUT: {} >= {} on {}'.format(timeHours, forceSimEndTime, model))
+        return True
+
+    vehIDs = traci.vehicle.getIDList()
+    isStationary = []
+    isWaiting = []
+    for vID in vehIDs:
+        isStationary.append(traci.vehicle.getSpeed(vID) < 0.1)
+        # vehicle is waiting too long if all cycles complete and still blocked
+        isWaiting.append(traci.vehicle.getWaitingTime(vID) > 500.0)
+    if all(isStationary) and all(isWaiting):
+        print('GRIDLOCK: all vehicles stationary')
+        return True
+    else:
+        return False
