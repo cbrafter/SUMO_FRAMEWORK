@@ -45,10 +45,17 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
 # Test configurations
 configs = list(itertools.product(models[3:],
                                  tlControllers[1:2],
-                                 CAVratios[:8],
+                                 CAVratios,
                                  runIDs))
-# run in descending CAV ratio
 configs = sorted(configs, key=lambda x: x[2], reverse=True)
+configs += sorted(list(itertools.product(models[3:],
+                                 tlControllers[2:],
+                                 CAVratios,
+                                 runIDs)),
+                  key=lambda x: x[2], reverse=True)
+
+#configs += list(itertools.product(['corridor'],['GPSVA', 'HVAslow'], CAVratios[4:9], runIDs))
+# run in descending CAV ratio
 print('# simulations: '+str(len(configs)))
 
 # nproc = sigTools.getNproc('best')

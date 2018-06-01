@@ -33,13 +33,13 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'simpleT'
+modelname = 'corridor'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
 CVP = np.linspace(0, 1, 11)[8]
-seed = 2
+seed = 1
 
 ctrl = str(controller).split('.')[1][:-2]
 print('STARTING: {}, {}, Run: {:03d}, AVR: {:03d}%, Date: {}'
@@ -72,7 +72,7 @@ maxGreenTime = 60
 for junction in junctionsList:
     if controller == HybridVAControl.HybridVAControl:
         print('YURT')
-        controllerList.append(controller(junction, loopIO=True, model=modelBase))
+        controllerList.append(controller(junction, loopIO=False, model=modelBase))
     else:
         print('YIP')
         controllerList.append(controller(junction))
@@ -86,11 +86,13 @@ juncIDs = traci.trafficlights.getIDList()
 
 # Step simulation while there are vehicles
 simTime, simActive = 0, True
-timeLimit = 3*60*60  # 10 hours in seconds for time limit
+# limit and extend are per 2.5 minute in test
+timeLimit = 2.5*60  # 1 hours in seconds for time limit
+limitExtend = 2.5*60 # check again in 20 mins if things seem ok
 subKey = sigTools.stopSubscription()
 stopCounter = sigTools.stopDict()
 timeDelta = int(1000*stepSize)
-oneMinute = 60000  # one minute in simulation 60sec im msec
+oneMinute = 60*1000  # one minute in simulation 60sec im msec
 '''
 subJunc = controllerList[0].junctionData.id
 traci.junction.subscribeContext(subJunc, 
@@ -119,8 +121,12 @@ while simActive:
         # stop sim to free resources if taking longer than ~10 hours
         # i.e. the sim is gridlocked
         if timer.runtime() > timeLimit:
-            connector.disconnect()
-            raise RuntimeError("RuntimeError: GRIDLOCK")
+            if sigTools.isSimGridlocked(modelBase, simTime):
+                connector.disconnect()
+                raise RuntimeError("RuntimeError: GRIDLOCK")
+            else:
+                print('EXTENDING')
+                timeLimit += limitExtend
 
 stopfilename = './test_results/stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
 sigTools.writeStops(stopCounter, stopfilename)
