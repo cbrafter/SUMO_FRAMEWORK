@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Tue 01 May 2018 11:23:48 BST by Netedit Version 0.28.0
+<!-- generated on Mon 04 Jun 2018 15:51:12 BST by Netedit Version 0.28.0
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netedit.exeConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="../2_models/sellyOak/sellyOak.net.xml"/>
+        <sumo-net-file value="2_models/sellyOak/sellyOak.net.xml"/>
     </input>
 
     <output>
-        <output-file value="../2_models/sellyOak/sellyOak.net.xml"/>
+        <output-file value="2_models/sellyOak/sellyOak.net.xml"/>
     </output>
 
     <processing>
@@ -114,12 +114,12 @@
         <lane id=":junc10_9_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="30.87" shape="518.78,741.42 535.97,766.89"/>
     </edge>
     <edge id=":junc11_0" function="internal">
-        <lane id=":junc11_0_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="35.64" shape="586.35,835.14 581.16,830.62 572.24,824.45 563.06,818.58 557.07,814.92"/>
+        <lane id=":junc11_0_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="37.71" shape="587.63,836.92 582.23,832.12 572.88,825.34 563.26,818.85 557.07,814.92"/>
     </edge>
     <edge id=":junc11_1" function="internal">
-        <lane id=":junc11_1_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="42.40" shape="559.68,812.17 583.14,847.67"/>
-        <lane id=":junc11_1_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="42.40" shape="562.43,810.34 585.80,845.71"/>
-        <lane id=":junc11_1_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="42.40" shape="565.17,808.51 588.47,843.75"/>
+        <lane id=":junc11_1_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="44.59" shape="559.68,812.17 584.43,849.44"/>
+        <lane id=":junc11_1_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="44.59" shape="562.43,810.34 587.09,847.48"/>
+        <lane id=":junc11_1_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="44.59" shape="565.17,808.51 589.75,845.53"/>
     </edge>
     <edge id=":junc12_0" function="internal">
         <lane id=":junc12_0_0" index="0" speed="13.41" length="10.57" shape="2763.37,2552.43 2760.12,2553.39 2757.65,2553.67 2755.93,2553.28 2754.98,2552.21"/>
@@ -868,9 +868,9 @@
         <lane id=":node17_3_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="17.81" length="7.97" shape="2446.03,2065.65 2447.46,2066.01 2449.03,2065.57 2450.74,2064.34 2452.60,2062.30"/>
     </edge>
     <edge id=":node170_0" function="internal">
-        <lane id=":node170_0_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="0.65" shape="618.75,903.79 619.39,904.67"/>
-        <lane id=":node170_0_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="0.65" shape="621.54,902.02 621.92,902.55"/>
-        <lane id=":node170_0_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="0.65" shape="624.32,900.26 624.45,900.43"/>
+        <lane id=":node170_0_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="0.27" shape="602.61,877.65 602.81,877.95"/>
+        <lane id=":node170_0_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="0.27" shape="605.39,875.87 605.54,876.09"/>
+        <lane id=":node170_0_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="0.27" shape="608.16,874.08 608.26,874.24"/>
     </edge>
     <edge id=":node171_0" function="internal">
         <lane id=":node171_0_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="20.59" length="5.28" shape="512.36,709.96 507.16,709.03"/>
@@ -1482,10 +1482,7 @@
         <lane id=":node73_6_1" index="1" speed="13.41" length="10.49" shape="1193.45,1572.54 1196.38,1574.08 1197.94,1575.83 1199.01,1578.11 1200.46,1581.29"/>
     </edge>
     <edge id=":node73_8" function="internal">
-        <lane id=":node73_8_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="6.86" shape="1193.45,1572.54 1198.00,1573.69 1200.15,1573.40"/>
-    </edge>
-    <edge id=":node73_9" function="internal">
-        <lane id=":node73_9_0" index="0" speed="11.18" length="9.56" shape="1200.15,1573.40 1201.74,1573.19 1204.67,1571.06 1206.78,1567.28"/>
+        <lane id=":node73_8_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="16.42" shape="1193.45,1572.54 1198.00,1573.69 1201.74,1573.19 1204.67,1571.06 1206.78,1567.28"/>
     </edge>
     <edge id=":node74_0" function="internal">
         <lane id=":node74_0_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1169.01,1555.76 1165.00,1557.72"/>
@@ -2127,15 +2124,15 @@
     <edge id="edge21" from="node32" to="node31" priority="4" type="highway.residential" shape="856.38,1617.84 816.83,1612.19 813.54,1610.85 812.04,1605.08 796.91,1523.82 798.30,1516.22 861.71,1464.23">
         <lane id="edge21_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="8.94" length="212.05" shape="855.16,1616.00 817.26,1610.59 814.93,1609.63 813.65,1604.72 798.59,1523.82 799.81,1517.11 859.40,1468.26"/>
     </edge>
-    <edge id="edge210" from="junc11" to="node170" priority="10" type="highway.trunk_link" spreadType="center" shape="570.86,823.02 576.05,830.08 577.03,831.88 621.71,902.30">
-        <lane id="edge210_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="66.69" shape="583.14,847.67 618.75,903.79"/>
-        <lane id="edge210_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="66.69" shape="585.80,845.71 621.54,902.02"/>
-        <lane id="edge210_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="66.69" shape="588.47,843.75 624.32,900.26"/>
+    <edge id="edge210" from="junc11" to="node170" priority="10" type="highway.trunk_link" spreadType="center" shape="570.86,823.02 576.05,830.08 577.03,831.88 605.46,875.98">
+        <lane id="edge210_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="33.77" shape="584.43,849.44 602.61,877.65"/>
+        <lane id="edge210_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="33.77" shape="587.09,847.48 605.39,875.87"/>
+        <lane id="edge210_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="33.77" shape="589.75,845.53 608.16,874.08"/>
     </edge>
-    <edge id="edge211" from="node170" to="junc9" priority="10" type="highway.trunk_link" spreadType="center" shape="621.71,902.30 630.35,912.59 643.29,934.50">
-        <lane id="edge211_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="29.20" shape="619.39,904.67 627.65,914.50 635.71,928.15"/>
-        <lane id="edge211_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="29.20" shape="621.92,902.55 630.35,912.59 638.53,926.44"/>
-        <lane id="edge211_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="29.20" shape="624.45,900.43 633.05,910.68 641.35,924.73"/>
+    <edge id="edge211" from="node170" to="junc9" priority="10" type="highway.trunk_link" spreadType="center" shape="605.46,875.98 630.35,912.59 643.29,934.50">
+        <lane id="edge211_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="60.22" shape="602.81,877.95 627.56,914.36 635.71,928.15"/>
+        <lane id="edge211_1" index="1" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="60.22" shape="605.54,876.09 630.35,912.59 638.53,926.44"/>
+        <lane id="edge211_2" index="2" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="60.22" shape="608.26,874.24 633.14,910.82 641.35,924.73"/>
     </edge>
     <edge id="edge212" from="junc10" to="node171" priority="11" type="highway.trunk" spreadType="center" shape="534.60,753.96 519.25,730.55 500.79,706.52">
         <lane id="edge212_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="28.13" shape="526.85,736.12 521.94,728.64 510.11,713.23"/>
@@ -2405,7 +2402,7 @@
         <lane id="edge280_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="8.94" length="18.52" shape="850.92,1100.62 862.69,1086.32"/>
     </edge>
     <edge id="edge281" from="node167" to="junc11" priority="10" type="highway.trunk_link" spreadType="center" shape="628.04,890.04 623.13,885.20 619.26,881.72 602.64,857.92 581.55,828.42 572.29,814.18 570.86,823.02">
-        <lane id="edge281_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="21.03" shape="598.58,852.24 586.35,835.14"/>
+        <lane id="edge281_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="18.84" shape="598.58,852.24 587.63,836.92"/>
     </edge>
     <edge id="edge282" from="junc11" to="node152" priority="10" type="highway.trunk_link" spreadType="center" shape="570.86,823.02 544.80,807.71 529.86,810.61 507.94,819.75">
         <lane id="edge282_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="45.92" shape="557.07,814.92 544.80,807.71 529.86,810.61 514.66,816.95"/>
@@ -3045,7 +3042,7 @@
         <request index="10" response="000000000000" foes="000000001111" cont="0"/>
         <request index="11" response="000000000000" foes="000000001111" cont="0"/>
     </junction>
-    <junction id="junc11" type="traffic_light" x="570.86" y="823.02" incLanes="edge281_0 edge209_0 edge209_1 edge209_2" intLanes=":junc11_0_0 :junc11_1_0 :junc11_1_1 :junc11_1_2" shape="582.87,827.52 589.83,842.75 581.85,848.62 556.26,816.30 557.88,813.54 558.35,813.05 566.51,807.62">
+    <junction id="junc11" type="traffic_light" x="570.86" y="823.02" incLanes="edge281_0 edge209_0 edge209_1 edge209_2" intLanes=":junc11_0_0 :junc11_1_0 :junc11_1_1 :junc11_1_2" shape="584.15,829.30 591.10,844.53 583.13,850.39 556.26,816.30 557.88,813.54 558.35,813.05 566.51,807.62">
         <request index="0" response="1110" foes="1110" cont="0"/>
         <request index="1" response="0000" foes="0001" cont="0"/>
         <request index="2" response="0000" foes="0001" cont="0"/>
@@ -3426,7 +3423,7 @@
         <request index="2" response="0000" foes="1001" cont="0"/>
         <request index="3" response="0111" foes="0111" cont="0"/>
     </junction>
-    <junction id="node170" type="priority" x="621.71" y="902.30" incLanes="edge210_0 edge210_1 edge210_2" intLanes=":node170_0_0 :node170_0_1 :node170_0_2" shape="625.67,899.40 618.17,905.70 617.40,904.65">
+    <junction id="node170" type="priority" x="605.46" y="875.98" incLanes="edge210_0 edge210_1 edge210_2" intLanes=":node170_0_0 :node170_0_1 :node170_0_2" shape="609.59,873.34 601.48,878.85 601.27,878.52 609.51,873.21">
         <request index="0" response="000" foes="000" cont="0"/>
         <request index="1" response="000" foes="000" cont="0"/>
         <request index="2" response="000" foes="000" cont="0"/>
@@ -3657,17 +3654,7 @@
         <request index="4" response="000000" foes="000010" cont="0"/>
         <request index="5" response="001100" foes="001110" cont="1"/>
     </junction>
-    <junction id="node73" type="priority" x="1202.41" y="1574.32" incLanes="edge90_0 edge3112_0 edge3113_0 edge229_0 edge229_1" intLanes=":node73_0_0 :node73_1_0 :node73_2_0 :node73_3_0 :node73_4_0 :node73_5_0 :node73_6_0 :node73_6_1 :node73_9_0" shape="1202.19,1565.57 1208.28,1567.83 1209.64,1573.77 1208.43,1576.73 1207.73,1577.49 1196.12,1583.55 1191.64,1577.10 1196.47,1564.92">
-        <request index="0" response="000001000" foes="000101000" cont="0"/>
-        <request index="1" response="111001000" foes="111101000" cont="0"/>
-        <request index="2" response="000000000" foes="100010000" cont="0"/>
-        <request index="3" response="000000000" foes="100110011" cont="0"/>
-        <request index="4" response="100001100" foes="100001100" cont="0"/>
-        <request index="5" response="100001011" foes="100001011" cont="0"/>
-        <request index="6" response="000000000" foes="000000010" cont="0"/>
-        <request index="7" response="000000000" foes="000000010" cont="0"/>
-        <request index="8" response="000001100" foes="001111110" cont="1"/>
-    </junction>
+    <junction id="node73" type="unregulated" x="1202.41" y="1574.32" incLanes="edge90_0 edge3112_0 edge3113_0 edge229_0 edge229_1" intLanes=":node73_0_0 :node73_1_0 :node73_2_0 :node73_3_0 :node73_4_0 :node73_5_0 :node73_6_0 :node73_6_1 :node73_8_0" shape="1202.19,1565.57 1208.28,1567.83 1209.64,1573.77 1208.43,1576.73 1207.73,1577.49 1196.12,1583.55 1191.64,1577.10 1196.47,1564.92"/>
     <junction id="node74" type="right_before_left" x="1165.79" y="1559.81" incLanes="edge55_0 edge55_1 edge228_0" intLanes=":node74_0_0 :node74_0_1 :node74_2_0 :node74_2_1" shape="1169.60,1554.27 1164.77,1566.45 1163.20,1562.28 1165.59,1556.24">
         <request index="0" response="0000" foes="0010" cont="0"/>
         <request index="1" response="0001" foes="0001" cont="0"/>
@@ -3755,7 +3742,6 @@
     <junction id=":node5_13_0" type="internal" x="1002.00" y="1482.01" incLanes=":node5_11_0 edge53_0" intLanes=":node5_1_0 :node5_2_0 :node5_3_0 :node5_4_0 :node5_7_0 :node5_8_0"/>
     <junction id=":node63_7_0" type="internal" x="2638.09" y="2307.93" incLanes=":node63_1_0 edge220_0 edge220_1" intLanes=":node63_3_0 :node63_4_0 :node63_5_0 :node63_5_1"/>
     <junction id=":node72_6_0" type="internal" x="1121.41" y="1542.21" incLanes=":node72_5_0 edge56_0" intLanes=":node72_1_0 :node72_2_0 :node72_3_0"/>
-    <junction id=":node73_9_0" type="internal" x="1200.15" y="1573.40" incLanes=":node73_8_0 edge3112_0" intLanes=":node73_1_0 :node73_2_0 :node73_3_0 :node73_4_0 :node73_5_0"/>
     <junction id=":node89_6_0" type="internal" x="1386.71" y="1472.35" incLanes=":node89_3_0 edge262_0" intLanes=":node89_0_0 :node89_1_0 :node89_5_0"/>
     <junction id=":node98_6_0" type="internal" x="1140.94" y="1202.95" incLanes=":node98_3_0 edge125_0" intLanes=":node98_0_0 :node98_1_0 :node98_5_0"/>
 
@@ -4056,7 +4042,7 @@
     <connection from="edge228" to="edge229" fromLane="0" toLane="1" via=":node74_2_1" dir="s" state="="/>
     <connection from="edge229" to="edge103" fromLane="0" toLane="0" via=":node73_6_0" dir="s" state="M"/>
     <connection from="edge229" to="edge103" fromLane="1" toLane="1" via=":node73_6_1" dir="s" state="M"/>
-    <connection from="edge229" to="edge286" fromLane="1" toLane="0" via=":node73_8_0" dir="r" state="m"/>
+    <connection from="edge229" to="edge286" fromLane="1" toLane="0" via=":node73_8_0" dir="r" state="M"/>
     <connection from="edge23" to="edge167" fromLane="0" toLane="0" via=":node31_4_0" dir="l" state="m"/>
     <connection from="edge23" to="edge20" fromLane="0" toLane="0" via=":node31_5_0" dir="r" state="m"/>
     <connection from="edge230" to="edge231" fromLane="0" toLane="0" via=":node75_2_0" dir="s" state="M"/>
@@ -4232,8 +4218,8 @@
     <connection from="edge311" to="edge302" fromLane="0" toLane="1" via=":node183_0_0" dir="r" state="M"/>
     <connection from="edge3112" to="edge286" fromLane="0" toLane="0" via=":node73_2_0" dir="l" state="M"/>
     <connection from="edge3112" to="edge55" fromLane="0" toLane="1" via=":node73_3_0" dir="s" state="M"/>
-    <connection from="edge3113" to="edge286" fromLane="0" toLane="0" via=":node73_4_0" dir="l" state="m"/>
-    <connection from="edge3113" to="edge55" fromLane="0" toLane="1" via=":node73_5_0" dir="s" state="m"/>
+    <connection from="edge3113" to="edge286" fromLane="0" toLane="0" via=":node73_4_0" dir="l" state="M"/>
+    <connection from="edge3113" to="edge55" fromLane="0" toLane="1" via=":node73_5_0" dir="s" state="M"/>
     <connection from="edge3116" to="edge137" fromLane="0" toLane="0" via=":node142_0_0" dir="s" state="M"/>
     <connection from="edge3119" to="edge3117" fromLane="0" toLane="0" via=":junc5_10_0" tl="junc5" linkIndex="10" dir="l" state="o"/>
     <connection from="edge3119" to="edge234" fromLane="0" toLane="0" via=":junc5_11_0" tl="junc5" linkIndex="11" dir="s" state="o"/>
@@ -4419,8 +4405,8 @@
     <connection from="edge89" to="edge54" fromLane="0" toLane="0" via=":node72_0_0" dir="l" state="m"/>
     <connection from="edge89" to="edge228" fromLane="0" toLane="0" via=":node72_1_0" dir="r" state="m"/>
     <connection from="edge9" to="edge291" fromLane="0" toLane="1" via=":node15_3_0" dir="r" state="m"/>
-    <connection from="edge90" to="edge55" fromLane="0" toLane="0" via=":node73_0_0" dir="l" state="m"/>
-    <connection from="edge90" to="edge103" fromLane="0" toLane="1" via=":node73_1_0" dir="r" state="m"/>
+    <connection from="edge90" to="edge55" fromLane="0" toLane="0" via=":node73_0_0" dir="l" state="M"/>
+    <connection from="edge90" to="edge103" fromLane="0" toLane="1" via=":node73_1_0" dir="r" state="M"/>
     <connection from="edge91" to="edge90" fromLane="0" toLane="0" via=":node91_0_0" dir="s" state="="/>
     <connection from="edge91" to="edge269" fromLane="0" toLane="0" via=":node91_1_0" dir="r" state="="/>
     <connection from="edge92" to="edge39" fromLane="0" toLane="0" via=":junc0_0_0" tl="junc0" linkIndex="0" dir="l" state="o"/>
@@ -5057,8 +5043,7 @@
     <connection from=":node73_5" to="edge55" fromLane="0" toLane="1" dir="s" state="M"/>
     <connection from=":node73_6" to="edge103" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node73_6" to="edge103" fromLane="1" toLane="1" dir="s" state="M"/>
-    <connection from=":node73_8" to="edge286" fromLane="0" toLane="0" via=":node73_9_0" dir="s" state="m"/>
-    <connection from=":node73_9" to="edge286" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":node73_8" to="edge286" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node74_0" to="edge56" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node74_0" to="edge56" fromLane="1" toLane="0" dir="s" state="M"/>
     <connection from=":node74_2" to="edge229" fromLane="0" toLane="0" dir="s" state="M"/>
