@@ -18,6 +18,7 @@ import numpy as np
 import traci.constants as tc
 import time
 from psutil import cpu_count
+import sys
 
 
 def getIntergreen(dist):
@@ -80,13 +81,13 @@ def mean(x):
 
 
 def getIncomingLaneInfo(controlledLanes):
-    laneInfo = defaultdict(list) 
+    laneInfo = {}
     for lane in unique(controlledLanes):
         shape = traci.lane.getShape(lane)
         width = traci.lane.getWidth(lane)
-        heading = getSUMOHeading(shape[1], shape[0])
+        heading = getSUMOHeading(shape[-1], shape[0])
         x1, y1 = shape[0]
-        x2, y2 = shape[1]
+        x2, y2 = shape[-1]
         dx = abs(x2 - x1) 
         dy = abs(y2 - y1)
         if dx > dy:
@@ -250,9 +251,7 @@ def getNproc(mode='best'):
 def isSimGridlocked(model, timeMS):
     timeHours = timeMS/3600000.0
     forceSimEndTime = 36.0 if 'selly' in model else 6.0
-    if timeHours >= forceSimEndTime:
-        print('TIMEOUT: {} >= {} on {}'.format(timeHours, forceSimEndTime, model))
-        return True
+
 
     vehIDs = traci.vehicle.getIDList()
     isStationary = []
@@ -261,8 +260,57 @@ def isSimGridlocked(model, timeMS):
         isStationary.append(traci.vehicle.getSpeed(vID) < 0.1)
         # vehicle is waiting too long if all cycles complete and still blocked
         isWaiting.append(traci.vehicle.getWaitingTime(vID) > 500.0)
-    if all(isStationary) and all(isWaiting):
-        print('GRIDLOCK: all vehicles stationary')
+
+    if timeHours >= forceSimEndTime:
+        print('TIMEOUT: {} >= {} on {}'.format(timeHours, forceSimEndTime, model))
+        print('TIMEOUT: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
+        sys.stdout.flush()
+        return True
+    elif all(isStationary) and all(isWaiting):
+        print('GRIDLOCK: all vehicles stationary, Thr: {}'.format(timeHours))
+        print('GRIDLOCK: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
+        sys.stdout.flush()
         return True
     else:
         return False
+
+
+def lane2edge(lanes):
+    if type(lanes) is str:
+        return unique([lanes.split('_')[0]])
+    elif type(lanes) is list:
+        return unique([x.split('_')[0] for x in lanes])
+    else:
+        raise TypeError("lanes not list or string")
+
+def edge2lanes(edges, laneNdict):
+    lanes = []
+    if type(edges) is str:
+        eList = [edges]
+    else:
+        eList = edges
+
+    for edge in eList:
+        for i in range(laneNdict[edge]):
+            lanes.append(edge+'_'+str(i))
+    return lanes
+
+def getLaneNumbers():
+    edges = traci.edge.getIDList()
+    lanes = traci.lane.getIDList()
+    laneNdict = defaultdict(int)
+    for edge in edges:
+        for lane in lanes:
+            if edge == lane.split('_')[0]:
+                laneNdict[edge] += 1
+    return laneNdict
+
+def edgeLaneMap():
+    eldict = defaultdict(list)
+    edges = traci.edge.getIDList()
+    lanes = traci.lane.getIDList()
+    for edge in edges:
+        for lane in lanes:
+            if edge == lane.split('_')[0]:
+                eldict[edge].append(lane)
+    return eldict
