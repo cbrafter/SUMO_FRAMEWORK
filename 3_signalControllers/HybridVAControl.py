@@ -215,11 +215,10 @@ class HybridVAControl(signalControl.signalControl):
         # Oncoming if (in active lane & heading matches oncoming heading & 
         # is in lane bounds)
         vehicles = []
-        edges = self.getActiveEdges()
         targetLanes = []
-        for edge1 in edges:
-            for edge2 in self.controlledEdges[edge1]:
-                targetLanes += self.edgeLaneMap[edge2]
+        for edges in self.getActiveEdges():
+            for edge in self.controlledEdges[edges]:
+                targetLanes += self.edgeLaneMap[edge]
 
         for lane in targetLanes:
             laneHeading = self.allLaneInfo[lane]['heading']
