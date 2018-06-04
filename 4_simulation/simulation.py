@@ -88,7 +88,7 @@ def simulation(x):
         # Step simulation while there are vehicles
         simTime, simActive = 0, True
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
-        limitExtend = 15*60 # check again in 20 mins if things seem ok
+        limitExtend = 15*60 # check again in 15 mins if things seem ok
         subKey = sigTools.stopSubscription()
         stopCounter = sigTools.stopDict()
         timeDelta = int(1000*stepSize)

@@ -31,16 +31,19 @@ class HybridVAControl(signalControl.signalControl):
         self.scanRange = scanRange
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
         self.jcnCtrlRegion = self._getJncCtrlRegion()
+        # self.laneNumDict = sigTools.getLaneNumbers()
         self.controlledLanes = traci.trafficlights.getControlledLanes(self.junctionData.id)
-        # dict[laneID] = [heading, shape]
-        self.laneDetectionInfo = sigTools.getIncomingLaneInfo(self.controlledLanes)
+        # dict[laneID] = {heading; float, shape:((x1,y1),(x2,y2))}
+        # self.laneDetectionInfo = sigTools.getIncomingLaneInfo(self.controlledLanes)
+        self.allLaneInfo = sigTools.getIncomingLaneInfo(traci.lane.getIDList())
+        self.edgeLaneMap = sigTools.edgeLaneMap()
         self.stageTime = 0.0
         self.minGreenTime = 2*self.intergreen
         self.maxGreenTime = 10*self.intergreen
         self.secondsPerMeterTraffic = 0.45
         self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
         self.extendTime = 1.0 # 5 m in 10 m/s (acceptable journey 1.333)
-        self.laneInductors = self.getInductorMap()
+        self.controlledEdges, self.laneInductors = self.getInductorMap()
 
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
@@ -106,7 +109,7 @@ class HybridVAControl(signalControl.signalControl):
                 gpsExtend = self.getGPSextension()
             else:
                 gpsExtend = None
-
+            
             # update stage time
             if loopExtend is not None and gpsExtend is not None:
                 updateTime = max(loopExtend, gpsExtend)
@@ -149,7 +152,7 @@ class HybridVAControl(signalControl.signalControl):
                 self.junctionData.stages[nextStageIndex].controlString, 
                 self.TIME_MS)
             self.lastStageIndex = nextStageIndex
-            # print(self.stageTime)
+            #print(self.stageTime)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
@@ -208,15 +211,21 @@ class HybridVAControl(signalControl.signalControl):
 
         return ctrlRegion
 
-    def _getOncomingVehicles(self, headingTol=10):
+    def _getOncomingVehicles(self, headingTol=15):
         # Oncoming if (in active lane & heading matches oncoming heading & 
         # is in lane bounds)
         vehicles = []
-        for lane in self.activeLanes[self.lastStageIndex]:
-            laneHeading = self.laneDetectionInfo[lane]['heading']
+        edges = self.getActiveEdges()
+        targetLanes = []
+        for edge1 in edges:
+            for edge2 in self.controlledEdges[edge1]:
+                targetLanes += self.edgeLaneMap[edge2]
+
+        for lane in targetLanes:
+            laneHeading = self.allLaneInfo[lane]['heading']
             headingUpper = laneHeading + headingTol
             headingLower = laneHeading - headingTol
-            laneBounds = self.laneDetectionInfo[lane]['bounds']
+            laneBounds = self.allLaneInfo[lane]['bounds']
             lowerXBound = min(laneBounds['x1'], laneBounds['x2'])
             lowerYBound = min(laneBounds['y1'], laneBounds['y2'])
             upperXBound = max(laneBounds['x1'], laneBounds['x2'])
@@ -250,6 +259,9 @@ class HybridVAControl(signalControl.signalControl):
         # Get a list of the unique active lanes
         # activeLanes = sigTools.unique(activeLanes)
         return activeLanes
+
+    def getActiveEdges(self):
+        return sigTools.lane2edge(self._getActiveLanes())
 
     def _getActiveLanesDict(self):
         # Get the current control string to find the green lights
@@ -329,11 +341,14 @@ class HybridVAControl(signalControl.signalControl):
                 lanes = self.getLanes(junc)
                 otherJunctionLanes += lanes['incoming'] + lanes['outgoing']
         links = self.getLanes(self.junctionData.id)
-        linkRelation = defaultdict(list)
-        routes = self.getModelRoutes()
+        self.linkRelation = defaultdict(list)
+        ctrlEdges = {}
+        routes = sigTools.getRouteDict()[self.modelName]
         for lane in links['incoming']:
+            laneHeading = self.allLaneInfo[lane+'_0']['heading']
             lanesBefore = []
             lanesAfter = []
+            ctrlLanes = []
             for route in routes:
                 try:
                     rIndex = route.index(lane)
@@ -341,22 +356,28 @@ class HybridVAControl(signalControl.signalControl):
                     continue
 
                 if rIndex < 1:
-                        continue
-                for edgeIdx in range(rIndex-1, -1, -1):
+                    continue
+                # traverse routes but only up to 3 adjacent edges
+                for edgeIdx in list(range(rIndex-1, -1, -1))[:3]:
                     if route[edgeIdx] not in otherJunctionLanes:
                         lanesBefore.append(route[edgeIdx])
+                        shape = traci.lane.getShape(route[edgeIdx]+'_0')
+                        heading = sigTools.getSUMOHeading(shape[-1], shape[0])
+                        if laneHeading-20 < heading < laneHeading+20: 
+                            ctrlLanes.append(route[edgeIdx])
                     else:
                         break
 
                 if rIndex >= len(route)-1:
-                        continue
-                for edgeIdx in range(rIndex+1, len(route)):
+                    continue
+                for edgeIdx in range(rIndex+1, len(route))[:3]:
                     if route[edgeIdx] not in otherJunctionLanes:
                         lanesAfter.append(route[edgeIdx])
                     else:
                         break
 
-            linkRelation[lane] = sigTools.unique(lanesBefore+[lane]+lanesAfter)
+            self.linkRelation[lane] = sigTools.unique(lanesBefore+[lane]+lanesAfter)
+            ctrlEdges[lane] = sigTools.unique(ctrlLanes+[lane])
 
         loopRelation = {}
         loopIDs = traci.inductionloop.getIDList()
@@ -369,16 +390,16 @@ class HybridVAControl(signalControl.signalControl):
             if distFromJunc < 200:
                 loopLanes[edge].append(loop)
 
-        for key in linkRelation.keys():
+        for key in self.linkRelation.keys():
             laneLoops = []
-            for lane in linkRelation[key]:
+            for lane in self.linkRelation[key]:
                 laneLoops += loopLanes[lane]
             loopRelation[key] = laneLoops
         
         if 'selly' in self.modelName:
             loopRelation = self.sellyOakLoops(loopRelation)
 
-        return loopRelation
+        return ctrlEdges, loopRelation
 
     def getLanes(self, junctionID):
         links = traci.trafficlights.getControlledLinks(junctionID)
