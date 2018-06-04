@@ -99,9 +99,9 @@ def makeRoutes(config):
 
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
-runs = 25
+runs = 11
 configs = itertools.product(models, range(runs+1))
-nproc = 10
+nproc = 8
 print('Starting route building on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
