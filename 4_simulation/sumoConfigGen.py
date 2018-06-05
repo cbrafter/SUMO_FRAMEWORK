@@ -32,6 +32,8 @@ def sumoConfigGen(modelname='simpleT',
     </output>
     <time>
         <begin value="0"/>
+        <!--stop sim, especially selly oak, after 35 hrs-->
+        <!--end value="118800000"/-->
         <step-length value="{stepSz}"/>
     </time>
     <processing>
