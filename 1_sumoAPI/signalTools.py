@@ -161,41 +161,38 @@ def flatten(ListofLists):
     return [x for y in ListofLists for x in y]
 
 
-def getStops(stopStore, subKey):
-    subResults = traci.edge.getContextSubscriptionResults(subKey)
-    vtol = 1e-3
-    wait = tc.VAR_WAITING_TIME
-    try:
-        for vehID in subResults.keys():
-            if 0.099 < subResults[vehID][wait] < 0.101:
-                stopStore[vehID] += 1
-    except KeyError:
-        pass
-    except AttributeError:
-        pass    
-    return stopStore
+class StopCounter(object):
+    def __init__(self):
+        self.stopSubscription()  # makes self.subkey
+        self.stopCountDict = defaultdict(int)
 
+    def stopSubscription(self):
+        self.subkey = traci.edge.getIDList()[0]
+        traci.edge.subscribeContext(self.subkey, 
+                                    tc.CMD_GET_VEHICLE_VARIABLE, 
+                                    1000000, 
+                                    varIDs=(tc.VAR_WAITING_TIME,))
 
-def stopDict():
-    return defaultdict(int)
+    def getStops(self):
+        subResults = traci.edge.getContextSubscriptionResults(self.subkey)
+        vtol = 1e-3
+        wait = tc.VAR_WAITING_TIME
+        try:
+            for vehID in subResults.keys():
+                if 0.099 < subResults[vehID][wait] < 0.101:
+                    self.stopCountDict[vehID] += 1
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
 
-
-def stopSubscription():
-    subKey = traci.edge.getIDList()[0]
-    traci.edge.subscribeContext(subKey, 
-                                tc.CMD_GET_VEHICLE_VARIABLE, 
-                                1000000, 
-                                varIDs=(tc.VAR_WAITING_TIME,))
-    return subKey
-
-
-def writeStops(stopCounter, filename):
-    with open(filename, 'w') as f:
-        f.write('vehID,stops\n')
-        vehIDs = stopCounter.keys()
-        vehIDs.sort()
-        for vehID in vehIDs:
-            f.write('{},{}\n'.format(vehID, stopCounter[vehID]))
+    def writeStops(self, filename):
+        with open(filename, 'w') as f:
+            f.write('vehID,stops\n')
+            vehIDs = self.stopCountDict.keys()
+            vehIDs.sort()
+            for vehID in vehIDs:
+                f.write('{},{}\n'.format(vehID, self.stopCountDict[vehID]))
 
 
 class simTimer(object):
