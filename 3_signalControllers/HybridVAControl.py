@@ -103,7 +103,7 @@ class HybridVAControl(signalControl.signalControl):
                 loopExtend = self.getLoopExtension()
             else:
                 loopExtend = None
-            
+
             # get GPS extend
             if self.numCAVs > 0:
                 gpsExtend = self.getGPSextension()
