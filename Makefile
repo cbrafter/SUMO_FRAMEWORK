@@ -6,6 +6,8 @@ UESCPATH = $(shell pwd | sed -e 's/ /\\ /g' -e 's/\[/\\\[/g' -e 's/\]/\\\]/g')
 RESULTPATH = /hardmem/results_test/
 ROUTEFILEPATH = /hardmem/ROUTEFILES/
 DOCKER_ARGS = \
+		-e "TZ=Europe/London"\
+		-v /etc/localtime:/etc/localtime:ro \
 		-v $(RESULTPATH):/hardmem/results/ \
 		-v $(UESCPATH)/1_sumoAPI/:/simulation/1_sumoAPI/ \
 		-v $(UESCPATH)/2_models/:/simulation/2_models/ \
