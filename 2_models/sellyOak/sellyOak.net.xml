@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Mon 04 Jun 2018 15:51:12 BST by Netedit Version 0.28.0
+<!-- generated on Mon 04 Jun 2018 22:46:50 BST by Netedit Version 0.28.0
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netedit.exeConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="2_models/sellyOak/sellyOak.net.xml"/>
+        <sumo-net-file value="../2_models/sellyOak/sellyOak.net.xml"/>
     </input>
 
     <output>
-        <output-file value="2_models/sellyOak/sellyOak.net.xml"/>
+        <output-file value="../2_models/sellyOak/sellyOak.net.xml"/>
     </output>
 
     <processing>
@@ -25,7 +25,7 @@
 
 <net version="0.27" lefthand="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
 
-    <location netOffset="-571510.31,-5809675.96" convBoundary="9.48,124.68,3027.35,2863.23" origBoundary="-1.948073,52.432516,-1.904730,52.460523" projParameter="+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/>
+    <location netOffset="-571510.31,5809675.96" convBoundary="9.48,124.68,3027.35,2863.23" origBoundary="-1.948073,52.432516,-1.904730,52.460523" projParameter="+proj=utm +zone=30 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"/>
 
     <edge id=":gneJ0_0" function="internal">
         <lane id=":gneJ0_0_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="0.30" shape="2463.48,1947.63 2463.34,1947.36"/>
@@ -1460,10 +1460,10 @@
         <lane id=":node72_6_0" index="0" speed="11.18" length="5.27" shape="1121.41,1542.21 1123.23,1540.71 1124.56,1538.12"/>
     </edge>
     <edge id=":node73_0" function="internal">
-        <lane id=":node73_0_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="8.57" shape="1203.69,1566.13 1202.79,1567.25 1201.19,1567.67 1198.89,1567.39 1195.88,1566.41"/>
+        <lane id=":node73_0_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="11.02" shape="1203.69,1566.13 1202.28,1568.60 1200.31,1569.98 1197.77,1570.28 1194.66,1569.48"/>
     </edge>
     <edge id=":node73_1" function="internal">
-        <lane id=":node73_1_0" index="0" speed="11.18" length="15.69" shape="1203.69,1566.13 1201.75,1571.75 1200.57,1576.16 1200.14,1579.33 1200.46,1581.29"/>
+        <lane id=":node73_1_0" index="0" speed="11.18" length="14.02" shape="1203.69,1566.13 1202.51,1570.10 1202.07,1573.69 1202.36,1576.91 1203.39,1579.76"/>
     </edge>
     <edge id=":node73_2" function="internal">
         <lane id=":node73_2_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="9.32" shape="1209.03,1575.25 1207.20,1574.06 1206.21,1572.33 1206.07,1570.07 1206.78,1567.28"/>
@@ -1482,15 +1482,17 @@
         <lane id=":node73_6_1" index="1" speed="13.41" length="10.49" shape="1193.45,1572.54 1196.38,1574.08 1197.94,1575.83 1199.01,1578.11 1200.46,1581.29"/>
     </edge>
     <edge id=":node73_8" function="internal">
-        <lane id=":node73_8_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="16.42" shape="1193.45,1572.54 1198.00,1573.69 1201.74,1573.19 1204.67,1571.06 1206.78,1567.28"/>
+        <lane id=":node73_8_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="11.18" length="6.86" shape="1193.45,1572.54 1198.00,1573.69 1200.15,1573.40"/>
+    </edge>
+    <edge id=":node73_9" function="internal">
+        <lane id=":node73_9_0" index="0" speed="11.18" length="9.56" shape="1200.15,1573.40 1201.74,1573.19 1204.67,1571.06 1206.78,1567.28"/>
     </edge>
     <edge id=":node74_0" function="internal">
-        <lane id=":node74_0_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1169.01,1555.76 1165.00,1557.72"/>
-        <lane id=":node74_0_1" index="1" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1167.79,1558.83 1165.00,1557.72"/>
+        <lane id=":node74_0_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.00" shape="1167.79,1558.83 1165.00,1557.72"/>
     </edge>
-    <edge id=":node74_2" function="internal">
-        <lane id=":node74_2_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1163.79,1560.79 1165.36,1564.96"/>
-        <lane id=":node74_2_1" index="1" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1163.79,1560.79 1166.58,1561.90"/>
+    <edge id=":node74_1" function="internal">
+        <lane id=":node74_1_0" index="0" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1163.79,1560.79 1165.36,1564.96"/>
+        <lane id=":node74_1_1" index="1" disallow="tram rail_urban rail rail_electric ship" speed="13.41" length="3.73" shape="1163.79,1560.79 1166.58,1561.90"/>
     </edge>
     <edge id=":node75_0" function="internal">
         <lane id=":node75_0_0" index="0" disallow="tram rail_urban rail rail_electric bicycle pedestrian ship" speed="13.41" length="3.76" shape="1131.89,1615.34 1128.67,1618.49"/>
@@ -3654,12 +3656,21 @@
         <request index="4" response="000000" foes="000010" cont="0"/>
         <request index="5" response="001100" foes="001110" cont="1"/>
     </junction>
-    <junction id="node73" type="unregulated" x="1202.41" y="1574.32" incLanes="edge90_0 edge3112_0 edge3113_0 edge229_0 edge229_1" intLanes=":node73_0_0 :node73_1_0 :node73_2_0 :node73_3_0 :node73_4_0 :node73_5_0 :node73_6_0 :node73_6_1 :node73_8_0" shape="1202.19,1565.57 1208.28,1567.83 1209.64,1573.77 1208.43,1576.73 1207.73,1577.49 1196.12,1583.55 1191.64,1577.10 1196.47,1564.92"/>
-    <junction id="node74" type="right_before_left" x="1165.79" y="1559.81" incLanes="edge55_0 edge55_1 edge228_0" intLanes=":node74_0_0 :node74_0_1 :node74_2_0 :node74_2_1" shape="1169.60,1554.27 1164.77,1566.45 1163.20,1562.28 1165.59,1556.24">
-        <request index="0" response="0000" foes="0010" cont="0"/>
-        <request index="1" response="0001" foes="0001" cont="0"/>
-        <request index="2" response="0000" foes="0000" cont="0"/>
-        <request index="3" response="0000" foes="0000" cont="0"/>
+    <junction id="node73" type="priority" x="1202.41" y="1574.32" incLanes="edge90_0 edge3112_0 edge3113_0 edge229_0 edge229_1" intLanes=":node73_0_0 :node73_1_0 :node73_2_0 :node73_3_0 :node73_4_0 :node73_5_0 :node73_6_0 :node73_6_1 :node73_9_0" shape="1202.19,1565.57 1208.28,1567.83 1209.64,1573.77 1208.43,1576.73 1207.73,1577.49 1196.12,1583.55 1191.64,1577.10 1196.47,1564.92">
+        <request index="0" response="000001000" foes="000101000" cont="0"/>
+        <request index="1" response="100001000" foes="100101000" cont="0"/>
+        <request index="2" response="000000000" foes="100010000" cont="0"/>
+        <request index="3" response="000000000" foes="100110011" cont="0"/>
+        <request index="4" response="100001100" foes="100001100" cont="0"/>
+        <request index="5" response="100001011" foes="100001011" cont="0"/>
+        <request index="6" response="000000000" foes="000000000" cont="0"/>
+        <request index="7" response="000000000" foes="000000000" cont="0"/>
+        <request index="8" response="000001100" foes="001111110" cont="1"/>
+    </junction>
+    <junction id="node74" type="priority" x="1165.79" y="1559.81" incLanes="edge55_0 edge55_1 edge228_0" intLanes=":node74_0_0 :node74_1_0 :node74_1_1" shape="1169.60,1554.27 1164.77,1566.45 1163.20,1562.28 1165.59,1556.24">
+        <request index="0" response="000" foes="000" cont="0"/>
+        <request index="1" response="000" foes="000" cont="0"/>
+        <request index="2" response="000" foes="000" cont="0"/>
     </junction>
     <junction id="node75" type="zipper" x="1130.10" y="1620.20" incLanes="edge58_0 edge58_1 edge230_0 edge230_1" intLanes=":node75_0_0 :node75_0_1 :node75_2_0 :node75_2_1" shape="1131.98,1613.75 1131.23,1626.83 1128.36,1626.69 1128.74,1616.89">
         <request index="0" response="0010" foes="0010" cont="0"/>
@@ -3742,6 +3753,7 @@
     <junction id=":node5_13_0" type="internal" x="1002.00" y="1482.01" incLanes=":node5_11_0 edge53_0" intLanes=":node5_1_0 :node5_2_0 :node5_3_0 :node5_4_0 :node5_7_0 :node5_8_0"/>
     <junction id=":node63_7_0" type="internal" x="2638.09" y="2307.93" incLanes=":node63_1_0 edge220_0 edge220_1" intLanes=":node63_3_0 :node63_4_0 :node63_5_0 :node63_5_1"/>
     <junction id=":node72_6_0" type="internal" x="1121.41" y="1542.21" incLanes=":node72_5_0 edge56_0" intLanes=":node72_1_0 :node72_2_0 :node72_3_0"/>
+    <junction id=":node73_9_0" type="internal" x="1200.15" y="1573.40" incLanes=":node73_8_0 edge3112_0" intLanes=":node73_1_0 :node73_2_0 :node73_3_0 :node73_4_0 :node73_5_0"/>
     <junction id=":node89_6_0" type="internal" x="1386.71" y="1472.35" incLanes=":node89_3_0 edge262_0" intLanes=":node89_0_0 :node89_1_0 :node89_5_0"/>
     <junction id=":node98_6_0" type="internal" x="1140.94" y="1202.95" incLanes=":node98_3_0 edge125_0" intLanes=":node98_0_0 :node98_1_0 :node98_5_0"/>
 
@@ -4038,11 +4050,11 @@
     <connection from="edge226" to="edge227" fromLane="0" toLane="0" via=":node71_1_0" dir="s" state="M"/>
     <connection from="edge227" to="edge228" fromLane="0" toLane="0" via=":node72_4_0" dir="s" state="M"/>
     <connection from="edge227" to="edge285" fromLane="0" toLane="0" via=":node72_5_0" dir="r" state="m"/>
-    <connection from="edge228" to="edge229" fromLane="0" toLane="0" via=":node74_2_0" dir="s" state="="/>
-    <connection from="edge228" to="edge229" fromLane="0" toLane="1" via=":node74_2_1" dir="s" state="="/>
+    <connection from="edge228" to="edge229" fromLane="0" toLane="0" via=":node74_1_0" dir="s" state="M"/>
+    <connection from="edge228" to="edge229" fromLane="0" toLane="1" via=":node74_1_1" dir="s" state="M"/>
     <connection from="edge229" to="edge103" fromLane="0" toLane="0" via=":node73_6_0" dir="s" state="M"/>
     <connection from="edge229" to="edge103" fromLane="1" toLane="1" via=":node73_6_1" dir="s" state="M"/>
-    <connection from="edge229" to="edge286" fromLane="1" toLane="0" via=":node73_8_0" dir="r" state="M"/>
+    <connection from="edge229" to="edge286" fromLane="1" toLane="0" via=":node73_8_0" dir="r" state="m"/>
     <connection from="edge23" to="edge167" fromLane="0" toLane="0" via=":node31_4_0" dir="l" state="m"/>
     <connection from="edge23" to="edge20" fromLane="0" toLane="0" via=":node31_5_0" dir="r" state="m"/>
     <connection from="edge230" to="edge231" fromLane="0" toLane="0" via=":node75_2_0" dir="s" state="M"/>
@@ -4218,8 +4230,8 @@
     <connection from="edge311" to="edge302" fromLane="0" toLane="1" via=":node183_0_0" dir="r" state="M"/>
     <connection from="edge3112" to="edge286" fromLane="0" toLane="0" via=":node73_2_0" dir="l" state="M"/>
     <connection from="edge3112" to="edge55" fromLane="0" toLane="1" via=":node73_3_0" dir="s" state="M"/>
-    <connection from="edge3113" to="edge286" fromLane="0" toLane="0" via=":node73_4_0" dir="l" state="M"/>
-    <connection from="edge3113" to="edge55" fromLane="0" toLane="1" via=":node73_5_0" dir="s" state="M"/>
+    <connection from="edge3113" to="edge286" fromLane="0" toLane="0" via=":node73_4_0" dir="l" state="m"/>
+    <connection from="edge3113" to="edge55" fromLane="0" toLane="1" via=":node73_5_0" dir="s" state="m"/>
     <connection from="edge3116" to="edge137" fromLane="0" toLane="0" via=":node142_0_0" dir="s" state="M"/>
     <connection from="edge3119" to="edge3117" fromLane="0" toLane="0" via=":junc5_10_0" tl="junc5" linkIndex="10" dir="l" state="o"/>
     <connection from="edge3119" to="edge234" fromLane="0" toLane="0" via=":junc5_11_0" tl="junc5" linkIndex="11" dir="s" state="o"/>
@@ -4346,8 +4358,7 @@
     <connection from="edge53" to="edge102" fromLane="0" toLane="1" via=":node5_4_0" dir="s" state="M"/>
     <connection from="edge53" to="edge3" fromLane="0" toLane="0" via=":node5_5_0" dir="r" state="m"/>
     <connection from="edge54" to="edge53" fromLane="0" toLane="0" via=":node71_0_0" dir="s" state="M"/>
-    <connection from="edge55" to="edge56" fromLane="0" toLane="0" via=":node74_0_0" dir="s" state="="/>
-    <connection from="edge55" to="edge56" fromLane="1" toLane="0" via=":node74_0_1" dir="s" state="="/>
+    <connection from="edge55" to="edge56" fromLane="1" toLane="0" via=":node74_0_0" dir="s" state="M"/>
     <connection from="edge56" to="edge285" fromLane="0" toLane="0" via=":node72_2_0" dir="l" state="M"/>
     <connection from="edge56" to="edge54" fromLane="0" toLane="0" via=":node72_3_0" dir="s" state="M"/>
     <connection from="edge57" to="edge5" fromLane="0" toLane="0" via=":node9_0_0" dir="s" state="M"/>
@@ -4405,8 +4416,8 @@
     <connection from="edge89" to="edge54" fromLane="0" toLane="0" via=":node72_0_0" dir="l" state="m"/>
     <connection from="edge89" to="edge228" fromLane="0" toLane="0" via=":node72_1_0" dir="r" state="m"/>
     <connection from="edge9" to="edge291" fromLane="0" toLane="1" via=":node15_3_0" dir="r" state="m"/>
-    <connection from="edge90" to="edge55" fromLane="0" toLane="0" via=":node73_0_0" dir="l" state="M"/>
-    <connection from="edge90" to="edge103" fromLane="0" toLane="1" via=":node73_1_0" dir="r" state="M"/>
+    <connection from="edge90" to="edge55" fromLane="0" toLane="1" via=":node73_0_0" dir="l" state="m"/>
+    <connection from="edge90" to="edge103" fromLane="0" toLane="2" via=":node73_1_0" dir="r" state="m"/>
     <connection from="edge91" to="edge90" fromLane="0" toLane="0" via=":node91_0_0" dir="s" state="="/>
     <connection from="edge91" to="edge269" fromLane="0" toLane="0" via=":node91_1_0" dir="r" state="="/>
     <connection from="edge92" to="edge39" fromLane="0" toLane="0" via=":junc0_0_0" tl="junc0" linkIndex="0" dir="l" state="o"/>
@@ -5035,19 +5046,19 @@
     <connection from=":node72_4" to="edge228" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node72_5" to="edge285" fromLane="0" toLane="0" via=":node72_6_0" dir="s" state="m"/>
     <connection from=":node72_6" to="edge285" fromLane="0" toLane="0" dir="s" state="M"/>
-    <connection from=":node73_0" to="edge55" fromLane="0" toLane="0" dir="s" state="M"/>
-    <connection from=":node73_1" to="edge103" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from=":node73_0" to="edge55" fromLane="0" toLane="1" dir="s" state="M"/>
+    <connection from=":node73_1" to="edge103" fromLane="0" toLane="2" dir="s" state="M"/>
     <connection from=":node73_2" to="edge286" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node73_3" to="edge55" fromLane="0" toLane="1" dir="s" state="M"/>
     <connection from=":node73_4" to="edge286" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node73_5" to="edge55" fromLane="0" toLane="1" dir="s" state="M"/>
     <connection from=":node73_6" to="edge103" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node73_6" to="edge103" fromLane="1" toLane="1" dir="s" state="M"/>
-    <connection from=":node73_8" to="edge286" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":node73_8" to="edge286" fromLane="0" toLane="0" via=":node73_9_0" dir="s" state="m"/>
+    <connection from=":node73_9" to="edge286" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node74_0" to="edge56" fromLane="0" toLane="0" dir="s" state="M"/>
-    <connection from=":node74_0" to="edge56" fromLane="1" toLane="0" dir="s" state="M"/>
-    <connection from=":node74_2" to="edge229" fromLane="0" toLane="0" dir="s" state="M"/>
-    <connection from=":node74_2" to="edge229" fromLane="1" toLane="1" dir="s" state="M"/>
+    <connection from=":node74_1" to="edge229" fromLane="0" toLane="0" dir="s" state="M"/>
+    <connection from=":node74_1" to="edge229" fromLane="1" toLane="1" dir="s" state="M"/>
     <connection from=":node75_0" to="edge57" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":node75_0" to="edge57" fromLane="1" toLane="0" dir="s" state="M"/>
     <connection from=":node75_2" to="edge231" fromLane="0" toLane="0" dir="s" state="M"/>
