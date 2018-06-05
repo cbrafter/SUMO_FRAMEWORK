@@ -31,14 +31,14 @@ timer = sigTools.simTimer()
 timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-#controller = fixedTimeControl.fixedTimeControl
+controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'corridor'
+modelname = 'cross'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = np.linspace(0, 1, 11)[8]
+CVP = np.linspace(0, 1, 11)[0]
 seed = 1
 
 ctrl = str(controller).split('.')[1][:-2]
@@ -57,7 +57,7 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile, gui=True, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 
@@ -72,7 +72,7 @@ maxGreenTime = 60
 for junction in junctionsList:
     if controller == HybridVAControl.HybridVAControl:
         print('YURT')
-        controllerList.append(controller(junction, loopIO=False, model=modelBase))
+        controllerList.append(controller(junction, loopIO=True, model=modelBase))
     else:
         print('YIP')
         controllerList.append(controller(junction))
@@ -89,8 +89,8 @@ simTime, simActive = 0, True
 # limit and extend are per 2.5 minute in test
 timeLimit = 2.5*60  # 1 hours in seconds for time limit
 limitExtend = 2.5*60 # check again in 20 mins if things seem ok
-subKey = sigTools.stopSubscription()
-stopCounter = sigTools.stopDict()
+stopCounter = sigTools.StopCounter()
+stopfilename = './test_results/stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
 timeDelta = int(1000*stepSize)
 oneMinute = 60*1000  # one minute in simulation 60sec im msec
 '''
@@ -112,7 +112,7 @@ while simActive:
     # subResults = traci.junction.getContextSubscriptionResults(subJunc)
     for controller in controllerList:
         controller.process(time=simTime)
-    stopCounter = sigTools.getStops(stopCounter, subKey)
+    stopCounter.getStops()
     simTime += timeDelta
     # reduce calls to traci to 1 per simulation min to improve performance
     # flag will always be positive int while there are vehicles no need for else
@@ -121,6 +121,7 @@ while simActive:
         # stop sim to free resources if taking longer than ~10 hours
         # i.e. the sim is gridlocked
         if timer.runtime() > timeLimit:
+            stopCounter.writeStops(stopfilename)
             if sigTools.isSimGridlocked(modelBase, simTime):
                 connector.disconnect()
                 raise RuntimeError("RuntimeError: GRIDLOCK")
@@ -128,9 +129,7 @@ while simActive:
                 print('EXTENDING')
                 timeLimit += limitExtend
 
-stopfilename = './test_results/stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
-sigTools.writeStops(stopCounter, stopfilename)
-
+stopCounter.writeStops(stopfilename)
 connector.disconnect()
 timer.stop()
 print('Simulations complete, exectime: {}, {}'.format(timer.strTime(), time.ctime()))

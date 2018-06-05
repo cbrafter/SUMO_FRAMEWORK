@@ -43,16 +43,20 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-configs = list(itertools.product(models[3:],
-                                 tlControllers[1:2],
-                                 CAVratios,
-                                 runIDs))
-configs = sorted(configs, key=lambda x: x[2], reverse=True)
-configs += sorted(list(itertools.product(models[3:],
-                                 tlControllers[2:],
-                                 CAVratios,
-                                 runIDs)),
+configs = list(itertools.product(models[::-1],
+                                  tlControllers[:1],
+                                  [0.],
+                                  runIDs))
+configs += sorted(list(itertools.product(models[5:6],
+                                        tlControllers[2:4],
+                                        CAVratios,
+                                        runIDs)),
                   key=lambda x: x[2], reverse=True)
+# configs += sorted(list(itertools.product(models[3:],
+#                                  tlControllers[2:],
+#                                  CAVratios,
+#                                  runIDs)),
+#                   key=lambda x: x[2], reverse=True)
 
 #configs += list(itertools.product(['corridor'],['GPSVA', 'HVAslow'], CAVratios[4:9], runIDs))
 # run in descending CAV ratio
@@ -66,6 +70,9 @@ workpool = mp.Pool(processes=nproc)
 # Run simualtions in parallel
 try:
     result = workpool.map(simulation, configs, chunksize=1)
+except Exception as e:
+    print(e)
+    sys.stdout.flush()
 finally:
     # remove spawned model copies
     for rmdir in glob('../2_models/*_*'):
