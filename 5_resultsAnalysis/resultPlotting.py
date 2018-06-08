@@ -54,30 +54,33 @@ def plotPercentile(data, scale, style='k-', alpha_val=1):
     yerr = bands[1, :]
     return xerr, yerr
 
-lineStyle = {'VA': '^k',
+lineStyle = {'GPSVAslow': '^k',
              'fixedTime': 'vC7',
              'GPSVA': '*C2',
              'HVA': 'oC3'}
 
 data = pd.read_csv('/hardmem/results_test/allTripInfo.csv')
 W = 1.0  # delay cost per second
-K = 1.0  # cost per stop
+K = 14.0  # cost per stop time to decel + time to accel for car
+#data['delay'] = data['delay']/(data['routeLength']*0.001)
+#data['stops'] = data['stops']/(data['routeLength']*0.001)
 data['PI'] = W*data['delay'] + K*data['stops']
 models = ['sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
-controllers = ['fixedTime', 'GPSVA']
+modMap = {'sellyOak_avg':'Selly Oak Avg.',
+          'sellyOak_lo':'Selly Oak Low',
+          'sellyOak_hi':'Selly Oak High'}
+controllers = ['fixedTime', 'HVA']
 figuresPDF = PdfPages('figures.pdf')
 
 # plot sellyOak results
-fig = plt.figure(figsize=(16, 9))
-lines = []
-labels = []
 cvp = data.groupby('cvp').delay.mean().index.values
 i = 0
 for model in models:
     fig = plt.figure(figsize=(16, 9))
     lines = []
     labels = []
-    for controller in controllers:
+    for controller in controllers+['GPSVA', 'GPSVAslow']:
+        if controller in ['GPSVA', 'HVAslow', 'GPSVAslow'] and model != 'sellyOak_avg': continue
         plotData = data[(data.model == model) &
                         (data.controller == controller)]
         meanDelay = plotData.groupby('cvp').delay.mean().values
@@ -88,8 +91,8 @@ for model in models:
         err = np.array([[lo, hi] for lo, hi in err])
         if controller in ['VA', 'fixedTime']:
             meanDelay = meanDelay * np.ones_like(cvp)
+            fixedMax = meanDelay[0]
             err = err * np.ones_like(cvp[:, np.newaxis])
-
         errLims = [meanDelay-err[:, 1], err[:, 0]-meanDelay]
         lines.append(plt.errorbar(cvp, meanDelay,
                                   yerr=errLims,
@@ -97,31 +100,127 @@ for model in models:
                                   linewidth=2, markersize=10,
                                   label=controller,
                                   capsize=7, capthick=2, elinewidth=1))
+        print(model, controller, meanDelay[-1])
         # plt.fill_between(cvp, err[:, 1], err[:, 0],
         #                  color=lineStyle[controller][1:], alpha=0.3)
         labels.append(controller)
-        modName = ' '.join(model.split('_'))
+        modName = modMap[model]
         plt.title(modName+': Delay vs. CV Penetration', fontsize=tsize)
         plt.xlabel('Percentage CV Penetration', fontsize=axsize,
                    fontweight='bold')
         plt.ylabel('Delay [s]', fontsize=axsize)
         # order of magnitude of the max point
-        magnitude = 10**int(log10(max(meanDelay)))
         # set x and y lims with some space around the max and min values
         plt.xticks(cvp, fontsize=ticksize, fontweight='bold')
-        yMax = roundUp(meanDelay[0], 0.5*magnitude)
+        maxVal = max([l[1][0].get_ydata()[1] for l in lines])
+        magnitude = 10**int(log10(maxVal))
+        yMax = roundUp(maxVal, 0.5*magnitude)
         # double the ytick interval
         if magnitude < 10000:
             newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
         else:
-            newYticks = np.arange(0, yMax+1, 0.2*magnitude, dtype=int)
+            newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
         plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
         yMin = -0.5*newYticks[1]
         plt.ylim([yMin, yMax])
         plt.xlim([-3, 103])
-        plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1)
+        plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1, loc='upper right')
     savePDF(figuresPDF, fig)
     i += 1
+
+i = 0
+for model in models:
+    if model != 'sellyOak_hi': continue
+    fig = plt.figure(figsize=(16, 9))
+    lines = []
+    labels = []
+    for controller in controllers:
+        plotData = data[(data.model == model) &
+                        (data.controller == controller)]
+        meanDelay = plotData.groupby('cvp').PI.sum().values
+
+        if controller in ['VA', 'fixedTime']:
+            meanDelay = meanDelay * np.ones_like(cvp)
+        meanDelay = meanDelay[1:]
+        lines.append(plt.errorbar(cvp[1:], meanDelay,
+                                  fmt=lineStyle[controller]+'-',
+                                  linewidth=2, markersize=10,
+                                  label=controller,
+                                  capsize=7, capthick=2, elinewidth=1))
+        print(model, controller, meanDelay[-1])
+
+        labels.append(controller)
+        modName = modMap[model]
+        plt.title(modName+': TRANSYT PI vs. CV Penetration', fontsize=tsize)
+        plt.xlabel('Percentage CV Penetration', fontsize=axsize,
+                   fontweight='bold')
+        plt.ylabel('TRANSYT PI', fontsize=axsize)
+        # order of magnitude of the max point
+        # set x and y lims with some space around the max and min values
+        plt.xticks(cvp[1:], fontsize=ticksize, fontweight='bold')
+        maxVal = max([l[0].get_ydata()[0] for l in lines])
+        magnitude = 10**int(log10(maxVal))
+        yMax = roundUp(maxVal, 0.5*magnitude)
+        # double the ytick interval
+        if magnitude < 10000:
+            newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
+        else:
+            newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
+        plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
+        yMin = -0.5*newYticks[1]
+        plt.ylim([yMin, yMax])
+        plt.xlim([7, 103])
+        plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1, loc='center right')
+    savePDF(figuresPDF, fig)
+    i += 1
+
+i = 0
+for model in models:
+    if model == 'sellyOak_hi': continue
+    fig = plt.figure(figsize=(16, 9))
+    lines = []
+    labels = []
+    for controller in controllers+['GPSVA', 'GPSVAslow']:
+        if controller in ['GPSVA', 'HVAslow', 'GPSVAslow'] and model != 'sellyOak_avg': continue
+        plotData = data[(data.model == model) &
+                        (data.controller == controller)]
+        meanDelay = plotData.groupby('cvp').PI.sum().values
+
+        if controller in ['VA', 'fixedTime']:
+            meanDelay = meanDelay * np.ones_like(cvp)
+        meanDelay = meanDelay[1:]
+        lines.append(plt.errorbar(cvp[1:], meanDelay,
+                                  fmt=lineStyle[controller]+'-',
+                                  linewidth=2, markersize=10,
+                                  label=controller,
+                                  capsize=7, capthick=2, elinewidth=1))
+        print(model, controller, meanDelay[-1])
+
+        labels.append(controller)
+        modName = modMap[model]
+        plt.title(modName+': TRANSYT PI vs. CV Penetration', fontsize=tsize)
+        plt.xlabel('Percentage CV Penetration', fontsize=axsize,
+                   fontweight='bold')
+        plt.ylabel('TRANSYT PI', fontsize=axsize)
+        # order of magnitude of the max point
+        # set x and y lims with some space around the max and min values
+        plt.xticks(cvp[1:], fontsize=ticksize, fontweight='bold')
+        maxVal = max([l[0].get_ydata()[0] for l in lines])
+        magnitude = 10**int(log10(maxVal))
+        yMax = roundUp(maxVal, 0.5*magnitude)
+        # double the ytick interval
+        if magnitude < 10000:
+            newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
+        else:
+            newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
+        plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
+        yMin = -0.5*newYticks[1]
+        plt.ylim([yMin, yMax])
+        plt.xlim([7, 103])
+        plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1, loc='lower right')
+    savePDF(figuresPDF, fig)
+    i += 1
+
 figuresPDF.close()
 
 '''
