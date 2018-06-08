@@ -247,7 +247,7 @@ def getNproc(mode='best'):
 
 def isSimGridlocked(model, timeMS):
     timeHours = timeMS/3600000.0
-    forceSimEndTime = 36.0 if 'selly' in model else 6.0
+    forceSimEndTime = 40.0 if 'selly' in model else 6.0
 
 
     vehIDs = traci.vehicle.getIDList()
