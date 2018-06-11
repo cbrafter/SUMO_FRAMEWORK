@@ -65,11 +65,11 @@ K = 14.0  # cost per stop time to decel + time to accel for car
 #data['delay'] = data['delay']/(data['routeLength']*0.001)
 #data['stops'] = data['stops']/(data['routeLength']*0.001)
 data['PI'] = W*data['delay'] + K*data['stops']
-models = ['sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi', 'twinT']
+models = ['cross']
 modMap = {'sellyOak_avg':'Selly Oak Avg.',
           'sellyOak_lo':'Selly Oak Low',
           'sellyOak_hi':'Selly Oak High',
-          'twinT': 'Twin-T'}
+          'twinT': 'Twin-T','cross':'cross'}
 controllers = ['fixedTime', 'HVA']
 figuresPDF = PdfPages('figures.pdf')
 
@@ -81,7 +81,7 @@ for model in models:
     lines = []
     labels = []
     for controller in controllers+['GPSVA', 'GPSVAslow']:
-        if controller in ['GPSVA', 'HVAslow', 'GPSVAslow'] and model not in ['sellyOak_avg', 'twinT']: continue
+        if controller in ['GPSVA', 'HVAslow', 'GPSVAslow'] and model not in ['sellyOak_avg', 'cross']: continue
         plotData = data[(data.model == model) &
                         (data.controller == controller)]
         if plotData.empty:
