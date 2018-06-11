@@ -157,8 +157,8 @@ def getDistance(A, B):
     return hypot(x1-x2, y1-y2)
 
 
-def flatten(ListofLists):
-    return [x for y in ListofLists for x in y]
+def flatten(listOfLists):
+    return [elem for subList in listOfLists for elem in subList]
 
 
 class StopCounter(object):
