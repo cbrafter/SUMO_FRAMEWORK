@@ -75,7 +75,7 @@ def simulation(x):
         # loopIO = True if CAVratio < 0.5 else False
         for junction in junctionsList:
             if tlLogic in ['HVA', 'GPSVA']: 
-                CAMmod = 1 if 'slow' in tlLogic else False
+                CAMmod = 1.0 if 'slow' in tlLogic else False
                 loopCtrl = True if 'HVA' in tlLogic else False
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
@@ -89,8 +89,8 @@ def simulation(x):
         simTime, simActive = 0, True
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
         limitExtend = 15*60 # check again in 15 mins if things seem ok
-        subKey = sigTools.stopSubscription()
-        stopCounter = sigTools.stopDict()
+        stopCounter = sigTools.StopCounter()
+        stopfilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         timeDelta = int(1000*stepSize)
         oneMinute = 60*1000  # one minute in simulation 60sec im msec
 
@@ -101,7 +101,7 @@ def simulation(x):
             traci.simulationStep()
             for controller in controllerList:
                 controller.process(time=simTime)
-            stopCounter = sigTools.getStops(stopCounter, subKey)
+            stopCounter.getStops()
             simTime += timeDelta
             # reduce calls to traci to 1 per simulation min to improve performance
             # flag will always be positive int while there are vehicles no need for else
@@ -110,6 +110,7 @@ def simulation(x):
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
+                    stopCounter.writeStops(stopfilename)
                     if sigTools.isSimGridlocked(modelBase, simTime):
                         connector.disconnect()
                         raise RuntimeError("RuntimeError: GRIDLOCK")
@@ -120,8 +121,7 @@ def simulation(x):
         connector.disconnect()
 
         # save stops file
-        stopfilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
-        sigTools.writeStops(stopCounter, stopfilename)
+        stopCounter.writeStops(stopfilename)
 
         timer.stop()
         print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Runtime: {}, Date: {}'
@@ -137,4 +137,5 @@ def simulation(x):
         sys.stdout.flush()
         return (False, x)
     finally:
+        stopCounter.writeStops(stopfilename)
         sys.stdout.flush()
