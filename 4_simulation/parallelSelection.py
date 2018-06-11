@@ -43,12 +43,8 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-configs = list(itertools.product(models[::-1],
-                                  tlControllers[:1],
-                                  [0.],
-                                  runIDs))
-configs += sorted(list(itertools.product(models[5:6],
-                                        tlControllers[2:4],
+configs = sorted(list(itertools.product(['twinT'],
+                                        ['GPSVA'],
                                         CAVratios,
                                         runIDs)),
                   key=lambda x: x[2], reverse=True)
@@ -58,12 +54,12 @@ configs += sorted(list(itertools.product(models[5:6],
 #                                  runIDs)),
 #                   key=lambda x: x[2], reverse=True)
 
-#configs += list(itertools.product(['corridor'],['GPSVA', 'HVAslow'], CAVratios[4:9], runIDs))
+#configs = list(itertools.product(['sellyOak_avg'],['HVAslow'], [0.3], runIDs))
 # run in descending CAV ratio
 print('# simulations: '+str(len(configs)))
 
 # nproc = sigTools.getNproc('best')
-nproc = 7
+nproc = 6
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
