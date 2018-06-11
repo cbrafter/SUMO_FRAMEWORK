@@ -33,7 +33,7 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'cross'
+modelname = 'sellyOak_avg'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
@@ -57,7 +57,7 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=True, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 
