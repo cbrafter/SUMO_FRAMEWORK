@@ -25,7 +25,7 @@ def simulation(x):
         modelName, tlLogic, CVP, run = x
         # split returns list so whether or not selly in name right base given 
         modelBase = modelName.split('_')[0]
-        procID = int(mp.current_process().name[-1])
+        procID = int(mp.current_process().name.split('-')[-1])
         model = '../2_models/{}_{}/'.format(modelBase, procID)
         simport = 8812 + procID
         seed = int(run)
@@ -75,7 +75,7 @@ def simulation(x):
         # loopIO = True if CAVratio < 0.5 else False
         for junction in junctionsList:
             if tlLogic in ['HVA', 'GPSVA']: 
-                CAMmod = 1.0 if 'slow' in tlLogic else False
+                CAMmod = 0.1 if 'slow' in tlLogic else False
                 loopCtrl = True if 'HVA' in tlLogic else False
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
