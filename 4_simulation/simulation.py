@@ -74,8 +74,8 @@ def simulation(x):
         # Turn loops off if CAV ratio > 50%
         # loopIO = True if CAVratio < 0.5 else False
         for junction in junctionsList:
-            if tlLogic in ['HVA', 'GPSVA']: 
-                CAMmod = 0.1 if 'slow' in tlLogic else False
+            if ('HVA' in tlLogic) or ('GPSVA' in tlLogic): 
+                CAMmod = 1.0 if 'slow' in tlLogic else False
                 loopCtrl = True if 'HVA' in tlLogic else False
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
