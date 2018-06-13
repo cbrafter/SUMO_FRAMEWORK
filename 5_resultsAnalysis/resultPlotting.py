@@ -80,7 +80,7 @@ for model in models:
     fig = plt.figure(figsize=(16, 9))
     lines = []
     labels = []
-    for controller in controllers+['GPSVA']:
+    for controller in controllers+['GPSVA', 'GPSVAslow']:
         if controller in ['GPSVA', 'HVAslow', 'GPSVAslow'] and model not in ['sellyOak_avg', 'cross']: continue
         plotData = data[(data.model == model) &
                         (data.controller == controller)]
