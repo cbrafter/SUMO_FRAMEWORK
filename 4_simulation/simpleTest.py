@@ -33,7 +33,7 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'cross'
+modelname = 'sellyOakFlows'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
