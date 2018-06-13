@@ -11,6 +11,7 @@ from simulation import simulation
 sys.path.insert(0, '../1_sumoAPI')
 sys.path.insert(0, '../3_signalControllers')
 import signalTools as sigTools
+from socket import gethostname
 
 ###############################################################################
 # MAIN SIMULATION DEFINITION
@@ -59,7 +60,8 @@ configs = sorted(list(itertools.product(['sellyOak_avg'],
 print('# simulations: '+str(len(configs)))
 
 # nproc = sigTools.getNproc('best')
-nproc = 7
+nproc = 40 if 'orange' in gethostname() else 7
+
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
