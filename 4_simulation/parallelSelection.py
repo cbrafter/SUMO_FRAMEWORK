@@ -61,6 +61,7 @@ print('# simulations: '+str(len(configs)))
 
 # nproc = sigTools.getNproc('best')
 nproc = 40 if 'orange' in gethostname() else 7
+nproc = min(nproc, len(configs))
 
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
