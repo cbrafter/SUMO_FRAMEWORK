@@ -97,7 +97,7 @@ class HybridVAControl(signalControl.signalControl):
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         #if self.junctionData.id == 'b2': print elapsedTime
-        if Tremaining <= 1:
+        if Tremaining <= 2.0:
             # get loop extend
             if self.loopIO:
                 loopExtend = self.getLoopExtension()
@@ -436,13 +436,18 @@ class HybridVAControl(signalControl.signalControl):
         # If currently staging then extend time if there are vehicles close 
         # to the stop line
         nearestVeh = self._getNearestVehicle(oncomingVeh)
-        nearVehicleCatchDistance = self.getNearVehicleCatchDistance()
+        catchDistance = self.getNearVehicleCatchDistance()
         # nV[1] is its velocity
         # If a vehicle detected and within catch distance
-        if (nearestVeh['id'] != '') and (nearestVeh['distance'] <= nearVehicleCatchDistance):
+        if (nearestVeh['id'] != '') and (nearestVeh['distance'] <= catchDistance):
             # if not invalid and travelling faster than SPM velocity
-            if (self.CAM.receiveData[nearestVeh['id']]['v'] > haltVelocity):
-                gpsExtend = nearestVeh['distance']/self.CAM.receiveData[nearestVeh['id']]['v']
+            vdata = self.CAM.receiveData[nearestVeh['id']]
+            if (vdata['v'] > haltVelocity):
+                dt = abs(self.TIME_SEC - vdata['Tgen'])
+                distance = abs(nearestVeh['distance'] - vdata['v']*dt)
+                distance = sigTools.ceilRound(distance, 0.1)
+                gpsExtend = distance/vdata['v']
+
                 if gpsExtend > 2*self.threshold:
                     gpsExtend = 0.0
             else:

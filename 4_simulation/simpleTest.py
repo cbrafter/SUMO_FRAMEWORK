@@ -31,9 +31,9 @@ timer = sigTools.simTimer()
 timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-controller = fixedTimeControl.fixedTimeControl
+#controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'sellyOakFlows'
+modelname = 'cross'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes

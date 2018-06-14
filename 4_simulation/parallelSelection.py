@@ -45,7 +45,7 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
                                   runIDs))
 # Test configurations
 configs = sorted(list(itertools.product(['sellyOak_avg'],
-                                        ['GPSVAslow'],
+                                        ['GPSVAslow', 'GPSVA'],
                                         CAVratios,
                                         runIDs)),
                   key=lambda x: x[2], reverse=True)

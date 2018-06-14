@@ -9,7 +9,7 @@ class for fixed time signal control
 
 import traci
 from collections import defaultdict
-from math import atan2, degrees, ceil, hypot
+from math import atan2, degrees, ceil, hypot, floor
 import re
 from glob import glob
 import os
@@ -311,3 +311,15 @@ def edgeLaneMap():
             if edge == lane.split('_')[0]:
                 eldict[edge].append(lane)
     return eldict
+
+def nearRound(x, base):
+    fb = float(base)
+    return round(float(x)/fb)*fb
+
+def floorRound(x, base):
+    fb = float(base)
+    return floor(float(x)/fb)*fb
+
+def ceilRound(x, base):
+    fb = float(base)
+    return ceil(float(x)/fb)*fb
