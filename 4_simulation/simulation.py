@@ -50,11 +50,12 @@ def simulation(x):
         # Check if model copy for this process exists
         if not os.path.isdir(model):
             shutil.copytree('../2_models/{}/'.format(modelBase), model)
-            time.sleep(0.5)  # sleep to make sure files copied
+            time.sleep(2.5)  # sleep to make sure files copied
 
         # this is relative to script not cfg file
         if not os.path.exists(exportPath):
             os.makedirs(exportPath)
+            time.sleep(2.5)  # sleep to make sure files copied
 
         # Edit the the output filenames in sumoConfig
         sumoConfigGen(modelName, configFile, exportPath, 
