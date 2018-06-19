@@ -13,9 +13,6 @@ sys.path.insert(0, '../3_signalControllers')
 import fixedTimeControl
 import HybridVAControl
 import actuatedControl
-import VAskip
-import HVAskip
-import GPSControl
 import sumoConnect
 import readJunctionData
 import traci
@@ -72,7 +69,7 @@ maxGreenTime = 60
 for junction in junctionsList:
     if controller == HybridVAControl.HybridVAControl:
         print('YURT')
-        controllerList.append(controller(junction, loopIO=True, model=modelBase))
+        controllerList.append(controller(junction, loopIO=False, model=modelBase))
     else:
         print('YIP')
         controllerList.append(controller(junction))

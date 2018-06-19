@@ -17,7 +17,8 @@ from cooperativeAwarenessMessage import CAMChannel
 
 class HybridVAControl(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
-                 scanRange=250, loopIO=False, CAMoverride=False, model='simpleT'):
+                 scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
+                 PER=0., noise=False):
         super(HybridVAControl, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -42,7 +43,7 @@ class HybridVAControl(signalControl.signalControl):
         self.maxGreenTime = 10*self.intergreen
         self.secondsPerMeterTraffic = 0.45
         self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
-        self.extendTime = 1.0 # 5 m in 10 m/s (acceptable journey 1.333)
+        self.extendTime = 1.5 # 5 m in 10 m/s (acceptable journey 1.333)
         self.controlledEdges, self.laneInductors = self.getInductorMap()
 
         self.TIME_MS = self.firstCalled
@@ -62,7 +63,9 @@ class HybridVAControl(signalControl.signalControl):
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
-                              self.scanRange, CAMoverride)
+                              scanRange=self.scanRange,
+                              CAMoverride=CAMoverride,
+                              PER=PER, noise=noise)
 
         # subscribe to vehicle params
         traci.junction.subscribeContext(self.junctionData.id, 
@@ -97,7 +100,7 @@ class HybridVAControl(signalControl.signalControl):
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         #if self.junctionData.id == 'b2': print elapsedTime
-        if Tremaining <= 2.0:
+        if Tremaining <= 1.0:
             # get loop extend
             if self.loopIO:
                 loopExtend = self.getLoopExtension()
@@ -135,7 +138,6 @@ class HybridVAControl(signalControl.signalControl):
         else:
             pass
 
-        # print(self.stageTime)
         #if isControlInterval:
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
@@ -447,6 +449,7 @@ class HybridVAControl(signalControl.signalControl):
                 distance = abs(nearestVeh['distance'] - vdata['v']*dt)
                 distance = sigTools.ceilRound(distance, 0.1)
                 gpsExtend = distance/vdata['v']
+                gpsExtend = sigTools.ceilRound(distance/vdata['v'], 0.1)
 
                 if gpsExtend > 2*self.threshold:
                     gpsExtend = 0.0
@@ -456,7 +459,8 @@ class HybridVAControl(signalControl.signalControl):
                 gpsExtend = 0.0
         # no detectable vehicle near
         else:
-            gpsExtend = 0.0
+            gpsExtend = None
+            # gpsExtend = 0.0
         return gpsExtend
 
     def getQueueExtension(self):
