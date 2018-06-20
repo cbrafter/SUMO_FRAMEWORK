@@ -459,8 +459,8 @@ class HybridVAControl(signalControl.signalControl):
                 gpsExtend = 0.0
         # no detectable vehicle near
         else:
-            gpsExtend = None
-            # gpsExtend = 0.0
+            # gpsExtend = None
+            gpsExtend = 0.0
         return gpsExtend
 
     def getQueueExtension(self):

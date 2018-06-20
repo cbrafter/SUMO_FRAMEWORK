@@ -123,7 +123,7 @@ resultFiles.sort()
 # resultFiles = [x for x in resultFiles if 'GPSVA/sellyOak_hi' not in x]
 print('~Parsing Tripfiles~')
 # define work pool
-nproc = 6
+nproc = 7
 workpool = mp.Pool(processes=nproc)
 # Run parsers in parallel
 resultData = workpool.map(parser, resultFiles, chunksize=1)
