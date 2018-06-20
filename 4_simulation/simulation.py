@@ -54,8 +54,10 @@ def simulation(x):
 
         # this is relative to script not cfg file
         if not os.path.exists(exportPath):
-            os.makedirs(exportPath)
-            time.sleep(2.5)  # sleep to make sure files copied
+            try:
+                os.makedirs(exportPath)
+            except:
+                time.sleep(2.5)  # sleep to make sure files copied
 
         # Edit the the output filenames in sumoConfig
         sumoConfigGen(modelName, configFile, exportPath, 
