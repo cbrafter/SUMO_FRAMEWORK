@@ -53,6 +53,7 @@ def simulation(x):
             time.sleep(1)  # sleep to make sure files copied
 
         # this is relative to script not cfg file
+        # try to make dir but keep going if other process created it already
         if not os.path.exists(exportPath):
             try:
                 os.makedirs(exportPath)
