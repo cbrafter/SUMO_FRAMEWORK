@@ -64,15 +64,15 @@ for edge in net.getEdges():
 # Find Edge I/O pairs
 ATOL = 10
 for edge1 in startEdges:
+    print(edge1)
     x1, y1, x2, y2 = [a for b in edgeShapes[edge1] for a in b]
     for edge2 in endEdges:
         if edge1 != edge2:
-            x3, y3, x4, y4 = [a for b in edgeShapes[edge2] for a in b]
+            x3, y3, x4, y4 = [c for d in edgeShapes[edge2] for c in d]
             if np.isclose(x2, x3, atol=ATOL) and np.isclose(y2, y3, atol=ATOL):
                 edgeIOpairs[edge1] = edge2
             else:
                 edgeIOpairs[edge1] = 'oneway'
-
 
 # Generate the trips for the starting and ending edges
 tripfile = open(tripfilename, 'w')
@@ -97,7 +97,6 @@ routecmd = [DUAROUTER, '-n', netfilename, '-t', tripfilename,
 
 print("calling ", " ".join(routecmd))
 subprocess.call(routecmd)
-
 
 # Get the validated routes and write to new file
 routeTree = ET.parse(routefilename)

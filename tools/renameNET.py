@@ -31,8 +31,13 @@ SUMO_HOME = '/usr/share/sumo'
 sys.path.append(os.path.join(SUMO_HOME, 'tools'))
 import sumolib
 
+def isTrafficLight(node):
+    return node.getType() == 'traffic_light'
+
 # import net file
 netfilename = sys.argv[1]
+path, file = os.path.split(netfilename)
+renamednet = path+'/REN_'+file
 net = sumolib.net.readNet(netfilename)
 
 # Remember special charaters in regex need to be escaped
@@ -40,10 +45,10 @@ net = sumolib.net.readNet(netfilename)
 edgeIDs = [re.escape(edge.getID()) for edge in net.getEdges()]
 
 # Get TL junction IDs
-tlIDs = [re.escape(tl.getID()) for tl in net.getTrafficLights()]
+tlIDs = [re.escape(node.getID()) for node in net.getNodes() if isTrafficLight(node)]
 
 # Get node junction IDs
-nodeIDs = [re.escape(node.getID()) for node in net.getNodes()]
+nodeIDs = [re.escape(node.getID()) for node in net.getNodes() if not isTrafficLight(node)]
 
 # Generate mappings for substitution
 # Precompile the values to be substituted as they will be used repeatedly
@@ -63,5 +68,5 @@ with open(netfilename, 'r') as f:
             # perform all regex substitutions on every line
             lines[i] = regex.sub(subStr, lines[i])
 
-with open('REN_'+netfilename, 'w') as f:
+with open(renamednet, 'w') as f:
     f.writelines(lines)
