@@ -100,7 +100,7 @@ class HybridVAControl(signalControl.signalControl):
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         #if self.junctionData.id == 'b2': print elapsedTime
-        if Tremaining <= 7.0:
+        if Tremaining <= 5.0:
             # get loop extend
             if self.loopIO:
                 loopExtend = self.getLoopExtension()
@@ -131,7 +131,7 @@ class HybridVAControl(signalControl.signalControl):
             # print(self.junctionData.id, self.stageTime)
         # run GPS extend only to check if queue cancelation needed
         elif elapsedTime > self.minGreenTime\
-          and np.isclose(elapsedTime%2.5, 0., atol=0.05) and self.numCAVs > 0:
+          and np.isclose(elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
             # print('checking')
             gpsExtend = self.getGPSextension()
         # process stage as normal

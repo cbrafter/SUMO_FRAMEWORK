@@ -66,7 +66,14 @@ with open(netfilename, 'r') as f:
     for i in range(len(lines)):
         for regex, subStr in allMaps:
             # perform all regex substitutions on every line
-            lines[i] = regex.sub(subStr, lines[i])
+            shapeFind = lines[i].find('shape=') 
+            # different replace to preserve shape definitions
+            if shapeFind >= 0:
+                head = lines[i][:shapeFind]
+                tail = lines[i][shapeFind:]
+                lines[i] = regex.sub(subStr, head)+tail
+            else:
+                lines[i] = regex.sub(subStr, lines[i])
 
 with open(renamednet, 'w') as f:
     f.writelines(lines)
