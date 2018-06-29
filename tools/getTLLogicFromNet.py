@@ -27,14 +27,17 @@ SUMO_HOME = '/usr/share/sumo'
 sys.path.append(os.path.join(SUMO_HOME, 'tools'))
 
 # import net file
-netTree = ET.parse(sys.argv[1])
+netfilename = sys.argv[1]
+path, file = os.path.split(netfilename)
+jcnfile = path+'/'+file.split('.')[0]+'.jcn.xml'
+netTree = ET.parse(netfilename)
 net = netTree.getroot()
 
 # get traffic lights
 juncs = [x for x in list(net) if x.tag == 'tlLogic']
 
 # write junctions to file
-f = open('junctions.jcn.xml', 'w')
+f = open(jcnfile, 'w')
 f.write('<junctions>\n')
 # Get each junction
 for junc in juncs:
