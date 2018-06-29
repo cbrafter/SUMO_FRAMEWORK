@@ -30,12 +30,12 @@ controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
 # Define road model directory
-modelname = 'cross'
+modelname = 'sellyOak_avg'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = np.linspace(0, 1, 11)[0]
+CVP = np.linspace(0, 1, 11)[100]
 seed = 1
 
 ctrl = str(controller).split('.')[1][:-2]
