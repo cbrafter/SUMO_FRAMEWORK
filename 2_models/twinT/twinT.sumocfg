@@ -1,18 +1,20 @@
 <configuration>
     <input>
         <net-file value="twinT.net.xml"/>
-        <route-files value="/hardmem/ROUTEFILES/twinT_R002_CVP080.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/twinT_R001_CVP000.rou.xml"/>
         <!--<gui-settings-file value="gui-settings.cfg"/>-->
         <additional-files value="twinT.det.xml"/>
     </input>
     <output>
-        <!--<summary-output value="../../4_simulation/test_results/summary_R002_CVP080.xml"/>-->
-        <tripinfo-output value="../../4_simulation/test_results/tripinfo_R002_CVP080.xml"/>
-        <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R002_CVP080.xml"/-->
-        <!--queue-output value="../../4_simulation/test_results/queuedata_R002_CVP080.xml"/-->
+        <!--<summary-output value="../../4_simulation/test_results/summary_R001_CVP000.xml"/>-->
+        <tripinfo-output value="../../4_simulation/test_results/tripinfo_R001_CVP000.xml"/>
+        <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R001_CVP000.xml"/-->
+        <!--queue-output value="../../4_simulation/test_results/queuedata_R001_CVP000.xml"/-->
     </output>
     <time>
         <begin value="0"/>
+        <!--stop sim, especially selly oak, after 35 hrs-->
+        <!--end value="118800000"/-->
         <step-length value="0.1"/>
     </time>
     <processing>
@@ -23,11 +25,11 @@
         <!--no-internal-links value="true"/-->
     </processing>
     <random_number>
-        <seed value="2"/>
+        <seed value="1"/>
     </random_number>
     <report>
         <no-step-log value="true"/>
-        <error-log value="logfile.txt"/>
+        <!--error-log value="logfile.txt"/-->
     </report>
     <traci_server>
         <remote-port value="8857"/>

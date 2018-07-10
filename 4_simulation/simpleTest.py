@@ -11,6 +11,7 @@ import os
 sys.path.insert(0, '../1_sumoAPI')
 sys.path.insert(0, '../3_signalControllers')
 import fixedTimeControl
+import TRANSYT
 import HybridVAControl
 import actuatedControl
 import sumoConnect
@@ -28,14 +29,15 @@ timer = sigTools.simTimer()
 timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-#controller = fixedTimeControl.fixedTimeControl
+controller = fixedTimeControl.fixedTimeControl
+controller = TRANSYT.TRANSYT
 # Define road model directory
 modelname = 'sellyOak_avg'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = np.linspace(0, 1, 11)[100]
+CVP = np.linspace(0, 1, 11)[0]
 seed = 1
 
 ctrl = str(controller).split('.')[1][:-2]
@@ -54,22 +56,28 @@ sumoConfigGen(modelname, configFile, exportPath,
               run=seed, port=simport, seed=seed)
 
 # Connect to model
-connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
+connector = sumoConnect.sumoConnect(configFile, gui=True, port=simport)
 connector.launchSumoAndConnect()
 print('Model connected')
 
 # Get junction data
-jd = readJunctionData.readJunctionData(model + modelBase + ".jcn.xml")
-junctionsList = jd.getJunctionData()
+if controller == TRANSYT.TRANSYT:
+    jd = readJunctionData.readJunctionData(model + modelBase + ".t15.xml")
+else:
+    jd = readJunctionData.readJunctionData(model + modelBase + ".jcn.xml")
+
+junctionData = jd.getJunctionData()
 
 # Add controller models to junctions
 controllerList = []
 minGreenTime = 10
 maxGreenTime = 60
-for junction in junctionsList:
+for junction in junctionData:
     if controller == HybridVAControl.HybridVAControl:
         print('YURT')
         controllerList.append(controller(junction, loopIO=False, model=modelBase))
+    elif controller == TRANSYT.TRANSYT:
+        controllerList.append(controller(junction))
     else:
         print('YIP')
         controllerList.append(controller(junction))

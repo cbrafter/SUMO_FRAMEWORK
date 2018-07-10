@@ -75,8 +75,11 @@ except Exception as e:
 finally:
     # remove spawned model copies
     for rmdir in glob('../2_models/*_*'):
-        if os.path.isdir(rmdir):
-            shutil.rmtree(rmdir)
+        try:
+            if os.path.isdir(rmdir):
+                shutil.rmtree(rmdir)
+        except:
+            pass
     timer.stop()
     # Inform of failed expermiments
     if all([r[0] for r in result]):

@@ -11,10 +11,11 @@ import signalControl, readJunctionData, traci
 
 class TRANSYT(signalControl.signalControl):
     def __init__(self, junctionData):
-        super(fixedTimeControl, self).__init__()
+        super(TRANSYT, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
         self.TIME_MS = self.getCurrentSUMOtime()
+        self.TIME_SEC = 0.001 * self.TIME_MS
         self.firstCalled = self.TIME_MS
         self.lastCalled = self.TIME_MS
         self.lastStageIndex = 0
@@ -27,6 +28,7 @@ class TRANSYT(signalControl.signalControl):
         self.TIME_MS = self.getCurrentSUMOtime() if time is None else time
         self.TIME_SEC = 0.001 * self.TIME_MS
         mode = self.getMode()
+        if not self.TIME_MS % 3600000: print(mode)
 
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
@@ -34,7 +36,7 @@ class TRANSYT(signalControl.signalControl):
         elif (self.TIME_MS - self.firstCalled) < (self.junctionData.offset*1000):
             # Process offset first
             pass
-        elif (self.TIME_MS - self.lastCalled) < (self.junctionData.stages[self.lastStageIndex].period*1000):
+        elif (self.TIME_MS - self.lastCalled) < (self.junctionData.stages[mode][self.lastStageIndex].period*1000):
             # Before the period of the next stage
             pass
         else:
@@ -51,25 +53,25 @@ class TRANSYT(signalControl.signalControl):
         return None
 
     def getTimeToSignalChange(self):
-        return (self.junctionData.stages[self.lastStageIndex].period*1000 - 
+        return (self.junctionData.stages[self.getMode()][self.lastStageIndex].period*1000 - 
             (self.TIME_MS - self.lastCalled))
 
     def getMode(self):
-        time = self.TIME_SEC % 86400  # modulo 1 day in seconds for spill over
+        timeOfDay = self.TIME_SEC % 86400  # modulo 1 day in seconds for spill over
         # 00:00 - 06:00
-        if 0 <= time < 21600:
+        if 0 <= timeOfDay < 21600:
             return 'OFF'
         # 06:00 - 11:00    
-        elif 21600 <= time < 39600:
+        elif 21600 <= timeOfDay < 39600:
             return 'PEAK'
         # 11:00 - 16:00
-        elif 39600 <= time < 57600:
+        elif 39600 <= timeOfDay < 57600:
             return 'INTER'
         # 16:00 - 20:00
-        elif 57600 <= time < 72000:
+        elif 57600 <= timeOfDay < 72000:
             return 'PEAK'
         # 20:00 - 00:00
-        elif 72000 <= time < 86400:
+        elif 72000 <= timeOfDay < 86400:
             return 'OFF'
         else:
             return 'INTER'

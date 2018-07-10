@@ -38,7 +38,7 @@ class readJunctionData:
             data = {j.attrib['id'].split('_')[0]: {} for j in self.junctionList}
 
             for junction in self.junctionList:
-                juncID, juncMode = j.attrib['id'].split('_')
+                juncID, juncMode = junction.attrib['id'].split('_')
                 stageData=[]
                 for stage in junction.getchildren():
                     stageData.append(stageObj(stage.attrib['id'],
@@ -47,6 +47,6 @@ class readJunctionData:
                 data[juncID][juncMode] = stageData
             
             for jID in data.keys():   
-                junctionData.append(junctionObj.junctionObj(jID, data[jID], 0.0))
+                junctionData.append(junctionObj(jID, data[jID], 0.0))
 
         return junctionData
