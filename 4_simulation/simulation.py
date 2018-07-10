@@ -10,7 +10,7 @@ import sumoConnect
 import readJunctionData
 sys.path.insert(0, '../3_signalControllers')
 import fixedTimeControl
-import actuatedControl
+import TRANSYT
 import HybridVAControl
 import traci
 import signalTools as sigTools
@@ -38,7 +38,7 @@ def simulation(x):
 
         # Configure the Map of controllers to be run
         tlControlMap = {'fixedTime': fixedTimeControl.fixedTimeControl,
-                        'VA': actuatedControl.actuatedControl,
+                        'TRANSYT': TRANSYT.TRANSYT,
                         'GPSVA': HybridVAControl.HybridVAControl,
                         'HVA': HybridVAControl.HybridVAControl,
                         'HVAslow': HybridVAControl.HybridVAControl,
@@ -70,7 +70,11 @@ def simulation(x):
         connector.launchSumoAndConnect()
 
         # Get junction data
-        jd = readJunctionData.readJunctionData(model + modelBase + ".jcn.xml")
+        if controller == TRANSYT.TRANSYT:
+            junctionFile = model + modelBase + ".t15.xml"
+        else:
+            junctionFile = model + modelBase + ".jcn.xml"
+        jd = readJunctionData.readJunctionData(junctionFile)
         junctionsList = jd.getJunctionData()
 
         # Add controller models to junctions

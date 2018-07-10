@@ -20,7 +20,7 @@ timer = sigTools.simTimer()
 timer.start()
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
-tlControllers = ['fixedTime', 'GPSVA', 'GPSVAslow']
+tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow']
 CAVratios = np.linspace(0, 1, 11)
 
 if len(sys.argv) >= 3:
