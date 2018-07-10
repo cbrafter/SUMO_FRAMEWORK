@@ -134,7 +134,7 @@
 		<stage id="1" period="37" controlString="Grrr"/><!--B-->
 	</junction>
 
-	<!--EDGEBASTON-->
+	<!--EDGBASTON-->
 	<junction id="junc12_OFF" offset="0">
 		<stage id="1" period="16" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
 		<stage id="2" period="48" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
