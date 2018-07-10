@@ -39,7 +39,7 @@ class signalControl(object):
 
     def setTransitionTime(self, junctionID):
         amber1 = 3
-        red = 2
+        red = 1
         amber2 = abs(sigTools.getIntergreenTime(junctionID) - (amber1 + red))
         if amber2 > 3:
             red += amber2 - 3
