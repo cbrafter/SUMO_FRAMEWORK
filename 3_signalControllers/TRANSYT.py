@@ -28,7 +28,6 @@ class TRANSYT(signalControl.signalControl):
         self.TIME_MS = self.getCurrentSUMOtime() if time is None else time
         self.TIME_SEC = 0.001 * self.TIME_MS
         mode = self.getMode()
-        if not self.TIME_MS % 3600000: print(mode)
 
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
