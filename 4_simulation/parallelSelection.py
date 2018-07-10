@@ -44,9 +44,9 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
                                   CAVratios[::-1],
                                   runIDs))
 # Test configurations
-configs = sorted(list(itertools.product(models[-3:],
-                                        tlControllers,
-                                        CAVratios,
+configs = sorted(list(itertools.product(models[-3:-2],
+                                        tlControllers[:1],
+                                        CAVratios[:1],
                                         runIDs)),
                   key=lambda x: x[2], reverse=True)
 # configs += sorted(list(itertools.product(models[3:],

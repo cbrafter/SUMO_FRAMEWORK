@@ -25,7 +25,10 @@ def simulation(x):
         modelName, tlLogic, CVP, run = x
         # split returns list so whether or not selly in name right base given 
         modelBase = modelName.split('_')[0]
-        procID = int(mp.current_process().name.split('-')[-1])
+        try:
+            procID = int(mp.current_process().name.split('-')[-1])
+        except:
+            procID = 1
         model = '../2_models/{}_{}/'.format(modelBase, procID)
         simport = 8812 + procID
         seed = int(run)
@@ -70,7 +73,7 @@ def simulation(x):
         connector.launchSumoAndConnect()
 
         # Get junction data
-        if controller == TRANSYT.TRANSYT:
+        if tlController == TRANSYT.TRANSYT:
             junctionFile = model + modelBase + ".t15.xml"
         else:
             junctionFile = model + modelBase + ".jcn.xml"
