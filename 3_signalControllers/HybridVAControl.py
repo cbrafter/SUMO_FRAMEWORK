@@ -22,12 +22,15 @@ class HybridVAControl(signalControl.signalControl):
         super(HybridVAControl, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
-        self.Nstages = len(self.junctionData.stages)
         self.firstCalled = traci.simulation.getCurrentTime()
         self.lastCalled = self.firstCalled
+        self.TIME_MS = self.firstCalled
+        self.TIME_SEC = 0.001 * self.TIME_MS
+        self.mode = self.getMode()
+        self.Nstages = len(self.junctionData.stages[self.mode])
         self.lastStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
-            self.junctionData.stages[self.lastStageIndex].controlString)
+            self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
         self.setModelName(model)
         self.scanRange = scanRange
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
@@ -46,8 +49,6 @@ class HybridVAControl(signalControl.signalControl):
         self.extendTime = 1.5 # 5 m in 10 m/s (acceptable journey 1.333)
         self.controlledEdges, self.laneInductors = self.getInductorMap()
 
-        self.TIME_MS = self.firstCalled
-        self.TIME_SEC = 0.001 * self.TIME_MS
         self.loopIO = loopIO
         self.threshold = 2.0
         self.activeLanes = self._getActiveLanesDict()
@@ -85,6 +86,7 @@ class HybridVAControl(signalControl.signalControl):
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
+        self.mode = self.getMode()
         # Packets sent on this step
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
@@ -121,7 +123,7 @@ class HybridVAControl(signalControl.signalControl):
             elif loopExtend is None and gpsExtend is not None:
                 updateTime = gpsExtend
             else:
-                fixedTime = self.junctionData.stages[self.lastStageIndex].period
+                fixedTime = self.junctionData.stages[self.mode][self.lastStageIndex].period
                 updateTime = max(0.0, fixedTime-elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
@@ -150,8 +152,8 @@ class HybridVAControl(signalControl.signalControl):
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
             self.transitionObject.newTransition(
                 self.junctionData.id, 
-                self.junctionData.stages[self.lastStageIndex].controlString,
-                self.junctionData.stages[nextStageIndex].controlString, 
+                self.junctionData.stages[self.mode][self.lastStageIndex].controlString,
+                self.junctionData.stages[self.mode][nextStageIndex].controlString, 
                 self.TIME_MS)
             self.lastStageIndex = nextStageIndex
             #print(self.stageTime)
@@ -267,7 +269,7 @@ class HybridVAControl(signalControl.signalControl):
     def _getActiveLanesDict(self):
         # Get the current control string to find the green lights
         activeLanesDict = {}
-        for n, stage in enumerate(self.junctionData.stages):
+        for n, stage in enumerate(self.junctionData.stages[self.mode]):
             activeLanes = self.getLanesFromString(stage.controlString)
             # Get a list of the unique active lanes
             # activeLanes = sigTools.unique(activeLanes)
@@ -514,3 +516,23 @@ class HybridVAControl(signalControl.signalControl):
             pass
 
         return loopRelation
+
+    def getMode(self):
+        timeOfDay = self.TIME_SEC % 86400  # modulo 1 day in seconds for spill over
+        # 00:00 - 06:00
+        if 0 <= timeOfDay < 21600:
+            return 'OFF'
+        # 06:00 - 11:00    
+        elif 21600 <= timeOfDay < 39600:
+            return 'PEAK'
+        # 11:00 - 16:00
+        elif 39600 <= timeOfDay < 57600:
+            return 'INTER'
+        # 16:00 - 20:00
+        elif 57600 <= timeOfDay < 72000:
+            return 'PEAK'
+        # 20:00 - 00:00
+        elif 72000 <= timeOfDay < 86400:
+            return 'OFF'
+        else:
+            return 'INTER'

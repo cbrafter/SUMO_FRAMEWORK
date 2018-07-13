@@ -73,10 +73,11 @@ def simulation(x):
         connector.launchSumoAndConnect()
 
         # Get junction data
-        if tlController == TRANSYT.TRANSYT:
+        if 'selly' in model:
             junctionFile = model + modelBase + ".t15.xml"
         else:
             junctionFile = model + modelBase + ".jcn.xml"
+
         jd = readJunctionData.readJunctionData(junctionFile)
         junctionsList = jd.getJunctionData()
 
@@ -89,7 +90,7 @@ def simulation(x):
                 CAMmod = 1.0 if 'slow' in tlLogic else False
                 loopCtrl = 'HVA' in tlLogic
                 noise = 'slow' in tlLogic
-                PER = 0.1 if noise else 0.0
+                PER = 0.33 if noise else 0.0
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
                                                    CAMoverride=CAMmod,
