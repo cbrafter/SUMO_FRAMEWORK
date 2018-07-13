@@ -29,15 +29,15 @@ timer = sigTools.simTimer()
 timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
-controller = fixedTimeControl.fixedTimeControl
-controller = TRANSYT.TRANSYT
+#controller = fixedTimeControl.fixedTimeControl
+#controller = TRANSYT.TRANSYT
 # Define road model directory
 modelname = 'sellyOak_avg'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = np.linspace(0, 1, 11)[0]
+CVP = np.linspace(0, 1, 11)[1]
 seed = 1
 
 ctrl = str(controller).split('.')[1][:-2]
@@ -61,7 +61,7 @@ connector.launchSumoAndConnect()
 print('Model connected')
 
 # Get junction data
-if controller == TRANSYT.TRANSYT:
+if 'selly' in model:
     jd = readJunctionData.readJunctionData(model + modelBase + ".t15.xml")
 else:
     jd = readJunctionData.readJunctionData(model + modelBase + ".jcn.xml")
