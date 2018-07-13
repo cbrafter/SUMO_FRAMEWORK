@@ -251,7 +251,7 @@ class HybridVAControl(signalControl.signalControl):
     def _getActiveLanes(self):
         # Get the current control string to find the green lights
         stageCtrlString = self.junctionData\
-                              .stages[self.lastStageIndex]\
+                              .stages[self.mode][self.lastStageIndex]\
                               .controlString
         try:
             # search dict to see if stage known already, if not work it out
