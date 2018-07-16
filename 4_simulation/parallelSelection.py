@@ -45,15 +45,16 @@ configs += list(itertools.product(models[:4][::-1]+models[4:],
                                   runIDs))
 # Test configurations
 configs = sorted(list(itertools.product(models[-3:],
+                                        tlControllers[:1],
+                                        CAVratios[:1],
+                                        runIDs)),
+                  key=lambda x: x[2], reverse=True)
+
+configs += sorted(list(itertools.product(models[-3:],
                                         tlControllers[1:],
                                         CAVratios,
                                         runIDs)),
                   key=lambda x: x[2], reverse=True)
-# configs += sorted(list(itertools.product(models[3:],
-#                                  tlControllers[2:],
-#                                  CAVratios,
-#                                  runIDs)),
-#                   key=lambda x: x[2], reverse=True)
 
 #configs = list(itertools.product(['sellyOak_avg'],['HVAslow'], [0.3], runIDs))
 # run in descending CAV ratio

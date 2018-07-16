@@ -90,7 +90,7 @@ def simulation(x):
                 CAMmod = 1.0 if 'slow' in tlLogic else False
                 loopCtrl = 'HVA' in tlLogic
                 noise = 'slow' in tlLogic
-                PER = 0.33 if noise else 0.0
+                PER = 0.5 if noise else 0.0
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
                                                    CAMoverride=CAMmod,
