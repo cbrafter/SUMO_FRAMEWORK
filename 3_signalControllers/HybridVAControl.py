@@ -106,14 +106,12 @@ class HybridVAControl(signalControl.signalControl):
             # get loop extend
             if self.loopIO:
                 loopExtend = self.getLoopExtension()
-                if 'junc3' in self.junctionData.id: print("LOOP")
             else:
                 loopExtend = None
 
             # get GPS extend
             if self.numCAVs > 0:
                 gpsExtend = self.getGPSextension()
-                if 'junc3' in self.junctionData.id: print("GPS")
             else:
                 gpsExtend = None
             
@@ -127,18 +125,16 @@ class HybridVAControl(signalControl.signalControl):
             else:
                 fixedTime = self.junctionData.stages[self.mode][self.lastStageIndex].period
                 updateTime = max(0.0, fixedTime-elapsedTime)
-                #if 'junc3' in self.junctionData.id: print("FIXED")
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
         elif elapsedTime <= 0.11 and self.numCAVs > 0:
             queueExtend = self.getQueueExtension()
             self.updateStageTime(queueExtend)
-            if 'junc3' in self.junctionData.id: print("QUEUE")
             # print(self.junctionData.id, self.stageTime)
         # run GPS extend only to check if queue cancelation needed
         elif elapsedTime > self.minGreenTime\
           and np.isclose(elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
-            if 'junc3' in self.junctionData.id: print("QUEUECHECK")
+            # print('checking')
             gpsExtend = self.getGPSextension()
         # process stage as normal
         else:
@@ -160,7 +156,7 @@ class HybridVAControl(signalControl.signalControl):
                 self.junctionData.stages[self.mode][nextStageIndex].controlString, 
                 self.TIME_MS)
             self.lastStageIndex = nextStageIndex
-            if 'junc3' in self.junctionData.id: print(self.stageTime)
+            # if 'junc3' in self.junctionData.id: print(self.stageTime)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
