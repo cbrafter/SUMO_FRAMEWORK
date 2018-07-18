@@ -246,29 +246,32 @@ def getNproc(mode='best'):
 
 
 def isSimGridlocked(model, timeMS):
-    timeHours = timeMS/3600000.0
-    forceSimEndTime = 40.0 if 'selly' in model else 6.0
+    try:
+        timeHours = timeMS/3600000.0
+        forceSimEndTime = 40.0 if 'selly' in model else 6.0
 
 
-    vehIDs = traci.vehicle.getIDList()
-    isStationary = []
-    isWaiting = []
-    for vID in vehIDs:
-        isStationary.append(traci.vehicle.getSpeed(vID) < 0.1)
-        # vehicle is waiting too long if all cycles complete and still blocked
-        isWaiting.append(traci.vehicle.getWaitingTime(vID) > 500.0)
+        vehIDs = traci.vehicle.getIDList()
+        isStationary = []
+        isWaiting = []
+        for vID in vehIDs:
+            isStationary.append(traci.vehicle.getSpeed(vID) < 0.1)
+            # vehicle is waiting too long if all cycles complete and still blocked
+            isWaiting.append(traci.vehicle.getWaitingTime(vID) > 500.0)
 
-    if timeHours >= forceSimEndTime:
-        print('TIMEOUT: {} >= {} on {}'.format(timeHours, forceSimEndTime, model))
-        print('TIMEOUT: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
-        sys.stdout.flush()
-        return True
-    elif all(isStationary) and all(isWaiting):
-        print('GRIDLOCK: all vehicles stationary, Thr: {}'.format(timeHours))
-        print('GRIDLOCK: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
-        sys.stdout.flush()
-        return True
-    else:
+        if timeHours >= forceSimEndTime:
+            print('TIMEOUT: {} >= {} on {}'.format(timeHours, forceSimEndTime, model))
+            print('TIMEOUT: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
+            sys.stdout.flush()
+            return True
+        elif all(isStationary) and all(isWaiting):
+            print('GRIDLOCK: all vehicles stationary, hour: {}'.format(timeHours))
+            print('GRIDLOCK: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
+            sys.stdout.flush()
+            return True
+        else:
+            return False
+    except:
         return False
 
 
