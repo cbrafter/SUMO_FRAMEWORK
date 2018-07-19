@@ -5,7 +5,7 @@ import shutil
 import time
 import numpy as np
 import multiprocessing as mp
-import itertools
+from itertools import product
 from glob import glob
 from simulation import simulation
 sys.path.insert(0, '../1_sumoAPI')
@@ -34,29 +34,17 @@ runIDs = np.arange(runStart, runEnd)
 
 configs = []
 # Generate all simulation configs for fixed time and VA
-configs += list(itertools.product(models[::-1],
-                                  tlControllers[:1],
-                                  [0.],
-                                  runIDs))
+configs += list(product(models[::-1], tlControllers[:1], [0.], runIDs))
 # Generate runs for CAV dependent controllers
-configs += list(itertools.product(models[:4][::-1]+models[4:],
-                                  tlControllers[1:],
-                                  CAVratios[::-1],
-                                  runIDs))
+configs += list(product(models[:4][::-1]+models[4:],
+                        tlControllers[1:], CAVratios[::-1], runIDs))
 # Test configurations
-configs = sorted(list(itertools.product(models[-3:],
-                                        tlControllers[:1],
-                                        CAVratios[:1],
-                                        runIDs)),
-                  key=lambda x: x[2], reverse=True)
+configs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
+configs += list(product(models[-3:], tlControllers[1:], CAVratios,  runIDs))
+configs += list(product(['sellyOak_avg'], ['HVA'], CAVratios, runIDs))
 
-configs += sorted(list(itertools.product(models[-3:],
-                                        tlControllers[1:],
-                                        CAVratios,
-                                        runIDs)),
-                  key=lambda x: x[2], reverse=True)
-
-#configs = list(itertools.product(['sellyOak_avg'],['HVAslow'], [0.3], runIDs))
+#configs = list(product(['sellyOak_avg'],['HVAslow'], [0.3], runIDs))
+configs.sort(key=lambda x: x[2], reverse=True)
 # run in descending CAV ratio
 print('# simulations: '+str(len(configs)))
 
