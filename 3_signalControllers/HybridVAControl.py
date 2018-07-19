@@ -171,7 +171,7 @@ class HybridVAControl(signalControl.signalControl):
         Tremaining = self.stageTime - elapsedTime
         self.stageTime = elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
-        self.stageTime = min(self.stageTime, self.maxGreenTime)
+        self.stageTime = float(min(self.stageTime, self.maxGreenTime))
 
     def cancelQueueExtend(self):
         # cancels queue extend if traffic queue can't move
