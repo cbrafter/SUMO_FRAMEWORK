@@ -114,6 +114,8 @@ class CAMChannel(object):
                                              self.jcnGeometry)
                 if inRange:
                     vehHeading = vehicleData[vehID][tc.VAR_ANGLE]
+                    if self.noise:
+                        vehHeading = self.addHeadingError(vehHeading)
                     vehVelocity = vehicleData[vehID][tc.VAR_SPEED]
                     if vehID in compareKeys:
                         nextNGC = self.channelData[vehID]['NGC']
@@ -132,3 +134,6 @@ class CAMChannel(object):
         # 99.7% data within 3 sigma (std. dev) 5/3 ~ 1.67
         xerr, yerr = self.random.normal(0, 1.67, 2)
         return coord[0]+xerr, coord[1]+yerr
+
+    def addHeadingError(self, heading):
+        return 20*self.random.random_sample() - 10 + heading
