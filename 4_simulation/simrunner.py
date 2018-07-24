@@ -41,7 +41,7 @@ configs += list(product(models[:4][::-1]+models[4:],
 # Test configurations
 configs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
 configs += list(product(models[-3:], tlControllers[1:], CAVratios,  runIDs))
-configs += list(product(['sellyOak_lo', 'sellyOak_hi'], ['HVA'], CAVratios, runIDs))
+configs += list(product(models[-3:], ['HVA'], CAVratios, runIDs))
 
 #configs = list(product(['sellyOak_avg'],['HVAslow'], [0.3], runIDs))
 configs.sort(key=lambda x: x[2], reverse=True)
