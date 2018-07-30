@@ -267,8 +267,12 @@ def isSimGridlocked(model, timeMS):
 
 
         if all(isStationary) and all(isWaiting):
+            meanStationary = np.mean(isStationary)
+            meanWaiting = np.mean(isWaiting)
+            if 'nan' in [str(meanStationary), str()]:
+                return False
             print('GRIDLOCK: all vehicles stationary, hour: {}'.format(timeHours))
-            print('GRIDLOCK: stopped {} waiting {}'.format(np.mean(isStationary), np.mean(isWaiting)))
+            print('GRIDLOCK: stopped {} waiting {}'.format(meanStationary, meanWaiting))
             sys.stdout.flush()
             return True
         else:

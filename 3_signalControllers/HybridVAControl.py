@@ -46,7 +46,7 @@ class HybridVAControl(signalControl.signalControl):
         self.maxGreenTime = 10*self.intergreen
         self.secondsPerMeterTraffic = 0.45
         self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
-        self.extendTime = 1.5 # 5 m in 10 m/s (acceptable journey 1.333)
+        self.extendTime = 2.0 # 5 m in 10 m/s (acceptable journey 1.333)
         self.controlledEdges, self.laneInductors = self.getInductorMap()
 
         self.loopIO = loopIO
@@ -57,10 +57,10 @@ class HybridVAControl(signalControl.signalControl):
         speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
         self.nearVehicleCatchDistanceDict =\
             {lane: 2.0*speedLimDict[lane] for lane in lanes}
-        carLen = float(traci.vehicletype.getLength('car') +
-                       traci.vehicletype.getMinGap('car'))
+        # carLen = float(traci.vehicletype.getLength('car') +
+        #                traci.vehicletype.getMinGap('car'))
         self.secondsPerMeterTrafficDict =\
-            {lane: carLen/speedLimDict[lane] for lane in lanes}
+            {lane: 1.0/speedLimDict[lane] for lane in lanes}
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -421,13 +421,13 @@ class HybridVAControl(signalControl.signalControl):
             return None
         # Set adaptive time limit
         try:
-            cond1 = np.any(detectTimes < self.threshold)
-            cond2 = np.std(detectTimes) < 2*self.threshold
-            cond3 = np.mean(detectTimes) < 3*self.threshold
+            cond1 = np.any(detectTimes <= self.threshold)
+            #cond2 = np.std(detectTimes) < 2*self.threshold
+            #cond3 = np.mean(detectTimes) < 3*self.threshold
         except Exception as e:
             print(self._getActiveLanes(), detectTimes)
             raise(e)
-        if cond1 and (cond2 or cond3):
+        if cond1:
             loopExtend = self.extendTime
         else:
             loopExtend = 0.0

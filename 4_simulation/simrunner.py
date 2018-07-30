@@ -39,11 +39,14 @@ configs += list(product(models[::-1], tlControllers[:1], [0.], runIDs))
 configs += list(product(models[:4][::-1]+models[4:],
                         tlControllers[1:], CAVratios[::-1], runIDs))
 # Test configurations
-configs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
-configs += list(product(models[-3:], tlControllers[1:], CAVratios,  runIDs))
-configs += list(product(models[-3:], ['HVA'], CAVratios, runIDs))
+#configs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
+#configs += list(product(models[-3:], tlControllers[1:], CAVratios,  runIDs))
+#configs += list(product(models[-3:], ['HVA'], CAVratios, runIDs))
+configs = [('sellyOak_lo', 'GPSVAslow', 0.2, 6),
+           ('sellyOak_lo', 'HVA', 0.0, 8),
+           ('sellyOak_lo', 'HVA', 0.0, 10)]
 
-#configs = list(product(['sellyOak_avg'],['HVAslow'], [0.3], runIDs))
+
 configs.sort(key=lambda x: x[2], reverse=True)
 # run in descending CAV ratio
 print('# simulations: '+str(len(configs)))
