@@ -20,7 +20,7 @@ timer = sigTools.simTimer()
 timer.start()
 models = ['cross', 'simpleT', 'twinT', 'corridor',
           'sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
-tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow']
+tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA']
 CAVratios = np.linspace(0, 1, 11)
 
 if len(sys.argv) >= 3:
@@ -40,10 +40,7 @@ configs += list(product(models[:4][::-1]+models[4:],
                         tlControllers[1:], CAVratios[::-1], runIDs))
 # Test configurations
 #configs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
-#configs += list(product(models[-3:], tlControllers[1:], CAVratios,  runIDs))
-configs = list(product(['sellyOak_lo', 'sellyOak_avg'], ['HVA'], CAVratios, runIDs))
-configs += [('sellyOak_lo', 'GPSVAslow', 0.2, 6)]
-
+configs = list(product(models[-3:], tlControllers[1:], CAVratios, runIDs))
 
 configs.sort(key=lambda x: x[2], reverse=True)
 # run in descending CAV ratio
