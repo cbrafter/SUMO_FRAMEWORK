@@ -53,7 +53,7 @@ nproc = min(nproc, len(configs))
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
-# Run simualtions in parallel
+# Run simualtions in parallel.
 try:
     result = workpool.map(simulation, configs, chunksize=1)
 except Exception as e:

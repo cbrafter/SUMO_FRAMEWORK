@@ -437,7 +437,7 @@ class HybridVAControl(signalControl.signalControl):
         oncomingVeh = self._getOncomingVehicles()
         haltVelocity = 0.01
         # If currently staging then extend time if there are vehicles close 
-        # to the stop line
+        # to the stop line.
         catchDistance = self.getNearVehicleCatchDistance()
         nearestVeh = self._getNearestVehicle(oncomingVeh, catchDistance)
         
