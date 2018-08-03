@@ -44,8 +44,8 @@ class HybridVAControl(signalControl.signalControl):
         self.stageTime = 0.0
         self.minGreenTime = 2*self.intergreen
         self.maxGreenTime = 10*self.intergreen
-        self.secondsPerMeterTraffic = 0.45
-        self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
+        # self.secondsPerMeterTraffic = 0.45
+        # self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
         self.extendTime = 2.0 # 5 m in 10 m/s (acceptable journey 1.333)
         self.controlledEdges, self.laneInductors = self.getInductorMap()
 
@@ -309,9 +309,8 @@ class HybridVAControl(signalControl.signalControl):
 
         return [furthestID, maxDistance]
 
-    def _getNearestVehicle(self, vehIDs):
+    def _getNearestVehicle(self, vehIDs, minDistance=28):
         nearestID = ''
-        minDistance = self.nearVehicleCatchDistance
         
         for ID in vehIDs:
             vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
@@ -439,8 +438,9 @@ class HybridVAControl(signalControl.signalControl):
         haltVelocity = 0.01
         # If currently staging then extend time if there are vehicles close 
         # to the stop line
-        nearestVeh = self._getNearestVehicle(oncomingVeh)
         catchDistance = self.getNearVehicleCatchDistance()
+        nearestVeh = self._getNearestVehicle(oncomingVeh, catchDistance)
+        
         # nV[1] is its velocity
         # If a vehicle detected and within catch distance
         if (nearestVeh['id'] != '') and (nearestVeh['distance'] <= catchDistance):
