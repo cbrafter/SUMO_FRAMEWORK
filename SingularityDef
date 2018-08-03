@@ -13,7 +13,7 @@ Description="Docker Container Simulation of Urban MObility(SUMO) + Python TraCI"
 #SINGULARITY_DISABLE_CACHE=True
 #export SINGULARITY_DISABLE_CACHE
 
-SUMO_VERSION=0.30.0
+SUMO_VERSION=0.28.0
 SUMO_HOME=/usr/share/sumo/
 # No interactivity but only during build (ARGs are deleted after build ENV persist)
 
