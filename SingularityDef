@@ -32,7 +32,11 @@ apt-get install -y lsof
 # RUN pip install --upgrade pip
 
 # Install python prerequisites
-pip install scipy numpy matplotlib psutil
+# pip install scipy numpy matplotlib psutil
+apt-get install -y python-scipy
+apt-get install -y python-numpy
+apt-get install -y python-matplotlib
+apt-get install -y python-psutil
 
 # Install SUMO Prerequistites
 apt-get install -y autoconf
