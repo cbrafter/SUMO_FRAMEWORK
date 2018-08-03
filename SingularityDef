@@ -24,7 +24,8 @@ apt-get update -y
 apt-get install -y apt-utils
 apt-get install -y build-essential python-pip git wget
 apt-get install -y nano
-apt-get install -y netstat
+# apt-get install -y netstat
+apt-get install -y net-tools
 apt-get install -y lsof
 
 # Upgrade pip
@@ -46,7 +47,7 @@ apt-get install -y libfox-1.6-0
 apt-get install -y libfox-1.6-dev
 
 # Fetch and build SUMO
-# RUN wget https://sourceforge.net/projects/sumo/files/sumo/version\ $SUMO_VERSION/sumo-all-0.30.0.tar.gz/download
+# RUN wget https://sourceforge.net/projects/sumo/files/sumo/version\ $SUMO_VERSION/sumo-all-$SUMO_VERSION.tar.gz/download
 wget http://prdownloads.sourceforge.net/sumo/sumo-all-$SUMO_VERSION.tar.gz
 tar -xvf sumo-all-$SUMO_VERSION.tar.gz
 cd /sumo-$SUMO_VERSION
@@ -65,7 +66,6 @@ rm -rf /sumo-all-$SUMO_VERSION.tar.gz
 apt-get clean
 apt-get autoremove -y
 %environment
-export SUMO_VERSION=0.30.0
 export SUMO_HOME=/usr/share/sumo/
 %runscript
 exec /bin/bash "$@"
