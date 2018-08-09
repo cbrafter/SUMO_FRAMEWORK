@@ -15,6 +15,7 @@ from collections import defaultdict
 import traci.constants as tc
 from cooperativeAwarenessMessage import CAMChannel
 
+
 class HybridVAControl(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
                  scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
@@ -46,7 +47,7 @@ class HybridVAControl(signalControl.signalControl):
         self.maxGreenTime = 10*self.intergreen
         # self.secondsPerMeterTraffic = 0.45
         # self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
-        self.extendTime = 2.0 # 5 m in 10 m/s (acceptable journey 1.333)
+        self.extendTime = 1.5 # 5 m in 10 m/s (acceptable journey 1.333)
         self.controlledEdges, self.laneInductors = self.getInductorMap()
 
         self.loopIO = loopIO
@@ -57,10 +58,10 @@ class HybridVAControl(signalControl.signalControl):
         speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
         self.nearVehicleCatchDistanceDict =\
             {lane: 2.0*speedLimDict[lane] for lane in lanes}
-        # carLen = float(traci.vehicletype.getLength('car') +
-        #                traci.vehicletype.getMinGap('car'))
+        carLen = float(traci.vehicletype.getLength('car') +
+                       traci.vehicletype.getMinGap('car'))
         self.secondsPerMeterTrafficDict =\
-            {lane: 1.0/speedLimDict[lane] for lane in lanes}
+            {lane: carLen/speedLimDict[lane] for lane in lanes}
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
