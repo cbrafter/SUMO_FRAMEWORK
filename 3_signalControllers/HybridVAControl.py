@@ -61,7 +61,7 @@ class HybridVAControl(signalControl.signalControl):
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
         self.secondsPerMeterTrafficDict =\
-            {lane: 1.0/speedLimDict[lane] for lane in lanes}
+            {lane: 1.0/(speedLimDict[lane]/1.333333) for lane in lanes}
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
