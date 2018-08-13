@@ -477,12 +477,12 @@ class HybridVAControl(signalControl.signalControl):
             # 2.6 is the acceleration of a typical vehicle, time based on 
             # reformulation of constant accelration equations
             speedLimit = self.getSpeedLimit()
-            queueExtend = ceil(sqrt(2.0*furthestVehDist[1]/self.carAccel))
+            queueExtend = sqrt(2.0*furthestVehDist[1]/self.carAccel)
             time2speedLim = speedLimit/self.carAccel
             if queueExtend > time2speedLim:
                 queueExtend = time2speedLim +\
                     ((furthestVehDist[1] - (0.5*self.carAccel*(time2speedLim**2)))/speedLimit)
-                    queueExtend = ceil(queueExtend)
+            queueExtend = ceil(queueExtend)
         # If we're in this state this should never happen but just in case
         else:
             queueExtend = 0.0
