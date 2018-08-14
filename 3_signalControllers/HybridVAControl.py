@@ -60,7 +60,8 @@ class HybridVAControl(signalControl.signalControl):
             {lane: 2.0*self.speedLimDict[lane] for lane in lanes}
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
-        self.carAccel = traci.vehicletype.getAccel('car')
+        # self.carAccel = traci.vehicletype.getAccel('car')
+        self.carAccel = 1.47  # g=9.81, comfort accel = 0.15g (Hoberock, 1977)  
         acceptJourneyFactor = 4.0/3.0
         self.secondsPerMeterTrafficDict =\
             {lane: acceptJourneyFactor/self.speedLimDict[lane] for lane in lanes}
