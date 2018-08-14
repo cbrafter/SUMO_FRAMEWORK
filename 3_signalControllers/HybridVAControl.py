@@ -61,7 +61,7 @@ class HybridVAControl(signalControl.signalControl):
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
         # self.carAccel = traci.vehicletype.getAccel('car')
-        self.carAccel = 1.47  # g=9.81, comfort accel = 0.15g (Hoberock, 1977)  
+        self.carAccel = 1.08  # g=9.81, comfort accel = 0.11g-0.15g (Hoberock, 1977)  
         acceptJourneyFactor = 4.0/3.0
         self.secondsPerMeterTrafficDict =\
             {lane: acceptJourneyFactor/self.speedLimDict[lane] for lane in lanes}
@@ -482,7 +482,7 @@ class HybridVAControl(signalControl.signalControl):
             time2speedLim = speedLimit/self.carAccel
             if queueExtend > time2speedLim:
                 queueExtend = time2speedLim +\
-                    ((furthestVehDist[1] - (0.5*self.carAccel*(time2speedLim**2)))/speedLimit)
+                    ((furthestVehDist[1] - ((speedLimit**2)/2.0*self.carAccel))/speedLimit)
             queueExtend = ceil(queueExtend)
         # If we're in this state this should never happen but just in case
         else:
