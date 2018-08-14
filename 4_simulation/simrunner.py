@@ -40,7 +40,7 @@ configs += list(product(models[:4][::-1]+models[4:],
                         tlControllers[1:], CAVratios[::-1], runIDs))
 # Test configurations
 configs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
-configs += list(product(models[-3:], tlControllers[1:], CAVratios, runIDs))
+configs = list(product(models[-3:-1], tlControllers[1:-1], CAVratios, runIDs))
 
 configs.sort(key=lambda x: x[2], reverse=False)
 # run in descending CAV ratio
