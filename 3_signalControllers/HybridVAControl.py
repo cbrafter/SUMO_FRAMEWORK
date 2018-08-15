@@ -9,7 +9,7 @@ class for fixed time signal control
 """
 import signalControl, readJunctionData, traci
 import signalTools as sigTools
-from math import atan2, degrees, ceil, hypot, sqrt
+from math import atan2, degrees, ceil, hypot
 import numpy as np
 from collections import defaultdict
 import traci.constants as tc
@@ -55,16 +55,14 @@ class HybridVAControl(signalControl.signalControl):
         self.activeLanes = self._getActiveLanesDict()
 
         lanes = [x for x in traci.lane.getIDList() if x[0] != ':']
-        self.speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
+        speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
         self.nearVehicleCatchDistanceDict =\
-            {lane: 2.0*self.speedLimDict[lane] for lane in lanes}
+            {lane: 2.0*speedLimDict[lane] for lane in lanes}
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
-        # self.carAccel = traci.vehicletype.getAccel('car')
-        self.carAccel = 1.08  # g=9.81, comfort accel = 0.11g-0.15g (Hoberock, 1977)  
         acceptJourneyFactor = 4.0/3.0
         self.secondsPerMeterTrafficDict =\
-            {lane: acceptJourneyFactor/self.speedLimDict[lane] for lane in lanes}
+            {lane: acceptJourneyFactor/speedLimDict[lane] for lane in lanes}
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -474,16 +472,10 @@ class HybridVAControl(signalControl.signalControl):
         # If new stage get furthest from stop line whose velocity < 5% speed
         # limit and determine queue length
         furthestVehDist = self._getFurthestStationaryVehicle(oncomingVeh)
+        # secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
+        secondsPerMeterTraffic = 0.3  # reach max green by 200m
         if furthestVehDist[0] != '':
-            # 2.6 is the acceleration of a typical vehicle, time based on 
-            # reformulation of constant accelration equations
-            speedLimit = self.getSpeedLimit()
-            queueExtend = sqrt(2.0*furthestVehDist[1]/self.carAccel)
-            time2speedLim = speedLimit/self.carAccel
-            if queueExtend > time2speedLim:
-                queueExtend = time2speedLim +\
-                    ((furthestVehDist[1] - ((speedLimit**2)/2.0*self.carAccel))/speedLimit)
-            queueExtend = ceil(queueExtend)
+            queueExtend = ceil(secondsPerMeterTraffic*furthestVehDist[1])
         # If we're in this state this should never happen but just in case
         else:
             queueExtend = 0.0
@@ -493,11 +485,6 @@ class HybridVAControl(signalControl.signalControl):
         activeLanes = self._getActiveLanes()
         spmts = [self.secondsPerMeterTrafficDict[lane] for lane in activeLanes]
         return max(spmts)
-
-    def getSpeedLimit(self):
-        activeLanes = self._getActiveLanes()
-        speedLimit = [self.speedLimDict[lane] for lane in activeLanes]
-        return max(speedLimit)
 
     def getNearVehicleCatchDistance(self):
         activeLanes = self._getActiveLanes()
