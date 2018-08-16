@@ -60,9 +60,10 @@ class HybridVAControl(signalControl.signalControl):
             {lane: 2.0*speedLimDict[lane] for lane in lanes}
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
-        acceptJourneyFactor = 4.0/3.0
+        queueMax = 125.0
+        self.secPerMeterTraffic = self.maxGreenTime/queueMax
         self.secondsPerMeterTrafficDict =\
-            {lane: acceptJourneyFactor/speedLimDict[lane] for lane in lanes}
+            {lane: carLen/speedLimDict[lane] for lane in lanes}
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -473,9 +474,9 @@ class HybridVAControl(signalControl.signalControl):
         # limit and determine queue length
         furthestVehDist = self._getFurthestStationaryVehicle(oncomingVeh)
         # secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
-        secondsPerMeterTraffic = 0.3  # reach max green by 200m
+        # secondsPerMeterTraffic = 0.3  # reach max green by 200m
         if furthestVehDist[0] != '':
-            queueExtend = ceil(secondsPerMeterTraffic*furthestVehDist[1])
+            queueExtend = ceil(self.secPerMeterTraffic*furthestVehDist[1])
         # If we're in this state this should never happen but just in case
         else:
             queueExtend = 0.0
