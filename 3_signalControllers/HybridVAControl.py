@@ -60,7 +60,7 @@ class HybridVAControl(signalControl.signalControl):
             {lane: 2.0*speedLimDict[lane] for lane in lanes}
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
-        queueMax = 125.0
+        queueMax = 200.0
         self.secPerMeterTraffic = self.maxGreenTime/queueMax
         self.secondsPerMeterTrafficDict =\
             {lane: carLen/speedLimDict[lane] for lane in lanes}
