@@ -226,7 +226,7 @@ class simTimer(object):
             return -1
 
     def strTime(self):
-        return time.strftime("%H:%M:%S", time.gmtime(self.runtime()))
+        return time.strftime("%dd %X", time.gmtime(self.runtime()))
 
 
 def getNproc(mode='best'):
