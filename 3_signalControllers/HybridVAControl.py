@@ -61,6 +61,9 @@ class HybridVAControl(signalControl.signalControl):
         carLen = float(traci.vehicletype.getLength('car') +
                        traci.vehicletype.getMinGap('car'))
         queueMax = 200.0
+        # Justification: clear queue if queue length is close to exceeding
+        # the control radius of 250 m so 200m<250m. The max green time should 
+        # then be set for queues exceeding this 200m threshold
         self.secPerMeterTraffic = self.maxGreenTime/queueMax
         self.secondsPerMeterTrafficDict =\
             {lane: carLen/speedLimDict[lane] for lane in lanes}
