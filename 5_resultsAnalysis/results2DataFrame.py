@@ -66,11 +66,15 @@ def parser(fileName):
     sys.stdout.flush()
     run, cvp = [int(x) for x in re.match('.+?R(.+?)_CVP(.+?).xml',
                                          fileTxt).groups()]
-
+    if cvp == 0: print(fileName)
+    # regex = '<tripinfo id="(.+?)" depart="(.+?)" departLane="(.+?)" .+? ' + \
+    #         'departDelay="(.+?)" arrival="(.+?)" arrivalLane="(.+?)" ' + \
+    #         '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
+    #         'timeLoss="(.+?)" .+? vType="(.+?)" speedFactor="(.+?)" .+?/>'
     regex = '<tripinfo id="(.+?)" depart="(.+?)" departLane="(.+?)" .+? ' + \
             'departDelay="(.+?)" arrival="(.+?)" arrivalLane="(.+?)" ' + \
             '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
-            'timeLoss="(.+?)" .+? vType="(.+?)" speedFactor="(.+?)" .+?/>'
+            'timeLoss="(.+?)" .+? vType="(.+?)" .+?/>'
     regex = re.compile(regex)
     # don't use readlines to save memory
     results = []
@@ -80,7 +84,7 @@ def parser(fileName):
         if data is None:
             continue
         vID = data.groups()[0]
-        data = convertTripData(data.groups()[1:])
+        data = convertTripData(list(data.groups()[1:])+["1.00"])
         depart, origin, departDelay, arrival, destination,\
             duration, routeLength, timeLoss, vType,\
             speedFactor = data
@@ -113,10 +117,8 @@ dataFolder = '/hardmem/results_test/'
 outputCSV = dataFolder + 'allTripInfo.csv'
 
 # recursive glob using ** notation to expand folders needs python3
-# resultFiles = glob(dataFolder+'**/tripinfo*.xml', recursive=True)
-resultFiles = glob(dataFolder+'fixedTime/**/tripinfo*.xml', recursive=True)
+resultFiles = glob(dataFolder+'TRANSYT/**/tripinfo*.xml', recursive=True)
 resultFiles += glob(dataFolder+'HVA/**/tripinfo*.xml', recursive=True)
-resultFiles += glob(dataFolder+'HVAslow/**/tripinfo*.xml', recursive=True)
 resultFiles += glob(dataFolder+'GPSVA/**/tripinfo*.xml', recursive=True)
 resultFiles += glob(dataFolder+'GPSVAslow/**/tripinfo*.xml', recursive=True)
 resultFiles.sort()
