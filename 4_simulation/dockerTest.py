@@ -22,4 +22,4 @@ print('Running the script! {} {}'.format(sys.argv[1], sys.argv[2]))
 # print(os.path.exists('/hardmem/results/stuff/'))
 # print([psutil.cpu_count(), psutil.cpu_count(logical=False)])
 
-simulation.simulation(['sellyOak_avg', 'TRANSYT', 0.1, 10])
+simulation.simulation(['sellyOak_avg', 'GPSVA', 0.1, 1])

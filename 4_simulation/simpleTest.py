@@ -32,13 +32,14 @@ controller = HybridVAControl.HybridVAControl
 #controller = fixedTimeControl.fixedTimeControl
 #controller = TRANSYT.TRANSYT
 # Define road model directory
-modelname = 'sellyOak_avg'
+modelname = 'sellyOak_hi'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = np.linspace(0, 1, 11)[1]
-seed = 1
+CVP = np.linspace(0, 1, 11)[5]
+#CVP = 0.6000000000000001
+seed = 7
 
 ctrl = str(controller).split('.')[1][:-2]
 print('STARTING: {}, {}, Run: {:03d}, AVR: {:03d}%, Date: {}'
@@ -74,12 +75,18 @@ minGreenTime = 10
 maxGreenTime = 60
 for junction in junctionData:
     if controller == HybridVAControl.HybridVAControl:
-        print('YURT')
-        controllerList.append(controller(junction, loopIO=False, model=modelBase))
+        CAMmod = False
+        loopCtrl = False
+        noise = False
+        PER = 0.0
+        controllerList.append(controller(junction, 
+                                         loopIO=loopCtrl,
+                                         CAMoverride=CAMmod,
+                                         model=modelBase,
+                                         PER=PER, noise=noise))
     elif controller == TRANSYT.TRANSYT:
         controllerList.append(controller(junction))
     else:
-        print('YIP')
         controllerList.append(controller(junction))
 
 print('Junctions and controllers acquired')
