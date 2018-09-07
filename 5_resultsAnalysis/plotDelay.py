@@ -61,6 +61,7 @@ lineStyle = {'GPSVAslow': '^k',
              'HVA': 'oC3'}
 
 data = pd.read_csv('/hardmem/results_test/allTripInfo.csv', engine='c')
+# data = data[data['routeLength']*0.001 > 1]
 W = 1.0  # delay cost per second
 K = 14.0  # cost per stop time to decel + time to accel for car
 data['delay'] = data['delay']/(data['routeLength']*0.001)
