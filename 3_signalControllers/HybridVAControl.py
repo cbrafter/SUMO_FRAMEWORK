@@ -4,7 +4,7 @@
 @author  Craig Rafter
 @date    19/08/2016
 
-class for fixed time signal control
+class for MATS the Multi-mode Adaptive Traffic Signals algorithm
 
 """
 import signalControl, readJunctionData, traci
