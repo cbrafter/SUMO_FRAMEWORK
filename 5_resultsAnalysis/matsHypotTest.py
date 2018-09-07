@@ -28,6 +28,6 @@ for model in models:
             H1 = data[(data.model == model) &
                       (data.controller == controller) &
                       (data.cvp == cvp)]
-            stat, p = ttest_ind(H0.stops, H1.stops)
+            stat, p = ttest_ind(H0.delay, H1.delay)
             N = np.mean([len(H0.delay), len(H1.delay)])
             print(model, controller, cvp, N, p)
