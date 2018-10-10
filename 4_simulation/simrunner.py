@@ -38,9 +38,9 @@ configs += list(product(models[::-1], tlControllers[:1], [0.], runIDs))
 # Generate runs for CAV dependent controllers
 configs += list(product(models[:4][::-1]+models[4:],
                         tlControllers[1:], CAVratios[::-1], runIDs))
-# Test configurations
-# configs += list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
-configs = list(product(models[-3:], tlControllers[1:], CAVratios, runIDs))
+# Test configurationsc
+onfigs = list(product(models[-3:], tlControllers[:1], CAVratios[:1], runIDs))
+configs += list(product(models[-3:], tlControllers[1:], CAVratios, runIDs))
 configs.sort(key=lambda x: x[2], reverse=True)
 
 # run in descending CAV ratio

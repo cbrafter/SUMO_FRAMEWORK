@@ -110,7 +110,7 @@ class HybridVAControl(signalControl.signalControl):
         #if self.junctionData.id == 'b2': print elapsedTime
         if Tremaining <= 5.0:
             # get loop extend
-            if self.loopIO:
+            if self.loopIO and self.numCAVs > 0:
                 loopExtend = self.getLoopExtension()
             else:
                 loopExtend = None
