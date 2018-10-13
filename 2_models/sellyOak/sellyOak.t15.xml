@@ -1,207 +1,207 @@
 <junctions>
 	<!--HIGH STREET-->
 	<junction id="junc0_OFF" offset="0">
-		<stage id="0" period="38" controlString="rrrgGGgrrrrrrr"/><!--A-->
-		<stage id="2" period="14" controlString="rrrrrrrrrrGGGG"/><!--B-->
+		<stage id="0" period="127" controlString="rrrgGGgrrrrrrr"/><!--A-->
+		<stage id="2" period="55" controlString="rrrrrrrrrrGGGG"/><!--B-->
 		<stage id="3" period="12" controlString="GGGrrrrrrrrrrr"/><!--C-->
 		<stage id="1" period="12" controlString="rrrrrrrGGGrrrr"/><!--D-->
 	</junction>
 	<junction id="junc0_INTER" offset="0">
-		<stage id="0" period="34" controlString="rrrgGGgrrrrrrr"/><!--A-->
-		<stage id="2" period="18" controlString="rrrrrrrrrrGGGG"/><!--B-->
+		<stage id="0" period="123" controlString="rrrgGGgrrrrrrr"/><!--A-->
+		<stage id="2" period="59" controlString="rrrrrrrrrrGGGG"/><!--B-->
 		<stage id="3" period="12" controlString="GGGrrrrrrrrrrr"/><!--C-->
 		<stage id="1" period="12" controlString="rrrrrrrGGGrrrr"/><!--D-->
 	</junction>
 	<junction id="junc0_PEAK" offset="0">
-		<stage id="0" period="33" controlString="rrrgGGgrrrrrrr"/><!--A-->
-		<stage id="2" period="19" controlString="rrrrrrrrrrGGGG"/><!--B-->
+		<stage id="0" period="121" controlString="rrrgGGgrrrrrrr"/><!--A-->
+		<stage id="2" period="61" controlString="rrrrrrrrrrGGGG"/><!--B-->
 		<stage id="3" period="12" controlString="GGGrrrrrrrrrrr"/><!--C-->
 		<stage id="1" period="12" controlString="rrrrrrrGGGrrrr"/><!--D-->
 	</junction>
 
 	<!--TRAIN STATION-->
 	<junction id="junc1_OFF" offset="0">
-		<stage id="0" period="18" controlString="rrGGGrrr"/><!--A-->
-		<stage id="2" period="12" controlString="rrrrrGGG"/><!--B-->
+		<stage id="0" period="89" controlString="rrGGGrrr"/><!--A-->
+		<stage id="2" period="51" controlString="rrrrrGGG"/><!--B-->
 		<stage id="3" period="12" controlString="GGrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc1_INTER" offset="0">
-		<stage id="0" period="17" controlString="rrGGGrrr"/><!--A-->
-		<stage id="2" period="13" controlString="rrrrrGGG"/><!--B-->
+		<stage id="0" period="83" controlString="rrGGGrrr"/><!--A-->
+		<stage id="2" period="57" controlString="rrrrrGGG"/><!--B-->
 		<stage id="3" period="12" controlString="GGrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc1_PEAK" offset="0">
-		<stage id="0" period="17" controlString="rrGGGrrr"/><!--A-->
-		<stage id="2" period="13" controlString="rrrrrGGG"/><!--B-->
+		<stage id="0" period="85" controlString="rrGGGrrr"/><!--A-->
+		<stage id="2" period="55" controlString="rrrrrGGG"/><!--B-->
 		<stage id="3" period="12" controlString="GGrrrrrr"/><!--C-->
 	</junction>
 
 	<!--BOURN BROOK-->
 	<junction id="junc4_OFF" offset="0">
 		<stage id="1" period="14" controlString="rrGGGrrr"/><!--B-->
-		<stage id="2" period="34" controlString="rrrrrGGG"/><!--A-->
-		<stage id="0" period="21" controlString="GGrrrrrr"/><!--C-->
+		<stage id="2" period="145" controlString="rrrrrGGG"/><!--A-->
+		<stage id="0" period="50" controlString="GGrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc4_INTER" offset="0">
 		<stage id="1" period="14" controlString="rrGGGrrr"/><!--B-->
-		<stage id="2" period="37" controlString="rrrrrGGG"/><!--A-->
-		<stage id="0" period="18" controlString="GGrrrrrr"/><!--C-->
+		<stage id="2" period="163" controlString="rrrrrGGG"/><!--A-->
+		<stage id="0" period="32" controlString="GGrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc4_PEAK" offset="0">
-		<stage id="2" period="41" controlString="rrrrrGGG"/><!--A-->
 		<stage id="1" period="14" controlString="rrGGGrrr"/><!--B-->
-		<stage id="0" period="14" controlString="GGrrrrrr"/><!--C-->
+		<stage id="2" period="175" controlString="rrrrrGGG"/><!--A-->
+		<stage id="0" period="20" controlString="GGrrrrrr"/><!--C-->
 	</junction>
 	
 	<junction id="junc5_OFF" offset="0">
 		<stage id="1" period="14" controlString="rrrrrrrGGGrrrr"/><!--B-->
-		<stage id="0" period="16" controlString="rrrgGGgrrrrrrr"/><!--C-->
+		<stage id="0" period="150" controlString="rrrgGGgrrrrrrr"/><!--C-->
 		<stage id="3" period="14" controlString="GGGrrrrrrrrrrr"/><!--D-->
-		<stage id="2" period="18" controlString="rrrrrrrrrrGGGG"/><!--A-->
+		<stage id="2" period="24" controlString="rrrrrrrrrrGGGG"/><!--A-->
 	</junction>
 	<junction id="junc5_INTER" offset="0">
 		<stage id="1" period="14" controlString="rrrrrrrGGGrrrr"/><!--B-->
-		<stage id="0" period="16" controlString="rrrgGGgrrrrrrr"/><!--C-->
+		<stage id="0" period="147" controlString="rrrgGGgrrrrrrr"/><!--C-->
 		<stage id="3" period="14" controlString="GGGrrrrrrrrrrr"/><!--D-->
-		<stage id="2" period="18" controlString="rrrrrrrrrrGGGG"/><!--A-->
+		<stage id="2" period="27" controlString="rrrrrrrrrrGGGG"/><!--A-->
 	</junction>
 	<junction id="junc5_PEAK" offset="0">
-		<stage id="2" period="19" controlString="rrrrrrrrrrGGGG"/><!--A-->
 		<stage id="1" period="14" controlString="rrrrrrrGGGrrrr"/><!--B-->
-		<stage id="0" period="15" controlString="rrrgGGgrrrrrrr"/><!--C-->
+		<stage id="0" period="142" controlString="rrrgGGgrrrrrrr"/><!--C-->
 		<stage id="3" period="14" controlString="GGGrrrrrrrrrrr"/><!--D-->
+		<stage id="2" period="32" controlString="rrrrrrrrrrGGGG"/><!--A-->
 	</junction>
 	
 	<junction id="junc6_OFF" offset="0">
-		<stage id="0" period="27" controlString="rrrrrrrGGG"/><!--A-->
+		<stage id="1" period="163" controlString="GGGrrrrrrr"/><!--C-->
+		<stage id="0" period="32" controlString="rrrrrrrGGG"/><!--A-->
 		<stage id="2" period="14" controlString="rrrGGGGrrr"/><!--B-->
-		<stage id="1" period="28" controlString="GGGrrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc6_INTER" offset="0">
-		<stage id="0" period="24" controlString="rrrrrrrGGG"/><!--A-->
+		<stage id="1" period="158" controlString="GGGrrrrrrr"/><!--C-->
+		<stage id="0" period="37" controlString="rrrrrrrGGG"/><!--A-->
 		<stage id="2" period="14" controlString="rrrGGGGrrr"/><!--B-->
-		<stage id="1" period="31" controlString="GGGrrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc6_PEAK" offset="0">
-		<stage id="0" period="24" controlString="rrrrrrrGGG"/><!--A-->
+		<stage id="1" period="154" controlString="GGGrrrrrrr"/><!--C-->
+		<stage id="0" period="41" controlString="rrrrrrrGGG"/><!--A-->
 		<stage id="2" period="14" controlString="rrrGGGGrrr"/><!--B-->
-		<stage id="1" period="31" controlString="GGGrrrrrrr"/><!--C-->
 	</junction>
 
 	<!--BRISTOL ROAD-->
 	<junction id="junc9_OFF" offset="0">
-		<stage id="3" period="17" controlString="rrrrrGGGGGGGrrrr"/><!--B-->
-		<stage id="1" period="18" controlString="rrrrrrrrrrrrGGGG"/><!--A-->
-		<stage id="0" period="23" controlString="rGGGGrrrrrrrrrrr"/><!--D-->
+		<stage id="0" period="47" controlString="rGGGGrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="17" controlString="rrrrrrrrrrrrGGGG"/><!--A-->
+		<stage id="3" period="14" controlString="rrrrrGGGGGGGrrrr"/><!--B-->
 		<stage id="2" period="14" controlString="Grrrrrrrrrrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc9_INTER" offset="0">
-		<stage id="3" period="16" controlString="rrrrrGGGGGGGrrrr"/><!--B-->
-		<stage id="1" period="18" controlString="rrrrrrrrrrrrGGGG"/><!--A-->
-		<stage id="0" period="24" controlString="rGGGGrrrrrrrrrrr"/><!--D-->
+		<stage id="0" period="42" controlString="rGGGGrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="22" controlString="rrrrrrrrrrrrGGGG"/><!--A-->
+		<stage id="3" period="14" controlString="rrrrrGGGGGGGrrrr"/><!--B-->
 		<stage id="2" period="14" controlString="Grrrrrrrrrrrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc9_PEAK" offset="0">
+		<stage id="0" period="42" controlString="rGGGGrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="22" controlString="rrrrrrrrrrrrGGGG"/><!--A-->
 		<stage id="3" period="14" controlString="rrrrrGGGGGGGrrrr"/><!--B-->
-		<stage id="1" period="17" controlString="rrrrrrrrrrrrGGGG"/><!--A-->
-		<stage id="0" period="27" controlString="rGGGGrrrrrrrrrrr"/><!--D-->
 		<stage id="2" period="14" controlString="Grrrrrrrrrrrrrrr"/><!--C-->
 	</junction>
 	
 	<junction id="junc10_OFF" offset="0">
+		<stage id="0" period="88" controlString="rrrrGGGggGGG"/><!--A-->
 		<stage id="1" period="16" controlString="GGggrrrrrrrr"/><!--B-->
-		<stage id="0" period="68" controlString="rrrrGGGggGGG"/><!--A-->
 	</junction>
 	<junction id="junc10_INTER" offset="0">
-		<stage id="1" period="17" controlString="GGggrrrrrrrr"/><!--B-->
-		<stage id="0" period="67" controlString="rrrrGGGggGGG"/><!--A-->
+		<stage id="0" period="80" controlString="rrrrGGGggGGG"/><!--A-->
+		<stage id="1" period="24" controlString="GGggrrrrrrrr"/><!--B-->
 	</junction>
 	<junction id="junc10_PEAK" offset="0">
-		<stage id="1" period="16" controlString="GGggrrrrrrrr"/><!--B-->
-		<stage id="0" period="68" controlString="rrrrGGGggGGG"/><!--A-->
+		<stage id="0" period="81" controlString="rrrrGGGggGGG"/><!--A-->
+		<stage id="1" period="23" controlString="GGggrrrrrrrr"/><!--B-->
 	</junction>
 	
 	<junction id="junc11_OFF" offset="0">
-		<stage id="0" period="23" controlString="rGGG"/><!--A-->
-		<stage id="1" period="61" controlString="Grrr"/><!--B-->
+		<stage id="0" period="78" controlString="rGGG"/><!--A-->
+		<stage id="1" period="26" controlString="Grrr"/><!--B-->
 	</junction>
 	<junction id="junc11_INTER" offset="0">
-		<stage id="0" period="27" controlString="rGGG"/><!--A-->
-		<stage id="1" period="57" controlString="Grrr"/><!--B-->
+		<stage id="0" period="79" controlString="rGGG"/><!--A-->
+		<stage id="1" period="25" controlString="Grrr"/><!--B-->
 	</junction>
 	<junction id="junc11_PEAK" offset="0">
-		<stage id="0" period="51" controlString="rGGG"/><!--A-->
-		<stage id="1" period="33" controlString="Grrr"/><!--B-->
+		<stage id="0" period="81" controlString="rGGG"/><!--A-->
+		<stage id="1" period="23" controlString="Grrr"/><!--B-->
 	</junction>
 
 	<!--EDGBASTON-->
+	<junction id="junc12_OFF" offset="0">
+		<stage id="2" period="33" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
+		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
+		<stage id="0" period="41" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="38" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+	</junction>
+	<junction id="junc12_INTER" offset="0">
+		<stage id="2" period="31" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
+		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
+		<stage id="0" period="43" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="38" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+	</junction>
+	<junction id="junc12_PEAK" offset="0">
+		<stage id="2" period="41" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
+		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
+		<stage id="0" period="46" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="25" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+	</junction>
+	
 	<junction id="junc3_OFF" offset="0">
-		<stage id="0" period="19" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
-		<stage id="1" period="16" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
-		<stage id="2" period="17" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
+		<stage id="0" period="77" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="19" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+		<stage id="2" period="16" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
 		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
 	</junction>
 	<junction id="junc3_INTER" offset="0">
-		<stage id="0" period="20" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
-		<stage id="1" period="16" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+		<stage id="0" period="71" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="20" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
 		<stage id="2" period="16" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
-		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
+		<stage id="3" period="21" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
 	</junction>
 	<junction id="junc3_PEAK" offset="0">
-		<stage id="0" period="20" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
-		<stage id="1" period="16" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+		<stage id="0" period="66" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
+		<stage id="1" period="24" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
 		<stage id="2" period="16" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
-		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
-	</junction>
-
-	<junction id="junc12_OFF" offset="0">
-		<stage id="2" period="19" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
-		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
-		<stage id="0" period="16" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
-		<stage id="1" period="17" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
-	</junction>
-	<junction id="junc12_INTER" offset="0">
-		<stage id="2" period="19" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
-		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
-		<stage id="0" period="16" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
-		<stage id="1" period="17" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
-	</junction>
-	<junction id="junc12_PEAK" offset="0">
-		<stage id="2" period="18" controlString="rrrrrrrrrrrrGGGGGGrrrrrr"/><!--B-->
-		<stage id="3" period="16" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
-		<stage id="0" period="16" controlString="GGGGGGrrrrrrrrrrrrrrrrrr"/><!--D-->
-		<stage id="1" period="18" controlString="rrrrrrGGGGGGrrrrrrrrrrrr"/><!--A-->
+		<stage id="3" period="22" controlString="rrrrrrrrrrrrrrrrrrGGGGGG"/><!--C-->
 	</junction>
 	
 	<junction id="junc7_OFF" offset="0">
-		<stage id="2" period="22" controlString="GGgrrrrr"/><!--C-->
-		<stage id="3" period="15" controlString="rrrGGrrr"/><!--A-->
-		<stage id="0" period="42" controlString="rrrrrgGG"/><!--B-->
+		<stage id="2" period="63" controlString="GGgrrrrr"/><!--C-->
+		<stage id="3" period="14" controlString="rrrGGrrr"/><!--A-->
+		<stage id="0" period="62" controlString="rrrrrgGG"/><!--B-->
 	</junction>
 	<junction id="junc7_INTER" offset="0">
-		<stage id="2" period="21" controlString="GGgrrrrr"/><!--C-->
-		<stage id="3" period="17" controlString="rrrGGrrr"/><!--A-->
-		<stage id="0" period="41" controlString="rrrrrgGG"/><!--B-->
+		<stage id="2" period="63" controlString="GGgrrrrr"/><!--C-->
+		<stage id="3" period="15" controlString="rrrGGrrr"/><!--A-->
+		<stage id="0" period="61" controlString="rrrrrgGG"/><!--B-->
 	</junction>
 	<junction id="junc7_PEAK" offset="0">
 		<stage id="3" period="15" controlString="rrrGGrrr"/><!--A-->
-		<stage id="0" period="28" controlString="rrrrrgGG"/><!--B-->
-		<stage id="2" period="36" controlString="GGgrrrrr"/><!--C-->
+		<stage id="0" period="62" controlString="rrrrrgGG"/><!--B-->
+		<stage id="2" period="62" controlString="GGgrrrrr"/><!--C-->
 	</junction>
 	
 	<junction id="junc8_OFF" offset="0">
 		<stage id="3" period="12" controlString="rrrrrrGG"/><!--A-->
-		<stage id="2" period="43" controlString="rrrGGgrr"/><!--B-->
-		<stage id="0" period="27" controlString="GGGrrrrr"/><!--C-->
+		<stage id="2" period="67" controlString="rrrGGgrr"/><!--B-->
+		<stage id="0" period="63" controlString="GGGrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc8_INTER" offset="0">
-		<stage id="3" period="12" controlString="rrrrrrGG"/><!--A-->
-		<stage id="2" period="46" controlString="rrrGGgrr"/><!--B-->
-		<stage id="0" period="24" controlString="GGGrrrrr"/><!--C-->
+		<stage id="3" period="15" controlString="rrrrrrGG"/><!--A-->
+		<stage id="2" period="69" controlString="rrrGGgrr"/><!--B-->
+		<stage id="0" period="58" controlString="GGGrrrrr"/><!--C-->
 	</junction>
 	<junction id="junc8_PEAK" offset="0">
-		<stage id="3" period="12" controlString="rrrrrrGG"/><!--A-->
-		<stage id="2" period="41" controlString="rrrGGgrr"/><!--B-->
-		<stage id="0" period="29" controlString="GGGrrrrr"/><!--C-->
+		<stage id="3" period="17" controlString="rrrrrrGG"/><!--A-->
+		<stage id="2" period="69" controlString="rrrGGgrr"/><!--B-->
+		<stage id="0" period="56" controlString="GGGrrrrr"/><!--C-->
 	</junction>
 </junctions>
