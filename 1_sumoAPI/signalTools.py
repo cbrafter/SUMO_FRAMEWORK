@@ -34,7 +34,7 @@ def getIntergreen(dist):
     return intergreen
 
 
-def getIntergreenTime(junctionID):
+def getJunctionDiameter(junctionID):
     juncPos = traci.junction.getPosition(junctionID)
     edges = traci.trafficlights.getControlledLinks(junctionID)
     edges = [x for z in edges for y in z for x in y[:2]]
@@ -49,7 +49,12 @@ def getIntergreenTime(junctionID):
         boundingCoords.append(coordMin)
     # get max of closest edge pairwise distances
     dMax = np.max(distance.cdist(boundingCoords, boundingCoords))
-    return getIntergreen(dMax)
+    return dMax
+
+
+def getIntergreenTime(junctionID):
+    juncDiameter = getJunctionDiameter(junctionID)
+    return getIntergreen(juncDiameter)
 
 
 def getSUMOHeading(currentLoc, prevLoc):
