@@ -68,6 +68,18 @@ class HybridVAControl(signalControl.signalControl):
         self.secondsPerMeterTrafficDict =\
             {lane: carLen/speedLimDict[lane] for lane in lanes}
 
+
+        # Pedestrian parameters
+        self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
+        self.pedStage = False
+        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+        juncsWithPedStages = ['junc0', 'junc9', 'junc1', 'junc10',
+                              'junc4', 'junc5', 'junc6', 'junc7']
+        if self.junctionData.id in juncsWithPedStages:
+            self.hasPedStage = True 
+        else:
+            self.hasPedStage = False
+
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
                               scanRange=self.scanRange,
@@ -88,7 +100,7 @@ class HybridVAControl(signalControl.signalControl):
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
     def process(self, time=None):
-        self.TIME_MS = self.getCurrentSUMOtime() if time is None else time
+        self.TIME_MS = time if time is not None else self.getCurrentSUMOtime()
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
@@ -107,8 +119,9 @@ class HybridVAControl(signalControl.signalControl):
         isControlInterval = not self.TIME_MS % 1000
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
-        #if self.junctionData.id == 'b2': print elapsedTime
-        if Tremaining <= 5.0:
+        if self.pedStage:
+            pass
+        elif Tremaining <= 5.0:
             # get loop extend
             try:
                 if self.loopIO and self.numCAVs > 0:
@@ -155,23 +168,35 @@ class HybridVAControl(signalControl.signalControl):
         else:
             pass
 
-        #if isControlInterval:
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
             pass
-        elif (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
+        elif not self.pedStage  and (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
             # Before the period of the next stage
             pass
+        elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
+            pass
         else:
-            # Not active, not in offset, stage not finished
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+            # We have completed one cycle, DO ped stage
+            if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
+                self.pedStage = True
+                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                nextStage = self.pedCtrlString
+            # Completed ped stage, resume signalling
+            elif self.hasPedStage and self.pedStage:
+                self.pedStage = False
+                lastStage = self.pedCtrlString
+                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                self.lastStageIndex = nextStageIndex
+            # No ped action, normal cycle
+            else:
+                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                self.lastStageIndex = nextStageIndex
+            
             self.transitionObject.newTransition(
-                self.junctionData.id, 
-                self.junctionData.stages[self.mode][self.lastStageIndex].controlString,
-                self.junctionData.stages[self.mode][nextStageIndex].controlString, 
-                self.TIME_MS)
-            self.lastStageIndex = nextStageIndex
-            # if 'junc3' in self.junctionData.id: print(self.stageTime)
+                self.junctionData.id, lastStage, nextStage)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
