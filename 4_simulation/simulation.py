@@ -104,7 +104,9 @@ def simulation(x):
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
         limitExtend = 15*60 # check again in 15 mins if things seem ok
         stopCounter = sigTools.StopCounter()
+        emissionCounter = sigTools.EmissionCounter()
         stopfilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
+        emissionFilename = './test_results/emissions_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         timeDelta = int(1000*stepSize)
         oneMinute = 60*1000  # one minute in simulation 60sec im msec
 
@@ -116,6 +118,7 @@ def simulation(x):
             for controller in controllerList:
                 controller.process(time=simTime)
             stopCounter.getStops()
+            emissionCounter.getEmissions(simTime)
             simTime += timeDelta
             # reduce calls to traci to 1 per simulation min to improve performance
             # flag will always be positive int while there are vehicles no need for else
@@ -125,6 +128,7 @@ def simulation(x):
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
                     stopCounter.writeStops(stopfilename)
+                    emissionCounter.writeEmissions(emissionFilename)
                     if sigTools.isSimGridlocked(modelBase, simTime):
                         connector.disconnect()
                         raise RuntimeError("RuntimeError: GRIDLOCK")
@@ -134,9 +138,10 @@ def simulation(x):
         # Disconnect from current configuration
         connector.disconnect()
 
-        # save stops file
+        # save stops and emissions files
         stopCounter.writeStops(stopfilename)
-
+        emissionCounter.writeEmissions(emissionFilename)
+        
         timer.stop()
         print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Runtime: {}, Date: {}'
               .format(modelName, tlLogic, run, int(CVP*100),
