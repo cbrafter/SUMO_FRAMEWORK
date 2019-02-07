@@ -19,11 +19,12 @@ import traci.constants as tc
 import time
 from psutil import cpu_count
 import sys
+import itertools
 
 
 def getIntergreen(dist):
-    # <10 & 10-18 & 19-27 & 28-37 & 38-46 & 47-55 & 56-64 & >65
-    #  5  &   6   &   7   &   8   &   9   &  10   &  11   & 12
+    # diam (m) <10 & 10-18 & 19-27 & 28-37 & 38-46 & 47-55 & 56-64 & >65
+    # time (s)  5  &   6   &   7   &   8   &   9   &  10   &  11   &  12
     diamThresholds = [10, 19, 28, 38, 47, 56, 65]
     intergreen = 5
     for threshold in diamThresholds:
@@ -155,6 +156,18 @@ class vTypeDict(defaultdict):
         self[key] = traci.vehicle.getTypeID(key)
         return self[key]
 
+class emissionDict(defaultdict):
+    def __missing__(self, key):
+        CO2 = tc.VAR_CO2EMISSION
+        CO = tc.VAR_COEMISSION
+        HC = tc.VAR_HCEMISSION
+        PMX = tc.VAR_PMXEMISSION
+        NOX = tc.VAR_NOXEMISSION
+        FUEL = tc.VAR_FUELCONSUMPTION
+        self[key] = {CO2: 0.0, CO: 0.0, HC: 0.0,
+                     PMX: 0.0, NOX: 0.0, FUEL: 0.0}
+        return self[key]
+
 
 def getDistance(A, B):
     x1, y1 = A
@@ -168,23 +181,27 @@ def flatten(listOfLists):
 
 class StopCounter(object):
     def __init__(self):
-        self.stopSubscription()  # makes self.subkey
         self.stopCountDict = defaultdict(int)
+        self.WAIT = tc.VAR_WAITING_TIME
+        self.speedTol = 1e-3
+        self.stopSubscription()  # makes self.subkey
 
     def stopSubscription(self):
-        self.subkey = traci.edge.getIDList()[0]
+        self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
         traci.edge.subscribeContext(self.subkey, 
                                     tc.CMD_GET_VEHICLE_VARIABLE, 
                                     1000000, 
-                                    varIDs=(tc.VAR_WAITING_TIME,))
+                                    varIDs=(self.WAIT,))
+
+    def getSubscriptionResults(self):
+        return traci.edge.getContextSubscriptionResults(self.subkey)
 
     def getStops(self):
-        subResults = traci.edge.getContextSubscriptionResults(self.subkey)
-        vtol = 1e-3
-        wait = tc.VAR_WAITING_TIME
+        subResults = self.getSubscriptionResults()
+        
         try:
             for vehID in subResults.keys():
-                if 0.099 < subResults[vehID][wait] < 0.101:
+                if 0.099 < subResults[vehID][self.WAIT] < 0.101:
                     self.stopCountDict[vehID] += 1
         except KeyError:
             pass
@@ -199,6 +216,76 @@ class StopCounter(object):
             for vehID in vehIDs:
                 f.write('{},{}\n'.format(vehID, self.stopCountDict[vehID]))
 
+
+class EmissionCounter(object):
+    def __init__(self):
+        self.emissionCountDict = emissionDict()
+        self.emissionMonitor = emissionDict()
+        self.vTypeDict = defaultdict(lambda: 'car')
+        self.CO2 = tc.VAR_CO2EMISSION
+        self.CO = tc.VAR_COEMISSION
+        self.HC = tc.VAR_HCEMISSION
+        self.PMX = tc.VAR_PMXEMISSION
+        self.NOX = tc.VAR_NOXEMISSION
+        self.FUEL = tc.VAR_FUELCONSUMPTION
+        self.emissionList = [self.CO2, self.CO, self.HC,
+                             self.PMX, self.NOX, self.FUEL]
+        self.vType = tc.VAR_TYPE
+        self.EmissionSubscription()  # makes self.subkey
+
+    def EmissionSubscription(self):
+        self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        traci.edge.subscribeContext(self.subkey, 
+                                    tc.CMD_GET_VEHICLE_VARIABLE, 
+                                    1000000, 
+                                    varIDs=(self.CO2, self.CO, self.HC,
+                                            self.PMX, self.NOX, self.FUEL,
+                                            self.vType))
+
+    def getSubscriptionResults(self):
+        return traci.edge.getContextSubscriptionResults(self.subkey)
+        
+    def getEmissions(self, time):
+        subResults = self.getSubscriptionResults()
+
+        try:
+            # If new second, add per second emissions to total
+            if not time%1000:
+                for vehID in subResults.keys():
+                    if vehID not in self.vTypeDict.keys():
+                        self.vTypeDict[vehID] = subResults[vehID][self.vType]
+                    # Add max per second counts to total
+                    for emission in self.emissionList:
+                        self.emissionCountDict[vehID][emission] = \
+                            self.emissionMonitor[vehID][emission]
+
+                # reset monitor for next second
+                self.emissionMonitor = emissionDict()
+
+            # Check for max per second emissions in this time step
+            for vehID in subResults.keys():
+                # Track maximum per second emissions
+                for emission in self.emissionList:
+                    self.emissionMonitor[vehID][emission] = \
+                        max(self.emissionMonitor[vehID][emission],
+                            subResults[vehID][emission])
+        except KeyError:
+            print("KeyError")
+        except AttributeError:
+            print("AttributeError")
+
+    def writeEmissions(self, filename):
+        with open(filename, 'w') as f:
+            f.write('vehID,type,CO2,CO,HCE,PMX,NOX,FUEL\n')
+            vehIDs = self.emissionCountDict.keys()
+            vehIDs.sort()
+            for vehID in vehIDs:
+                dataStr = '{},{},'.format(vehID, self.vTypeDict[vehID])
+                for emission in self.emissionList:
+                    dataStr += str(self.emissionCountDict[vehID][emission])
+                    dataStr += ','
+                dataStr += '\n'
+                f.write(dataStr)
 
 class simTimer(object):
     def __init__(self):
@@ -338,3 +425,11 @@ def floorRound(x, base):
 def ceilRound(x, base):
     fb = float(base)
     return ceil(float(x)/fb)*fb
+
+def powerset(iterable, excludeZero=True):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    if excludeZero:
+        return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(1, len(s)+1))
+    else:
+        return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
