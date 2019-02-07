@@ -105,7 +105,7 @@ def simulation(x):
         limitExtend = 15*60 # check again in 15 mins if things seem ok
         stopCounter = sigTools.StopCounter()
         emissionCounter = sigTools.EmissionCounter()
-        stopfilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
+        stopFilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         emissionFilename = './test_results/emissions_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         timeDelta = int(1000*stepSize)
         oneMinute = 60*1000  # one minute in simulation 60sec im msec
@@ -127,7 +127,7 @@ def simulation(x):
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
-                    stopCounter.writeStops(stopfilename)
+                    stopCounter.writeStops(stopFilename)
                     emissionCounter.writeEmissions(emissionFilename)
                     if sigTools.isSimGridlocked(modelBase, simTime):
                         connector.disconnect()
@@ -139,9 +139,9 @@ def simulation(x):
         connector.disconnect()
 
         # save stops and emissions files
-        stopCounter.writeStops(stopfilename)
+        stopCounter.writeStops(stopFilename)
         emissionCounter.writeEmissions(emissionFilename)
-        
+
         timer.stop()
         print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Runtime: {}, Date: {}'
               .format(modelName, tlLogic, run, int(CVP*100),
@@ -156,5 +156,5 @@ def simulation(x):
         sys.stdout.flush()
         return (False, x)
     finally:
-        stopCounter.writeStops(stopfilename)
+        stopCounter.writeStops(stopFilename)
         sys.stdout.flush()

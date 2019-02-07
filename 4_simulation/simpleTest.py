@@ -30,9 +30,9 @@ timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
-#controller = TRANSYT.TRANSYT
+controller = TRANSYT.TRANSYT
 # Define road model directory
-modelname = 'sellyOak_hi'
+modelname = 'sellyOak_lo'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
@@ -99,32 +99,22 @@ juncIDs = traci.trafficlights.getIDList()
 # Step simulation while there are vehicles
 simTime, simActive = 0, True
 # limit and extend are per 2.5 minute in test
-timeLimit = 2.5*60  # 1 hours in seconds for time limit
-limitExtend = 2.5*60 # check again in 20 mins if things seem ok
+timeLimit = 1*60  # 1 hours in seconds for time limit
+limitExtend = 1*60 # check again in 20 mins if things seem ok
 stopCounter = sigTools.StopCounter()
-stopfilename = './test_results/stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
+emissionCounter = sigTools.EmissionCounter()
+stopFilename = './test_results/stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
+emissionFilename = './test_results/emissions_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
 timeDelta = int(1000*stepSize)
 oneMinute = 60*1000  # one minute in simulation 60sec im msec
-'''
-subJunc = controllerList[0].junctionData.id
-traci.junction.subscribeContext(subJunc, 
-    tc.CMD_GET_VEHICLE_VARIABLE, 
-    1000000, 
-    varIDs=(tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED,
-            tc.VAR_TYPE, tc.VAR_WAITING_TIME))
 
-# only subscribe to loop params if necessary
-traci.junction.subscribeContext(subJunc, 
-    tc.CMD_GET_INDUCTIONLOOP_VARIABLE, 
-    1000000, 
-    varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
-'''
 while simActive:
     traci.simulationStep()
     # subResults = traci.junction.getContextSubscriptionResults(subJunc)
     for controller in controllerList:
         controller.process(time=simTime)
     stopCounter.getStops()
+    emissionCounter.getEmissions(simTime)
     simTime += timeDelta
     # reduce calls to traci to 1 per simulation min to improve performance
     # flag will always be positive int while there are vehicles no need for else
@@ -133,7 +123,8 @@ while simActive:
         # stop sim to free resources if taking longer than ~10 hours
         # i.e. the sim is gridlocked
         if timer.runtime() > timeLimit:
-            stopCounter.writeStops(stopfilename)
+            stopCounter.writeStops(stopFilename)
+            emissionCounter.writeEmissions(emissionFilename)
             if sigTools.isSimGridlocked(modelBase, simTime):
                 connector.disconnect()
                 raise RuntimeError("RuntimeError: GRIDLOCK")
@@ -141,7 +132,8 @@ while simActive:
                 print('EXTENDING')
                 timeLimit += limitExtend
 
-stopCounter.writeStops(stopfilename)
+stopCounter.writeStops(stopFilename)
+emissionCounter.writeEmissions(emissionFilename)
 connector.disconnect()
 timer.stop()
 print('Simulations complete, exectime: {}, {}'.format(timer.strTime(), time.ctime()))
