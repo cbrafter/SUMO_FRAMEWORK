@@ -19,38 +19,38 @@ def vehicleDistribution(cvp):
         <!--PASSENGER CAR-->
         <vType id="car" length="4.3" minGap="2.5"
             accel="2.6" decel="4.5" sigma="0.5" maxSpeed="50"
-            probability="{car}" color="240,228,66"/>
+            probability="{car}" color="240,228,66" emissionClass="HBEFA3/PC_G_EU4"/>
         <vType id="c_car" length="4.3" minGap="2.5"
             accel="2.6" decel="4.5" sigma="0.5" maxSpeed="50"
-            probability="{ccar}" color="240,228,66"/>
+            probability="{ccar}" color="240,228,66" emissionClass="HBEFA3/PC_G_EU4"/>
         <!--MOTORCYCLE-->
         <vType id="motorcycle" length="2.2" minGap="2.5"
             accel="5.0" decel="9.0" sigma="0.5" maxSpeed="55"
-            probability="{moto}" color="36,255,36"/>
+            probability="{moto}" color="36,255,36" emissionClass="HBEFA3/PC"/>
         <vType id="c_motorcycle" length="2.2" minGap="2.5"
             accel="5.0" decel="9.0" sigma="0.5" maxSpeed="55"
-            probability="{cmoto}" color="36,255,36"/>
+            probability="{cmoto}" color="36,255,36" emissionClass="HBEFA3/PC"/>
         <!--LGV-->
         <vType id="lgv" length="6.5" minGap="2.5"
             accel="2.0" decel="4.0" sigma="0.5" maxSpeed="44"
-            probability="{lgv}" color="86,180,233"/>
+            probability="{lgv}" color="86,180,233" emissionClass="HBEFA3/LDV"/>
         <vType id="c_lgv" length="6.5" minGap="2.5"
             accel="2.0" decel="4.0" sigma="0.5" maxSpeed="44"
-            probability="{clgv}" color="86,180,233"/>
+            probability="{clgv}" color="86,180,233" emissionClass="HBEFA3/LDV"/>
         <!--HGV-->
         <vType id="hgv" length="7.1" minGap="2.5"
             accel="1.3" decel="3.5" sigma="0.5" maxSpeed="36"
-            probability="{hgv}" color="0,158,115"/>
+            probability="{hgv}" color="0,158,115" emissionClass="HBEFA3/HDV"/>
         <vType id="c_hgv" length="7.1" minGap="2.5"
             accel="1.3" decel="3.5" sigma="0.5" maxSpeed="36"
-            probability="{chgv}" color="0,158,115"/>
+            probability="{chgv}" color="0,158,115" emissionClass="HBEFA3/HDV"/>
         <!--BUS-->
         <vType id="bus" length="12.0" minGap="2.5"
             accel="1.0" decel="3.5" sigma="0.5" maxSpeed="24"
-            probability="{bus}" color="255,109,182"/>
+            probability="{bus}" color="255,109,182" emissionClass="HBEFA3/Bus"/>
         <vType id="c_bus" length="12.0" minGap="2.5"
             accel="1.0" decel="3.5" sigma="0.5" maxSpeed="24"
-            probability="{cbus}" color="255,109,182"/>
+            probability="{cbus}" color="255,109,182" emissionClass="HBEFA3/Bus"/>
     </vTypeDistribution>
 """.format(car=Pcar*(1-cvp/100.0),
            ccar=Pcar*cvp/100.0,
