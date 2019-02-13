@@ -19,7 +19,7 @@ from cooperativeAwarenessMessage import CAMChannel
 class HybridVAControl(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
                  scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
-                 PER=0., noise=False):
+                 PER=0., noise=False, pedStageActive=False):
         super(HybridVAControl, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -75,7 +75,7 @@ class HybridVAControl(signalControl.signalControl):
         self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
         juncsWithPedStages = ['junc0', 'junc9', 'junc1', 'junc10',
                               'junc4', 'junc5', 'junc6', 'junc7']
-        if self.junctionData.id in juncsWithPedStages:
+        if self.junctionData.id in juncsWithPedStages and pedStageActive:
             self.hasPedStage = True 
         else:
             self.hasPedStage = False

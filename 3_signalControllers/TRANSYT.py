@@ -11,7 +11,7 @@ import signalControl, readJunctionData, traci
 import signalTools as sigTools
 
 class TRANSYT(signalControl.signalControl):
-    def __init__(self, junctionData):
+    def __init__(self, junctionData, pedStageActive=False):
         super(TRANSYT, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -30,7 +30,7 @@ class TRANSYT(signalControl.signalControl):
         self.pedCtrlString = 'r'*len(self.junctionData.stages[mode][self.lastStageIndex].controlString)
         juncsWithPedStages = ['junc0', 'junc9', 'junc1', 'junc10',
                               'junc4', 'junc5', 'junc6', 'junc7']
-        if self.junctionData.id in juncsWithPedStages:
+        if self.junctionData.id in juncsWithPedStages and pedStageActive:
             self.hasPedStage = True 
         else:
             self.hasPedStage = False
