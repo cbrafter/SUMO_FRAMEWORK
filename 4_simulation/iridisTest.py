@@ -16,4 +16,4 @@ def nodeTest(x):
 #result = workpool.map(nodeTest, range(500), chunksize=1)
 #result.sort(key=lambda x: int(x.split(':')[0]))
 result = nodeTest(int(sys.argv[1]))
-print('\n'.join(result))
+print(result)
