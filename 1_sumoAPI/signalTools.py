@@ -20,7 +20,7 @@ import time
 from psutil import cpu_count
 import sys
 import itertools
-
+import traceback
 
 def getIntergreen(dist):
     # diam (m) <10 & 10-18 & 19-27 & 28-37 & 38-46 & 47-55 & 56-64 & >65
@@ -270,9 +270,13 @@ class EmissionCounter(object):
                         max(self.emissionMonitor[vehID][emission],
                             subResults[vehID][emission])
         except KeyError:
-            print("KeyError")
+            pass
+            # print("Emissions Writer: KeyError")
+            # traceback.print_exc()
         except AttributeError:
-            print("AttributeError")
+            pass
+            # print("Emissions Writer: AttributeError")
+            # traceback.print_exc()
 
     def writeEmissions(self, filename):
         with open(filename, 'w') as f:
