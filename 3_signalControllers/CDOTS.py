@@ -34,6 +34,7 @@ class CDOTS(signalControl.signalControl):
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.mode = self.getMode()
         self.Nstages = len(self.junctionData.stages[self.mode])
+        self.stageLastCallTime = [0.0]*self.Nstages
         self.lastStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
@@ -59,6 +60,9 @@ class CDOTS(signalControl.signalControl):
         self.threshold = 2.0
         self.activeLanes = self._getActiveLanesDict()
 
+        self.stopCounter = None
+        self.emissionCounter = None
+
         lanes = [x for x in traci.lane.getIDList() if x[0] != ':']
         speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
         self.nearVehicleCatchDistanceDict =\
@@ -78,12 +82,16 @@ class CDOTS(signalControl.signalControl):
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
         self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+        self.stagesSinceLastPedStage = 0
         juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
                               'junc5', 'junc6', 'junc7']
         if self.junctionData.id in juncsWithPedStages and pedStageActive:
             self.hasPedStage = True 
         else:
             self.hasPedStage = False
+
+        # Stage calculation utility
+        self.stageOptimiser = cutils.stageOptimiser(self)
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -104,12 +112,14 @@ class CDOTS(signalControl.signalControl):
                 250, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
-    def process(self, time=None):
+    def process(self, time=None, stopCounter=None, emissionCounter=None):
         self.TIME_MS = time if time is not None else self.getCurrentSUMOtime()
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
-        
+        self.stopCounter = stopCounter
+        self.emissionCounter = emissionCounter
+
         # Packets sent on this step
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
@@ -180,13 +190,20 @@ class CDOTS(signalControl.signalControl):
         elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
             pass
         else:
-            nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+            # Transitioning to next stage
+            # record the most recent end time for a stage so we can calculate 
+            # how long since the stage was last used
+            self.stageLastCallTime[self.lastStageIndex] = self.TIME_SEC
+            nextStageIndex = self.stageOptimiser.getNextStage()
+            if nextStageIndex is None:
+                nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
             # We have completed one cycle, DO ped stage
-            if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
+            if self.hasPedStage and self.stagesSinceLastPedStage > self.Nstages and not self.pedStage:
                 self.pedStage = True
+                self.stagesSinceLastPedStage = 0
                 lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
@@ -200,6 +217,7 @@ class CDOTS(signalControl.signalControl):
                 lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
                 self.lastStageIndex = nextStageIndex
+                self.stagesSinceLastPedStage += 1
             
             self.transitionObject.newTransition(
                 self.junctionData.id, lastStage, nextStage)
@@ -511,15 +529,19 @@ class CDOTS(signalControl.signalControl):
             gpsExtend = 0.0
         return gpsExtend
 
-    def getQueueExtension(self):
+    def getQueueLength(self):
         oncomingVeh = self._getOncomingVehicles()
         # If new stage get furthest from stop line whose velocity < 5% speed
         # limit and determine queue length
-        furthestVehDist = self._getFurthestStationaryVehicle(oncomingVeh)
+        queueInfo = self._getFurthestStationaryVehicle(oncomingVeh)
+        return queueInfo  # [vehID, distance]
+
+    def getQueueExtension(self):
+        queueInfo = self.getQueueLength()
         # secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
         # secondsPerMeterTraffic = 0.3  # reach max green by 200m
-        if furthestVehDist[0] != '':
-            queueExtend = ceil(self.secPerMeterTraffic*furthestVehDist[1])
+        if queueInfo != '':
+            queueExtend = ceil(self.secPerMeterTraffic*queueInfo[1])
         # If we're in this state this should never happen but just in case
         else:
             queueExtend = 0.0
