@@ -21,27 +21,26 @@ class TRANSYT(signalControl.signalControl):
         self.firstCalled = self.TIME_MS
         self.lastCalled = self.TIME_MS
         self.lastStageIndex = 0
-        mode = self.getMode()
-        self.Nstages = len(self.junctionData.stages[mode])
+        self.mode = self.getMode()
+        self.Nstages = len(self.junctionData.stages[self.mode])
 
         # Pedestrian parameters (1.2 m/s walking speed)
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
-        self.pedCtrlString = 'r'*len(self.junctionData.stages[mode][self.lastStageIndex].controlString)
-        juncsWithPedStages = ['junc0', 'junc9', 'junc1', 'junc10',
-                              'junc4', 'junc5', 'junc6', 'junc7']
+        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+        juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
+                              'junc5', 'junc6', 'junc7']
         if self.junctionData.id in juncsWithPedStages and pedStageActive:
             self.hasPedStage = True 
         else:
             self.hasPedStage = False
 
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
-            self.junctionData.stages[mode][self.lastStageIndex].controlString)
+            self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
         
     def process(self, time=None):
         self.TIME_MS = time if time is not None else self.getCurrentSUMOtime()
         self.TIME_SEC = 0.001 * self.TIME_MS
-        mode = self.getMode()
 
         if self.transitionObject.active:
             # If the transition object is active i.e. processing a transition
@@ -50,28 +49,32 @@ class TRANSYT(signalControl.signalControl):
             # Process offset first
             pass
         elif not self.pedStage and ((self.TIME_MS - self.lastCalled) <
-              (self.junctionData.stages[mode][self.lastStageIndex].period*1000)):
+              (self.junctionData.stages[self.mode][self.lastStageIndex].period*1000)):
             # Before the period of the next stage
             pass
         elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
+            # process the ped stage
             pass
         else:
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+            # change mode only at this point to avoid changing the stage time
+            # mid-process
+            self.mode = self.getMode()  
             # We have completed one cycle, DO ped stage
             if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
                 self.pedStage = True
-                lastStage = self.junctionData.stages[mode][self.lastStageIndex].controlString
+                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
                 self.pedStage = False
                 lastStage = self.pedCtrlString
-                nextStage = self.junctionData.stages[mode][nextStageIndex].controlString
+                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
                 self.lastStageIndex = nextStageIndex
             # No ped action, normal cycle
             else:
-                lastStage = self.junctionData.stages[mode][self.lastStageIndex].controlString
-                nextStage = self.junctionData.stages[mode][nextStageIndex].controlString
+                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
                 self.lastStageIndex = nextStageIndex
             
             self.transitionObject.newTransition(

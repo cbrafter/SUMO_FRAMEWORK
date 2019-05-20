@@ -73,8 +73,8 @@ class HybridVAControl(signalControl.signalControl):
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
         self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
-        juncsWithPedStages = ['junc0', 'junc9', 'junc1', 'junc10',
-                              'junc4', 'junc5', 'junc6', 'junc7']
+        juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
+                              'junc5', 'junc6', 'junc7']
         if self.junctionData.id in juncsWithPedStages and pedStageActive:
             self.hasPedStage = True 
         else:
@@ -104,7 +104,7 @@ class HybridVAControl(signalControl.signalControl):
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
-        self.mode = self.getMode()
+        
         # Packets sent on this step
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
@@ -169,15 +169,16 @@ class HybridVAControl(signalControl.signalControl):
             pass
 
         if self.transitionObject.active:
-            # If the transition object is active i.e. processing a transition
-            pass
+            pass # If the transition object is active i.e. processing a transition
         elif not self.pedStage  and (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
-            # Before the period of the next stage
-            pass
+            pass # Before the period of the next stage
         elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
             pass
         else:
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+            # change mode only at this point to avoid changing the stage time
+            # mid-process
+            self.mode = self.getMode()
             # We have completed one cycle, DO ped stage
             if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
                 self.pedStage = True
