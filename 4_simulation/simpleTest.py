@@ -30,16 +30,16 @@ timer.start()
 controller = HybridVAControl.HybridVAControl
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
-controller = TRANSYT.TRANSYT
+#controller = TRANSYT.TRANSYT
 # Define road model directory
 modelname = 'sellyOak_lo'
 modelBase = modelname.split('_')[0]
 model = '../2_models/{}/'.format(modelBase)
 # Generate new routes
 stepSize = 0.1
-CVP = np.linspace(0, 1, 11)[5]
-#CVP = 0.6000000000000001
-seed = 7
+CVP = np.linspace(0, 1, 11)[0]
+seed = 32
+pedStage=True
 
 ctrl = str(controller).split('.')[1][:-2]
 print('STARTING: {}, {}, Run: {:03d}, AVR: {:03d}%, Date: {}'
@@ -83,9 +83,10 @@ for junction in junctionData:
                                          loopIO=loopCtrl,
                                          CAMoverride=CAMmod,
                                          model=modelBase,
-                                         PER=PER, noise=noise))
+                                         PER=PER, noise=noise,
+                                         pedStageActive=pedStage))
     elif controller == TRANSYT.TRANSYT:
-        controllerList.append(controller(junction))
+        controllerList.append(controller(junction, pedStageActive=pedStage))
     else:
         controllerList.append(controller(junction))
 
