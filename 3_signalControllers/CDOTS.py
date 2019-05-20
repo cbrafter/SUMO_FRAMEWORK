@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """
-@file    SCOAR.py
+@file    CDOTS.py
 @author  Craig Rafter
 @date    19/08/2016
 
 class for ROSA - the Resource Optimised Signal Adaptation algorithm
 class for (A)DOTS - Data/Dynamically Optmised Traffic Signals
+class for C-DOTS - Connected Data Optmised Traffic Signals
 class for AROS - Adaptive Resource Optimised Signals 
 class for SCOAR - Signal Control by Optimisation of Available Resources
 
@@ -17,13 +18,14 @@ import numpy as np
 from collections import defaultdict
 import traci.constants as tc
 from cooperativeAwarenessMessage import CAMChannel
+import cdots_utils as cutils
 
 
-class SCOAR(signalControl.signalControl):
+class CDOTS(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
                  scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
-                 PER=0., noise=False):
-        super(SCOAR, self).__init__()
+                 PER=0., noise=False, pedStageActive=False):
+        super(CDOTS, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
         self.firstCalled = traci.simulation.getCurrentTime()
@@ -71,6 +73,18 @@ class SCOAR(signalControl.signalControl):
         self.secondsPerMeterTrafficDict =\
             {lane: carLen/speedLimDict[lane] for lane in lanes}
 
+
+        # Pedestrian parameters
+        self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
+        self.pedStage = False
+        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+        juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
+                              'junc5', 'junc6', 'junc7']
+        if self.junctionData.id in juncsWithPedStages and pedStageActive:
+            self.hasPedStage = True 
+        else:
+            self.hasPedStage = False
+
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
                               scanRange=self.scanRange,
@@ -91,11 +105,11 @@ class SCOAR(signalControl.signalControl):
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
     def process(self, time=None):
-        self.TIME_MS = self.getCurrentSUMOtime() if time is None else time
+        self.TIME_MS = time if time is not None else self.getCurrentSUMOtime()
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = min(self.stageTime, self.maxGreenTime)
-        self.mode = self.getMode()
+        
         # Packets sent on this step
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
@@ -110,20 +124,27 @@ class SCOAR(signalControl.signalControl):
         isControlInterval = not self.TIME_MS % 1000
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
-        #if self.junctionData.id == 'b2': print elapsedTime
-        if Tremaining <= 5.0:
+        if self.pedStage:
+            pass
+        elif Tremaining <= 5.0:
             # get loop extend
-            if self.loopIO:
-                loopExtend = self.getLoopExtension()
-            else:
+            try:
+                if self.loopIO and self.numCAVs > 0:
+                    loopExtend = self.getLoopExtension()
+                else:
+                    loopExtend = None
+            except:
                 loopExtend = None
 
             # get GPS extend
-            if self.numCAVs > 0:
-                gpsExtend = self.getGPSextension()
-            else:
+            try:
+                if self.numCAVs > 0:
+                    gpsExtend = self.getGPSextension()
+                else:
+                    gpsExtend = None
+            except:
                 gpsExtend = None
-            
+
             # update stage time
             if loopExtend is not None and gpsExtend is not None:
                 updateTime = max(loopExtend, gpsExtend)
@@ -137,8 +158,11 @@ class SCOAR(signalControl.signalControl):
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
         elif elapsedTime <= 0.11 and self.numCAVs > 0:
-            queueExtend = self.getQueueExtension()
-            self.updateStageTime(queueExtend)
+            try:
+                queueExtend = self.getQueueExtension()
+                self.updateStageTime(queueExtend)
+            except:
+                pass
             # print(self.junctionData.id, self.stageTime)
         # run GPS extend only to check if queue cancelation needed
         elif elapsedTime > self.minGreenTime\
@@ -149,27 +173,40 @@ class SCOAR(signalControl.signalControl):
         else:
             pass
 
-        #if isControlInterval:
         if self.transitionObject.active:
-            # If the transition object is active i.e. processing a transition
-            pass
-        elif (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
-            # Before the period of the next stage
+            pass # If the transition object is active i.e. processing a transition
+        elif not self.pedStage  and (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
+            pass # Before the period of the next stage
+        elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
             pass
         else:
-            # Not active, not in offset, stage not finished
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+            # change mode only at this point to avoid changing the stage time
+            # mid-process
+            self.mode = self.getMode()
+            # We have completed one cycle, DO ped stage
+            if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
+                self.pedStage = True
+                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                nextStage = self.pedCtrlString
+            # Completed ped stage, resume signalling
+            elif self.hasPedStage and self.pedStage:
+                self.pedStage = False
+                lastStage = self.pedCtrlString
+                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                self.lastStageIndex = nextStageIndex
+            # No ped action, normal cycle
+            else:
+                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                self.lastStageIndex = nextStageIndex
+            
             self.transitionObject.newTransition(
-                self.junctionData.id, 
-                self.junctionData.stages[self.mode][self.lastStageIndex].controlString,
-                self.junctionData.stages[self.mode][nextStageIndex].controlString, 
-                self.TIME_MS)
-            self.lastStageIndex = nextStageIndex
-            # if 'junc3' in self.junctionData.id: print(self.stageTime)
+                self.junctionData.id, lastStage, nextStage)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
-        super(SCOAR, self).process(self.TIME_MS)
+        super(CDOTS, self).process(self.TIME_MS)
 
     def _getSubscriptionResults(self):
         self.subResults = traci.junction.getContextSubscriptionResults(self.junctionData.id)
