@@ -12,3 +12,5 @@ info
 *.xmle
 5_resultsAnalysis/pngs
 singularityConfig.txt
+*.zip
+
