@@ -97,11 +97,12 @@ def makeRoutes(config):
                 if '<routes' in line:
                     f.write(vehicleDistribution(cvp))
 
-models = ['cross', 'simpleT', 'twinT', 'corridor',
-          'sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
-runs = 11
+# models = ['cross', 'simpleT', 'twinT', 'corridor',
+#           'sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
+models = ['sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
+runs = 51
 configs = itertools.product(models, range(runs+1))
-nproc = 8
+nproc = 6
 print('Starting route building on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
