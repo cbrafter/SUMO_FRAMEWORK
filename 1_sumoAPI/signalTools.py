@@ -196,11 +196,11 @@ class StopCounter(object):
         return traci.edge.getContextSubscriptionResults(self.subkey)
 
     def getStops(self):
-        subResults = self.getSubscriptionResults()
+        self.subResults = self.getSubscriptionResults()
         
         try:
-            for vehID in subResults.keys():
-                if 0.099 < subResults[vehID][self.WAIT] < 0.101:
+            for vehID in self.subResults.keys():
+                if 0.099 < self.subResults[vehID][self.WAIT] < 0.101:
                     self.stopCountDict[vehID] += 1
         except KeyError:
             pass
@@ -245,29 +245,29 @@ class EmissionCounter(object):
         return traci.edge.getContextSubscriptionResults(self.subkey)
         
     def getEmissions(self, time):
-        subResults = self.getSubscriptionResults()
+        self.subResults = self.getSubscriptionResults()
 
         try:
             # If new second, add per second emissions to total
             if not time%1000:
-                for vehID in subResults.keys():
+                for vehID in self.subResults.keys():
                     if vehID not in self.vTypeDict.keys():
-                        self.vTypeDict[vehID] = subResults[vehID][self.vType]
+                        self.vTypeDict[vehID] = self.subResults[vehID][self.vType]
                     # Add max per second counts to total
                     for emission in self.emissionList:
-                        self.emissionCountDict[vehID][emission] = \
+                        self.emissionCountDict[vehID][emission] += \
                             self.emissionMonitor[vehID][emission]
 
                 # reset monitor for next second
                 self.emissionMonitor = emissionDict()
 
             # Check for max per second emissions in this time step
-            for vehID in subResults.keys():
+            for vehID in self.subResults.keys():
                 # Track maximum per second emissions
                 for emission in self.emissionList:
                     self.emissionMonitor[vehID][emission] = \
                         max(self.emissionMonitor[vehID][emission],
-                            subResults[vehID][emission])
+                            self.subResults[vehID][emission])
         except KeyError:
             pass
             # print("Emissions Writer: KeyError")
