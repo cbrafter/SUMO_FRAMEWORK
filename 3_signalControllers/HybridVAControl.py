@@ -27,13 +27,13 @@ class HybridVAControl(signalControl.signalControl):
         self.lastCalled = self.firstCalled
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
-        self.mode = self.getMode()
+        self.mode = self.getMode()  # TRANSYT flow mode
         self.Nstages = len(self.junctionData.stages[self.mode])
         self.lastStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
         self.setModelName(model)
-        self.scanRange = scanRange
+        self.scanRange = scanRange  #  max range of effect by junction
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
         self.jcnCtrlRegion = self._getJncCtrlRegion()
         # self.laneNumDict = sigTools.getLaneNumbers()
@@ -141,12 +141,16 @@ class HybridVAControl(signalControl.signalControl):
                 gpsExtend = None
 
             # update stage time
+            # Have both loop and CV data
             if loopExtend is not None and gpsExtend is not None:
                 updateTime = max(loopExtend, gpsExtend)
+            # Have loop data but not CV data
             elif loopExtend is not None and gpsExtend is None:
                 updateTime = loopExtend
+            # Have Cv data but not loop data
             elif loopExtend is None and gpsExtend is not None:
                 updateTime = gpsExtend
+            # No loop or CV data
             else:
                 fixedTime = self.junctionData.stages[self.mode][self.lastStageIndex].period
                 updateTime = max(0.0, fixedTime-elapsedTime)
@@ -175,6 +179,7 @@ class HybridVAControl(signalControl.signalControl):
         elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
             pass
         else:
+            # Transition to next stage
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
             # change mode only at this point to avoid changing the stage time
             # mid-process
@@ -226,6 +231,7 @@ class HybridVAControl(signalControl.signalControl):
         return 0.001*(self.TIME_MS - self.lastCalled)
 
     def _getJncCtrlRegion(self):
+        # Truncate junction control region if other junctions nearby
         jncPosition = traci.junction.getPosition(self.junctionData.id)
         otherJuncPos = [traci.junction.getPosition(x)\
                         for x in traci.trafficlights.getIDList()\
@@ -377,6 +383,7 @@ class HybridVAControl(signalControl.signalControl):
         return meanDetectTimePerLane
 
     def getInductorMap(self):
+        # Work out which lanes are controlled and which loops they are associated with
         otherJunctionLanes = []
         juncIDs = traci.trafficlights.getIDList()
         for junc in juncIDs:

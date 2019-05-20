@@ -21,7 +21,7 @@ class TRANSYT(signalControl.signalControl):
         self.firstCalled = self.TIME_MS
         self.lastCalled = self.TIME_MS
         self.lastStageIndex = 0
-        self.mode = self.getMode()
+        self.mode = self.getMode()  # TRANSYT Timing plan mode
         self.Nstages = len(self.junctionData.stages[self.mode])
 
         # Pedestrian parameters (1.2 m/s walking speed)
@@ -56,6 +56,7 @@ class TRANSYT(signalControl.signalControl):
             # process the ped stage
             pass
         else:
+            # transition to next stage
             nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
             # change mode only at this point to avoid changing the stage time
             # mid-process
