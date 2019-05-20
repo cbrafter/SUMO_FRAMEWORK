@@ -7,6 +7,8 @@
 4_simulation/test_results
 4_simulation/simple
 5_resultsAnalysis/*.pdf
+5_resultsAnalysis/old/
+5_resultsAnalysis/png/
 testing
 info
 *.xmle
