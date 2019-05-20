@@ -16,11 +16,11 @@ import traci
 import signalTools as sigTools
 import traceback
 
-def simulation(x):
+def simulation(configList, GUIbool=False):
     try:
         timer = sigTools.simTimer()
         timer.start()
-        modelName, tlLogic, CVP, run, pedStage, procID = x
+        modelName, tlLogic, CVP, run, pedStage, procID = configList
         pedStr = '_ped' if pedStage else ''
         # split returns list so whether or not selly in name right base given 
         modelBase = modelName.split('_')[0]
@@ -32,7 +32,7 @@ def simulation(x):
         configFile = model + modelBase + ".sumocfg"
 
         print('STARTING: {}, {}, Run: {:03d}, CVP: {:03d}%, Ped: {}, Date: {}'
-              .format(modelName, tlLogic, run, int(CVP*100), time.ctime()))
+              .format(modelName, tlLogic, run, int(CVP*100), pedStage, time.ctime()))
         sys.stdout.flush()
 
         # Configure the Map of controllers to be run
@@ -65,7 +65,7 @@ def simulation(x):
               run=seed, port=simport, seed=seed)
 
         # Connect to model
-        connector = sumoConnect.sumoConnect(configFile, gui=False, port=simport)
+        connector = sumoConnect.sumoConnect(configFile, gui=GUIbool, port=simport)
         connector.launchSumoAndConnect()
 
         # Get junction data
@@ -95,7 +95,6 @@ def simulation(x):
             else:
                 controllerList.append(tlController(junction, pedStageActive=pedStage))
 
-        # Step simulation while there are vehicles
         # Step simulation while there are vehicles
         simTime, simActive = 0, True
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
@@ -140,8 +139,8 @@ def simulation(x):
         emissionCounter.writeEmissions(emissionFilename)
 
         timer.stop()
-        print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Runtime: {}, Date: {}'
-              .format(modelName, tlLogic, run, int(CVP*100),
+        print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Ped: {} Runtime: {}, Date: {}'
+              .format(modelName, tlLogic, run, int(CVP*100), pedStage,
                       timer.strTime(), time.ctime()))
         sys.stdout.flush()
         return (True, x)
@@ -156,3 +155,9 @@ def simulation(x):
     finally:
         stopCounter.writeStops(stopFilename)
         sys.stdout.flush()
+        # remove spawned model folder
+        try:
+            if os.path.isdir(model):
+                shutil.rmtree(model)
+        except:
+            print('Could not remove folder: '+ model)
