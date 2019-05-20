@@ -13,6 +13,7 @@ sys.path.insert(0, '../3_signalControllers')
 import signalTools as sigTools
 from socket import gethostname
 import traceback
+import random
 
 ###############################################################################
 # MAIN SIMULATION DEFINITION
@@ -23,35 +24,41 @@ models = ['sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
 tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA']
 pedStage = [True, False]
 CAVratios = np.linspace(0, 1, 11)
-runIDs = [1]
+runIDs = list(range(1,51))
 PBS_ARRAYID = int(sys.argv[-1])
-start = PBS_ARRAYID * 16
-stop = (PBS_ARRAYID + 1) * 16
+nproc = 16
+nsims = 32
+startIndex = PBS_ARRAYID * nsims
+stopIndex = (PBS_ARRAYID + 1) * nsims
 
 configs = []
-# Generate all simulation configs for fixed time and VA
-configs += list(product(models[::-1], tlControllers[:1], [0.], runIDs, pedStage))
-# Generate runs for CAV dependent controllers
-configs += list(product(models[:4][::-1]+models[4:],
-                        tlControllers[1:], CAVratios[::-1], runIDs, pedStage))
-# Test configurations
-configs = list(product(models, tlControllers[:1], CAVratios[:1], runIDs, pedStage)) # 6
+
+# Test configurations, don't run TRANSYT for lo and hi cases
+configs = list(product(models, tlControllers[:1], CAVratios[:1], runIDs, pedStage)) # 2
 configs += list(product(models, tlControllers[1:], CAVratios, runIDs, pedStage)) # 198
 
-#sort configurations to process most intensive case first
-configs.sort(key=lambda x: x[0], reverse=False)
-if stop >= len(configs):
-    configs = configs[start:]
-else:
-    configs = configs[start:stop]
-# run in descending CAV ratio
-print('# simulations: '+str(len(configs)))
+# configs = list(product(['sellyOak_avg'], tlControllers[:1], CAVratios[:1], runIDs, pedStage))
+# configs += list(product(['sellyOak_avg'], tlControllers[1:], CAVratios, runIDs, pedStage))
 
-nproc = 16
+#sort configurations to process most intensive case first
+configs.sort(key=lambda x: x[3], reverse=False)
+# randomise configs so that long running jobs aren't bunched
+random.seed(1)
+random.shuffle(configs)
+
+if stopIndex >= len(configs):
+    if startIndex >= len(configs):
+        print("PBS_ARRAYID indexes beyond #configs")
+        sys.exit()
+    configs = configs[startIndex:]
+else:
+    configs = configs[startIndex:stopIndex]
+
 for i in range(len(configs)):
     configs[i] = list(configs[i])
-    configs[i].append(i)
+    configs[i].append(i%nsims)
 
+print('# simulations: '+str(len(configs)))
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)
