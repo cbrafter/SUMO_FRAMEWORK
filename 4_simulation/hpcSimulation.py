@@ -12,6 +12,7 @@ sys.path.insert(0, '../3_signalControllers')
 import fixedTimeControl
 import TRANSYT
 import HybridVAControl
+import CDOTS
 import traci
 import signalTools as sigTools
 import traceback
@@ -41,7 +42,9 @@ def simulation(configList, GUIbool=False):
                         'GPSVA': HybridVAControl.HybridVAControl,
                         'HVA': HybridVAControl.HybridVAControl,
                         'HVAslow': HybridVAControl.HybridVAControl,
-                        'GPSVAslow': HybridVAControl.HybridVAControl}
+                        'GPSVAslow': HybridVAControl.HybridVAControl,
+                        'CDOTS': CDOTS.CDOTS,
+                        'CDOTSslow': CDOTS.CDOTS}
         tlController = tlControlMap[tlLogic]
 
         exportPath = '/hardmem/results/' + tlLogic + pedStr + '/' + modelName + '/'
@@ -111,11 +114,17 @@ def simulation(configList, GUIbool=False):
 
         while simActive:
             traci.simulationStep()
-            for controller in controllerList:
-                controller.process(time=simTime)
+            simTime += timeDelta
             stopCounter.getStops()
             emissionCounter.getEmissions(simTime)
-            simTime += timeDelta
+
+            for controller in controllerList:
+                if 'CDOTS' in tlLogic:
+                    controller.process(time=simTime, stopCounter=stopCounter, 
+                                       emissionCounter=emissionCounter)
+                else:
+                    controller.process(time=simTime)
+
             # reduce calls to traci to 1 per simulation min to improve performance
             # flag will always be positive int while there are vehicles no need for else
             if not simTime % oneMinute: 
@@ -143,15 +152,15 @@ def simulation(configList, GUIbool=False):
               .format(modelName, tlLogic, run, int(CVP*100), pedStage,
                       timer.strTime(), time.ctime()))
         sys.stdout.flush()
-        return (True, x)
+        return (True, configList)
     except Exception as e:
         # Print if an experiment fails and provide repr of params to repeat run
         timer.stop()
-        print('***FAILURE '+timer.strTime()+', '+time.ctime()+'*** '+repr(x))
+        print('***FAILURE '+timer.strTime()+', '+time.ctime()+'*** '+repr(configList))
         print(str(e))
         traceback.print_exc()
         sys.stdout.flush()
-        return (False, x)
+        return (False, configList)
     finally:
         stopCounter.writeStops(stopFilename)
         sys.stdout.flush()
