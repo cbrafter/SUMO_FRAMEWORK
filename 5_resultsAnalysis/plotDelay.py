@@ -36,7 +36,7 @@ def roundUp(x, num):
 def savePDF(pdfFile, figure):
     ''' Save figure at publication quality using desired settings
     '''
-    pdfFile.savefig(figure, dpi=300,
+    pdfFile.savefig(figure, dpi=600,
                     # bbox_extra_artists=(lgnd,),
                     bbox_inches='tight', pad_inches=0.1)
 
@@ -60,7 +60,7 @@ lineStyle = {'GPSVAslow': '^k',
              'GPSVA': '*C2',
              'HVA': 'oC3'}
 
-data = pd.read_csv('/hardmem/results_test/allTripInfo.csv', engine='c')
+data = pd.read_csv('/hardmem/results_test1/allTripInfo.csv', engine='c')
 # data = data[data['routeLength']*0.001 > 1]
 W = 1.0  # delay cost per second
 K = 14.0  # cost per stop time to decel + time to accel for car
@@ -98,9 +98,11 @@ for model in models:
     # iterate controllers
     for controller in controllers:
         # subset plot data
+        if 'avg' not in model and controller == 'TRANSYT':
+            continue 
+
         plotData = data[(data.model == model) &
                         (data.controller == controller)]
-        
         # if no data in this set continue
         if plotData.empty:
             print('{} {} *NULL*'.format(model, controller))
@@ -112,7 +114,7 @@ for model in models:
         # get error limits 
         err = plotData.groupby('cvp')\
                       .delay\
-                      .apply(lambda x: np.percentile(x, [5, 95]))\
+                      .apply(lambda x: np.percentile(x, [10, 90]))\
                       .values
         err = np.array([[lo, hi] for lo, hi in err])
         if controller in ['VA', 'TRANSYT']:
@@ -138,9 +140,9 @@ for model in models:
         # order of magnitude of the max point
         # set x and y lims with some space around the max and min values
         plt.xticks(cvp, fontsize=ticksize, fontweight='bold')
-        maxVal = max([min(l[1][0].get_ydata()[:2]) for l in lines])
+        maxVal = max([min(l[1][0].get_ydata()[:1]) for l in lines])
         magnitude = 10**int(log10(maxVal))
-        yMax = roundUp(maxVal, 0.5*magnitude)
+        yMax = roundUp(maxVal, 0.5*magnitude)+ 10
         # double the ytick interval
         if magnitude < 10000:
             newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
@@ -151,7 +153,7 @@ for model in models:
         plt.ylim([yMin, yMax])
         plt.xlim([-3, 103])
         #plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1,
-        #    loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=4)
+        #    loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=4)
     savePDF(figuresPDF, fig)
     i += 1
 
@@ -159,7 +161,7 @@ figuresPDF.close()
 
 '''
 Crop out legend:
-pdfcrop --margins '0 0 0 -570' legend.pdf legend_crop.pdf
+pdfcrop --margins '0 0 0 -600' delay.pdf legend_crop.pdf
 pdfcrop --margins '0 0 0 0' legend_crop.pdf legend.pdf
 pdftk legend.pdf cat 1 output legend1.pdf
 mv legend1.pdf legend.pdf && rm legend_crop.pdf

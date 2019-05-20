@@ -36,7 +36,7 @@ def roundUp(x, num):
 def savePDF(pdfFile, figure):
     ''' Save figure at publication quality using desired settings
     '''
-    pdfFile.savefig(figure, dpi=300,
+    pdfFile.savefig(figure, dpi=600,
                     # bbox_extra_artists=(lgnd,),
                     bbox_inches='tight', pad_inches=0.1)
 
@@ -92,12 +92,15 @@ cvp = data.cvp.unique()
 i = 0
 
 yMaxDict = {'sellyOak_hi': 11, 'sellyOak_lo': 4.5, 'sellyOak_avg':5.5}
+yMaxDict = {'sellyOak_hi': 26, 'sellyOak_lo': 6, 'sellyOak_avg':12}
 for model in models:
     fig = plt.figure(figsize=(16, 9))  # set figure size
     lines = []
     labels = []
     # iterate controllers
     for controller in controllers:
+        if 'avg' not in model and controller == 'TRANSYT':
+            continue 
         # subset plot data
         plotData = data[(data.model == model) &
                         (data.controller == controller)]
@@ -113,7 +116,7 @@ for model in models:
         # get error limits 
         err = plotData.groupby('cvp')\
                       .stops\
-                      .apply(lambda x: np.percentile(x, [5, 95]))\
+                      .apply(lambda x: np.percentile(x, [10, 90]))\
                       .values
         err = np.array([[lo, hi] for lo, hi in err])
         if controller in ['VA', 'TRANSYT']:
@@ -140,10 +143,15 @@ for model in models:
         # set x and y lims with some space around the max and min values
         plt.xticks(cvp, fontsize=ticksize, fontweight='bold')
         maxVal = max([min(l[1][0].get_ydata()[:2]) for l in lines])
-        magnitude = 1
+        if yMaxDict[model] < 10:
+            magnitude = 1
+        elif yMaxDict[model] > 20:
+            magnitude = 4
+        else:
+            magnitude = 2
         yMax = ceil(maxVal)
         # double the ytick interval
-        newYticks = np.arange(0, 12, 0.5*magnitude, dtype=float)
+        newYticks = np.arange(0, yMaxDict[model]+1, 0.5*magnitude, dtype=float)
         plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
         yMin = -0.1
         plt.ylim([yMin, yMaxDict[model]])
@@ -157,7 +165,7 @@ figuresPDF.close()
 
 '''
 Crop out legend:
-pdfcrop --margins '0 0 0 -570' legend.pdf legend_crop.pdf
+pdfcrop --margins '0 0 0 -600' legend.pdf legend_crop.pdf
 pdfcrop --margins '0 0 0 0' legend_crop.pdf legend.pdf
 pdftk legend.pdf cat 1 output legend1.pdf
 mv legend1.pdf legend.pdf && rm legend_crop.pdf

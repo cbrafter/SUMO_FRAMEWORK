@@ -56,6 +56,12 @@ def getStopInfo(fname):
 
 def parser(fileName):
     controller, model, fileTxt = fileName.split('/')[-3:]
+    if '_ped' in controller:
+        controller = controller.split('_')[0]
+        pedStage = True
+    else:
+        pedStage = False
+
     try:
         stopDict = getStopInfo(fileName)
     except Exception as e:
@@ -104,7 +110,7 @@ def parser(fileName):
             stops = -1
             print(ke, controller, model, fileName)
         delay = getDelay(vType, model, origin, destination, journeyTime)
-        data = [controller, model, run, cvp, depart, origin,
+        data = [controller, model, run, cvp, pedStage, depart, origin,
                 departDelay, arrival, destination, duration,
                 routeLength, timeLoss, vType, speedFactor,
                 journeyTime, connected, delay, stops]
@@ -113,14 +119,18 @@ def parser(fileName):
     file.close()
     return results
 
-dataFolder = '/hardmem/results_test/'
+if len(sys.argv) > 1:
+    dataFolder = sys.argv[-1]
+else:
+    dataFolder = '/hardmem/results/'
+
 outputCSV = dataFolder + 'allTripInfo.csv'
 
 # recursive glob using ** notation to expand folders needs python3
-resultFiles = glob(dataFolder+'TRANSYT/**/tripinfo*.xml', recursive=True)
-resultFiles += glob(dataFolder+'HVA/**/tripinfo*.xml', recursive=True)
-resultFiles += glob(dataFolder+'GPSVA/**/tripinfo*.xml', recursive=True)
-resultFiles += glob(dataFolder+'GPSVAslow/**/tripinfo*.xml', recursive=True)
+resultFiles = glob(dataFolder+'**/**/tripinfo*.xml', recursive=True)
+# resultFiles += glob(dataFolder+'HVA/**/tripinfo*.xml', recursive=True)
+# resultFiles += glob(dataFolder+'GPSVA/**/tripinfo*.xml', recursive=True)
+# resultFiles += glob(dataFolder+'GPSVAslow/**/tripinfo*.xml', recursive=True)
 resultFiles.sort()
 # resultFiles = [x for x in resultFiles if 'GPSVA/sellyOak_hi' not in x]
 print('~Parsing Tripfiles~')
@@ -133,7 +143,7 @@ resultData = [line for file in resultData for line in file]
 
 print('Saving data')
 with open(outputCSV, 'w') as ofile:
-    cols = ['controller', 'model', 'run', 'cvp', "depart", "origin",
+    cols = ['controller', 'model', 'run', 'cvp', 'pedStage', "depart", "origin",
             "departDelay", "arrival", "destination", "duration",
             "routeLength", "timeLoss", "vType", "speedFactor",
             "journeyTime", "connected", "delay", "stops"]
