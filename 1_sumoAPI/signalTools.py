@@ -106,7 +106,6 @@ def getIncomingLaneInfo(controlledLanes):
                           'bounds': {'x1': x1, 'y1': y1,
                                      'x2': x2, 'y2': y2}
                          }
-
     return laneInfo
 
 
@@ -280,7 +279,7 @@ class EmissionCounter(object):
 
     def writeEmissions(self, filename):
         with open(filename, 'w') as f:
-            f.write('vehID,type,CO2,CO,HCE,PMX,NOX,FUEL\n')
+            f.write('vehID,vType,CO2,CO,HC,PMX,NOX,FUEL\n')
             vehIDs = self.emissionCountDict.keys()
             vehIDs.sort()
             for vehID in vehIDs:
@@ -288,7 +287,8 @@ class EmissionCounter(object):
                 for emission in self.emissionList:
                     dataStr += str(self.emissionCountDict[vehID][emission])
                     dataStr += ','
-                dataStr += '\n'
+                # Don't write terminating comma
+                dataStr = dataStr[:-1] + '\n'
                 f.write(dataStr)
 
 class simTimer(object):
