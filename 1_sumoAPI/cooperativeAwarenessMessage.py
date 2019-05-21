@@ -121,10 +121,13 @@ class CAMChannel(object):
                         nextNGC = self.channelData[vehID]['NGC']
                     else:
                         nextNGC = 0
+                    signal = signalTools.vehicleSignalParser(
+                                self.channelData[vehID][tc.VAR_SIGNALS])
                     self.transmitData[vehID] = {'pos': vehPosition,
                                                 'h': vehHeading,
                                                 'v': vehVelocity,
                                                 'Tgen': TIME_SEC,
+                                                'signal': signal,
                                                 'NGC': nextNGC}
 
     def isPktError(self):
