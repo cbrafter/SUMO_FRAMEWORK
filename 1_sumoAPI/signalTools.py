@@ -437,3 +437,21 @@ def powerset(iterable, excludeZero=True):
         return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(1, len(s)+1))
     else:
         return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
+
+def vehicleSignalParser(traciSignal):
+    binarySignal = '{:014d}'.format(int(bin(9)[2:]))[::-1]
+    signalCode = {'BLINKER_RIGHT': int(binarySignal[0]),
+                  'BLINKER_LEFT': int(binarySignal[1]),
+                  'BLINKER_EMERGENCY': int(binarySignal[2]),
+                  'BRAKELIGHT': int(binarySignal[3]),
+                  'FRONTLIGHT': int(binarySignal[4]),
+                  'FOGLIGHT': int(binarySignal[5]),
+                  'HIGHBEAM': int(binarySignal[6]),
+                  'BACKDRIVE': int(binarySignal[7]),
+                  'WIPER': int(binarySignal[8]),
+                  'DOOR_OPEN_LEFT': int(binarySignal[9]),
+                  'DOOR_OPEN_RIGHT': int(binarySignal[10]),
+                  'EMERGENCY_BLUE': int(binarySignal[11]),
+                  'EMERGENCY_RED': int(binarySignal[12]),
+                  'EMERGENCY_YELLOW': int(binarySignal[13])}
+    return signalCode
