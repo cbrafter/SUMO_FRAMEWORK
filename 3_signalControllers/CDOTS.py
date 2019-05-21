@@ -35,13 +35,13 @@ class CDOTS(signalControl.signalControl):
         self.mode = self.getMode()
         self.Nstages = len(self.junctionData.stages[self.mode])
         self.stageLastCallTime = [0.0]*self.Nstages
-        self.lastStageIndex = 0
+        self.currentStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
-            self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+            self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.setModelName(model)
         self.scanRange = scanRange
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
-        self.jcnCtrlRegion = self._getJncCtrlRegion()
+        self.jcnCtrlRegion = self.getJncCtrlRegion()
         # self.laneNumDict = sigTools.getLaneNumbers()
         self.controlledLanes = traci.trafficlights.getControlledLanes(self.junctionData.id)
         # dict[laneID] = {heading; float, shape:((x1,y1),(x2,y2))}
@@ -58,7 +58,7 @@ class CDOTS(signalControl.signalControl):
 
         self.loopIO = loopIO
         self.threshold = 2.0
-        self.activeLanes = self._getActiveLanesDict()
+        self.activeLanes = self.getActiveLanesDict()
 
         self.stopCounter = None
         self.emissionCounter = None
@@ -81,7 +81,7 @@ class CDOTS(signalControl.signalControl):
         # Pedestrian parameters
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
-        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.stagesSinceLastPedStage = 0
         juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
                               'junc5', 'junc6', 'junc7']
@@ -103,7 +103,8 @@ class CDOTS(signalControl.signalControl):
         traci.junction.subscribeContext(self.junctionData.id, 
             tc.CMD_GET_VEHICLE_VARIABLE, 
             self.scanRange, 
-            varIDs=(tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED, tc.VAR_TYPE))
+            varIDs=(tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED, tc.VAR_TYPE,
+                    tc.VAR_SIGNALS))
 
         # only subscribe to loop params if necessary
         if self.loopIO:
@@ -123,7 +124,7 @@ class CDOTS(signalControl.signalControl):
         # Packets sent on this step
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
-        self._getSubscriptionResults()
+        self.getSubscriptionResults()
         self.CAM.channelUpdate(self.subResults, self.TIME_SEC)
         # else:
         #     self.CAMactive = False
@@ -135,7 +136,7 @@ class CDOTS(signalControl.signalControl):
         elapsedTime = self.getElapsedTime()
         Tremaining = self.stageTime - elapsedTime
         if self.pedStage:
-            pass
+            pass  # no calculations needed for ped stage
         elif Tremaining <= 5.0:
             # get loop extend
             try:
@@ -163,7 +164,7 @@ class CDOTS(signalControl.signalControl):
             elif loopExtend is None and gpsExtend is not None:
                 updateTime = gpsExtend
             else:
-                fixedTime = self.junctionData.stages[self.mode][self.lastStageIndex].period
+                fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
                 updateTime = max(0.0, fixedTime-elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
@@ -183,6 +184,7 @@ class CDOTS(signalControl.signalControl):
         else:
             pass
 
+        # Stage transition manager
         if self.transitionObject.active:
             pass # If the transition object is active i.e. processing a transition
         elif not self.pedStage  and (self.TIME_MS - self.lastCalled) < self.stageTime*1000:
@@ -193,10 +195,10 @@ class CDOTS(signalControl.signalControl):
             # Transitioning to next stage
             # record the most recent end time for a stage so we can calculate 
             # how long since the stage was last used
-            self.stageLastCallTime[self.lastStageIndex] = self.TIME_SEC
+            self.stageLastCallTime[self.currentStageIndex] = self.TIME_SEC
             nextStageIndex = self.stageOptimiser.getNextStage()
             if nextStageIndex is None:
-                nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+                nextStageIndex = (self.currentStageIndex + 1) % self.Nstages
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
@@ -204,29 +206,29 @@ class CDOTS(signalControl.signalControl):
             if self.hasPedStage and self.stagesSinceLastPedStage > self.Nstages and not self.pedStage:
                 self.pedStage = True
                 self.stagesSinceLastPedStage = 0
-                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
                 self.pedStage = False
-                lastStage = self.pedCtrlString
+                currentStage = self.pedCtrlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
-                self.lastStageIndex = nextStageIndex
+                self.currentStageIndex = nextStageIndex
             # No ped action, normal cycle
             else:
-                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
-                self.lastStageIndex = nextStageIndex
+                self.currentStageIndex = nextStageIndex
                 self.stagesSinceLastPedStage += 1
             
             self.transitionObject.newTransition(
-                self.junctionData.id, lastStage, nextStage)
+                self.junctionData.id, currentStage, nextStage)
             self.lastCalled = self.TIME_MS
             self.stageTime = 0.0
 
         super(CDOTS, self).process(self.TIME_MS)
 
-    def _getSubscriptionResults(self):
+    def getSubscriptionResults(self):
         self.subResults = traci.junction.getContextSubscriptionResults(self.junctionData.id)
 
     def updateStageTime(self, updateTime):
@@ -248,7 +250,7 @@ class CDOTS(signalControl.signalControl):
     def getElapsedTime(self):
         return 0.001*(self.TIME_MS - self.lastCalled)
 
-    def _getJncCtrlRegion(self):
+    def getJncCtrlRegion(self):
         jncPosition = traci.junction.getPosition(self.junctionData.id)
         otherJuncPos = [traci.junction.getPosition(x)\
                         for x in traci.trafficlights.getIDList()\
@@ -279,12 +281,13 @@ class CDOTS(signalControl.signalControl):
 
         return ctrlRegion
 
-    def _getOncomingVehicles(self, headingTol=15):
+    def getOncomingVehicles(self, headingTol=15, stageIndexOverride=None):
         # Oncoming if (in active lane & heading matches oncoming heading & 
         # is in lane bounds)
         vehicles = []
         targetLanes = []
-        for edges in self.getActiveEdges():
+
+        for edges in self.getActiveEdges(stageIndexOverride):
             for edge in self.controlledEdges[edges]:
                 targetLanes += self.edgeLaneMap[edge]
 
@@ -312,11 +315,19 @@ class CDOTS(signalControl.signalControl):
         vehicles = sigTools.unique(vehicles)
         return vehicles
 
-    def _getActiveLanes(self):
+    def getActiveEdges(self, stageIndexOverride=None):
+        return sigTools.lane2edge(self.getActiveLanes(stageIndexOverride))
+
+    def getActiveLanes(self, stageIndexOverride=None):
         # Get the current control string to find the green lights
-        stageCtrlString = self.junctionData\
-                              .stages[self.mode][self.lastStageIndex]\
-                              .controlString
+        if stageIndexOverride is None:
+            stageCtrlString = self.junctionData\
+                                  .stages[self.mode][self.currentStageIndex]\
+                                  .controlString
+        else:
+            stageCtrlString = self.junctionData\
+                                  .stages[self.mode][stageIndexOverride]\
+                                  .controlString
         try:
             # search dict to see if stage known already, if not work it out
             activeLanes = self.activeLanes[stageCtrlString]
@@ -327,10 +338,7 @@ class CDOTS(signalControl.signalControl):
         # activeLanes = sigTools.unique(activeLanes)
         return activeLanes
 
-    def getActiveEdges(self):
-        return sigTools.lane2edge(self._getActiveLanes())
-
-    def _getActiveLanesDict(self):
+    def getActiveLanesDict(self):
         # Get the current control string to find the green lights
         activeLanesDict = {}
         for n, stage in enumerate(self.junctionData.stages[self.mode]):
@@ -348,7 +356,7 @@ class CDOTS(signalControl.signalControl):
                 activeLanes.append(self.controlledLanes[i])
         return activeLanes
 
-    def _getLaneInductors(self):
+    def getLaneInductors(self):
         laneInductors = defaultdict(list)
 
         for loop in traci.inductionloop.getIDList():
@@ -358,7 +366,7 @@ class CDOTS(signalControl.signalControl):
             
         return laneInductors
 
-    def _getFurthestStationaryVehicle(self, vehIDs):
+    def getFurthestStationaryVehicle(self, vehIDs):
         furthestID = ''
         maxDistance = -1
         haltVelocity = 0.01 
@@ -373,7 +381,7 @@ class CDOTS(signalControl.signalControl):
 
         return [furthestID, maxDistance]
 
-    def _getNearestVehicle(self, vehIDs, minDistance=28):
+    def getNearestVehicle(self, vehIDs, minDistance=28):
         nearestID = ''
         
         for ID in vehIDs:
@@ -385,9 +393,9 @@ class CDOTS(signalControl.signalControl):
 
         return {'id': nearestID, 'distance': minDistance}
 
-    def _getLaneDetectTime(self):
-        activeLanes = self._getActiveLanes()
-        meanDetectTimePerLane = []
+    def getLaneDetectTime(self):
+        activeLanes = self.getActiveLanes()
+        detectTimePerLane = []
         retrievedEdges = []
         flowConst = tc.LAST_STEP_TIME_SINCE_DETECTION
         edges = sigTools.unique([lane.split('_')[0] for lane in activeLanes])
@@ -395,7 +403,7 @@ class CDOTS(signalControl.signalControl):
             detectTimes = []
             for loop in self.laneInductors[edge]:
                 detectTimes.append(self.subResults[loop][flowConst])
-            meanDetectTimePerLane.append(detectTimes)
+            detectTimePerLane.append(detectTimes)
 
         return meanDetectTimePerLane
 
@@ -478,7 +486,7 @@ class CDOTS(signalControl.signalControl):
         return {'incoming': incomingLanes, 'outgoing': outgoingLanes}
 
     def getLoopExtension(self):
-        detectTimes = sigTools.flatten(self._getLaneDetectTime())
+        detectTimes = sigTools.flatten(self.getLaneDetectTime())
         detectTimes = np.array(detectTimes)
         if not detectTimes.any():
             return None
@@ -488,7 +496,7 @@ class CDOTS(signalControl.signalControl):
             #cond2 = np.std(detectTimes) < 2*self.threshold
             #cond3 = np.mean(detectTimes) < 3*self.threshold
         except Exception as e:
-            print(self._getActiveLanes(), detectTimes)
+            print(self.getActiveLanes(), detectTimes)
             raise(e)
         if cond1:
             loopExtend = self.extendTime
@@ -498,12 +506,12 @@ class CDOTS(signalControl.signalControl):
 
     def getGPSextension(self):
         # If active and on the second, or transition then make stage descision
-        oncomingVeh = self._getOncomingVehicles()
+        oncomingVeh = self.getOncomingVehicles()
         haltVelocity = 0.01
         # If currently staging then extend time if there are vehicles close 
         # to the stop line.
         catchDistance = self.getNearVehicleCatchDistance()
-        nearestVeh = self._getNearestVehicle(oncomingVeh, catchDistance)
+        nearestVeh = self.getNearestVehicle(oncomingVeh, catchDistance)
         
         # nV[1] is its velocity
         # If a vehicle detected and within catch distance
@@ -530,10 +538,10 @@ class CDOTS(signalControl.signalControl):
         return gpsExtend
 
     def getQueueLength(self):
-        oncomingVeh = self._getOncomingVehicles()
+        oncomingVeh = self.getOncomingVehicles()
         # If new stage get furthest from stop line whose velocity < 5% speed
         # limit and determine queue length
-        queueInfo = self._getFurthestStationaryVehicle(oncomingVeh)
+        queueInfo = self.getFurthestStationaryVehicle(oncomingVeh)
         return queueInfo  # [vehID, distance]
 
     def getQueueExtension(self):
@@ -548,12 +556,12 @@ class CDOTS(signalControl.signalControl):
         return queueExtend
 
     def getSecondsPerMeterTraffic(self):
-        activeLanes = self._getActiveLanes()
+        activeLanes = self.getActiveLanes()
         spmts = [self.secondsPerMeterTrafficDict[lane] for lane in activeLanes]
         return max(spmts)
 
     def getNearVehicleCatchDistance(self):
-        activeLanes = self._getActiveLanes()
+        activeLanes = self.getActiveLanes()
         nvcd = [self.nearVehicleCatchDistanceDict[lane] for lane in activeLanes]
         return max(nvcd)
 
