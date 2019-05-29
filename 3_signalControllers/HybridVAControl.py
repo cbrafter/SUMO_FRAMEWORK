@@ -29,14 +29,15 @@ class HybridVAControl(signalControl.signalControl):
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.mode = self.getMode()  # TRANSYT flow mode
         self.Nstages = len(self.junctionData.stages[self.mode])
-        self.lastStageIndex = 0
+        self.currentStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
-            self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+            self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.setModelName(model)
         self.scanRange = scanRange  #  max range of effect by junction
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
-        self.jcnCtrlRegion = self._getJncCtrlRegion()
+        self.jcnCtrlRegion = self.getJncCtrlRegion()
         # self.laneNumDict = sigTools.getLaneNumbers()
+        # returns the lane once for each movement at the junction, maps to rgG string
         self.controlledLanes = traci.trafficlights.getControlledLanes(self.junctionData.id)
         # dict[laneID] = {heading; float, shape:((x1,y1),(x2,y2))}
         # self.laneDetectionInfo = sigTools.getIncomingLaneInfo(self.controlledLanes)
@@ -52,7 +53,10 @@ class HybridVAControl(signalControl.signalControl):
 
         self.loopIO = loopIO
         self.threshold = 2.0
-        self.activeLanes = self._getActiveLanesDict()
+        self.activeLanes = self.getActiveLanesDict()
+        #if self.junctionData.id == 'junc3': print(self.activeLanes)
+        #if self.junctionData.id == 'junc3': print(self.controlledLanes)
+        #if self.junctionData.id == 'junc3': print(self.controlledEdges)
 
         lanes = [x for x in traci.lane.getIDList() if x[0] != ':']
         speedLimDict = {lane: traci.lane.getMaxSpeed(lane) for lane in lanes}
@@ -72,7 +76,7 @@ class HybridVAControl(signalControl.signalControl):
         # Pedestrian parameters
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
-        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.lastStageIndex].controlString)
+        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
                               'junc5', 'junc6', 'junc7']
         if self.junctionData.id in juncsWithPedStages and pedStageActive:
@@ -108,7 +112,7 @@ class HybridVAControl(signalControl.signalControl):
         # Packets sent on this step
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
-        self._getSubscriptionResults()
+        self.getSubscriptionResults()
         self.CAM.channelUpdate(self.subResults, self.TIME_SEC)
         # else:
         #     self.CAMactive = False
@@ -152,7 +156,7 @@ class HybridVAControl(signalControl.signalControl):
                 updateTime = gpsExtend
             # No loop or CV data
             else:
-                fixedTime = self.junctionData.stages[self.mode][self.lastStageIndex].period
+                fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
                 updateTime = max(0.0, fixedTime-elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
@@ -180,26 +184,26 @@ class HybridVAControl(signalControl.signalControl):
             pass
         else:
             # Transition to next stage
-            nextStageIndex = (self.lastStageIndex + 1) % self.Nstages
+            nextStageIndex = (self.currentStageIndex + 1) % self.Nstages
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
             # We have completed one cycle, DO ped stage
             if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
                 self.pedStage = True
-                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                lastStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
                 self.pedStage = False
                 lastStage = self.pedCtrlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
-                self.lastStageIndex = nextStageIndex
+                self.currentStageIndex = nextStageIndex
             # No ped action, normal cycle
             else:
-                lastStage = self.junctionData.stages[self.mode][self.lastStageIndex].controlString
+                lastStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
-                self.lastStageIndex = nextStageIndex
+                self.currentStageIndex = nextStageIndex
             
             self.transitionObject.newTransition(
                 self.junctionData.id, lastStage, nextStage)
@@ -208,7 +212,7 @@ class HybridVAControl(signalControl.signalControl):
 
         super(HybridVAControl, self).process(self.TIME_MS)
 
-    def _getSubscriptionResults(self):
+    def getSubscriptionResults(self):
         self.subResults = traci.junction.getContextSubscriptionResults(self.junctionData.id)
 
     def updateStageTime(self, updateTime):
@@ -230,7 +234,7 @@ class HybridVAControl(signalControl.signalControl):
     def getElapsedTime(self):
         return 0.001*(self.TIME_MS - self.lastCalled)
 
-    def _getJncCtrlRegion(self):
+    def getJncCtrlRegion(self):
         # Truncate junction control region if other junctions nearby
         jncPosition = traci.junction.getPosition(self.junctionData.id)
         otherJuncPos = [traci.junction.getPosition(x)\
@@ -262,7 +266,7 @@ class HybridVAControl(signalControl.signalControl):
 
         return ctrlRegion
 
-    def _getOncomingVehicles(self, headingTol=15):
+    def getOncomingVehicles(self, headingTol=15):
         # Oncoming if (in active lane & heading matches oncoming heading & 
         # is in lane bounds)
         vehicles = []
@@ -277,8 +281,8 @@ class HybridVAControl(signalControl.signalControl):
             headingLower = laneHeading - headingTol
             laneBounds = self.allLaneInfo[lane]['bounds']
             lowerXBound = min(laneBounds['x1'], laneBounds['x2'])
-            lowerYBound = min(laneBounds['y1'], laneBounds['y2'])
             upperXBound = max(laneBounds['x1'], laneBounds['x2'])
+            lowerYBound = min(laneBounds['y1'], laneBounds['y2'])
             upperYBound = max(laneBounds['y1'], laneBounds['y2'])
             for vehID in self.CAM.receiveData.keys():
                 vehicleXcoord = self.CAM.receiveData[vehID]['pos'][0]
@@ -295,10 +299,10 @@ class HybridVAControl(signalControl.signalControl):
         vehicles = sigTools.unique(vehicles)
         return vehicles
 
-    def _getActiveLanes(self):
+    def getActiveLanes(self):
         # Get the current control string to find the green lights
         stageCtrlString = self.junctionData\
-                              .stages[self.mode][self.lastStageIndex]\
+                              .stages[self.mode][self.currentStageIndex]\
                               .controlString
         try:
             # search dict to see if stage known already, if not work it out
@@ -311,9 +315,9 @@ class HybridVAControl(signalControl.signalControl):
         return activeLanes
 
     def getActiveEdges(self):
-        return sigTools.lane2edge(self._getActiveLanes())
+        return sigTools.lane2edge(self.getActiveLanes())
 
-    def _getActiveLanesDict(self):
+    def getActiveLanesDict(self):
         # Get the current control string to find the green lights
         activeLanesDict = {}
         for n, stage in enumerate(self.junctionData.stages[self.mode]):
@@ -331,7 +335,7 @@ class HybridVAControl(signalControl.signalControl):
                 activeLanes.append(self.controlledLanes[i])
         return activeLanes
 
-    def _getLaneInductors(self):
+    def getLaneInductors(self):
         laneInductors = defaultdict(list)
 
         for loop in traci.inductionloop.getIDList():
@@ -341,7 +345,7 @@ class HybridVAControl(signalControl.signalControl):
             
         return laneInductors
 
-    def _getFurthestStationaryVehicle(self, vehIDs):
+    def getFurthestStationaryVehicle(self, vehIDs):
         furthestID = ''
         maxDistance = -1
         haltVelocity = 0.01 
@@ -356,7 +360,7 @@ class HybridVAControl(signalControl.signalControl):
 
         return [furthestID, maxDistance]
 
-    def _getNearestVehicle(self, vehIDs, minDistance=28):
+    def getNearestVehicle(self, vehIDs, minDistance=28):
         nearestID = ''
         
         for ID in vehIDs:
@@ -368,8 +372,8 @@ class HybridVAControl(signalControl.signalControl):
 
         return {'id': nearestID, 'distance': minDistance}
 
-    def _getLaneDetectTime(self):
-        activeLanes = self._getActiveLanes()
+    def getLaneDetectTime(self):
+        activeLanes = self.getActiveLanes()
         meanDetectTimePerLane = []
         retrievedEdges = []
         flowConst = tc.LAST_STEP_TIME_SINCE_DETECTION
@@ -462,7 +466,7 @@ class HybridVAControl(signalControl.signalControl):
         return {'incoming': incomingLanes, 'outgoing': outgoingLanes}
 
     def getLoopExtension(self):
-        detectTimes = sigTools.flatten(self._getLaneDetectTime())
+        detectTimes = sigTools.flatten(self.getLaneDetectTime())
         detectTimes = np.array(detectTimes)
         if not detectTimes.any():
             return None
@@ -472,7 +476,7 @@ class HybridVAControl(signalControl.signalControl):
             #cond2 = np.std(detectTimes) < 2*self.threshold
             #cond3 = np.mean(detectTimes) < 3*self.threshold
         except Exception as e:
-            print(self._getActiveLanes(), detectTimes)
+            print(self.getActiveLanes(), detectTimes)
             raise(e)
         if cond1:
             loopExtend = self.extendTime
@@ -482,12 +486,12 @@ class HybridVAControl(signalControl.signalControl):
 
     def getGPSextension(self):
         # If active and on the second, or transition then make stage descision
-        oncomingVeh = self._getOncomingVehicles()
+        oncomingVeh = self.getOncomingVehicles()
         haltVelocity = 0.01
         # If currently staging then extend time if there are vehicles close 
         # to the stop line.
         catchDistance = self.getNearVehicleCatchDistance()
-        nearestVeh = self._getNearestVehicle(oncomingVeh, catchDistance)
+        nearestVeh = self.getNearestVehicle(oncomingVeh, catchDistance)
         
         # nV[1] is its velocity
         # If a vehicle detected and within catch distance
@@ -514,10 +518,13 @@ class HybridVAControl(signalControl.signalControl):
         return gpsExtend
 
     def getQueueExtension(self):
-        oncomingVeh = self._getOncomingVehicles()
+        oncomingVeh = self.getOncomingVehicles()
         # If new stage get furthest from stop line whose velocity < 5% speed
         # limit and determine queue length
-        furthestVehDist = self._getFurthestStationaryVehicle(oncomingVeh)
+        furthestVehDist = self.getFurthestStationaryVehicle(oncomingVeh)
+        # if self.junctionData.id == 'junc3' and self.junctionData.stages[self.mode][self.currentStageIndex].id == '0': 
+        #     print(self.currentStageIndex, furthestVehDist, self.getActiveEdges())
+
         # secondsPerMeterTraffic = self.getSecondsPerMeterTraffic()
         # secondsPerMeterTraffic = 0.3  # reach max green by 200m
         if furthestVehDist[0] != '':
@@ -528,12 +535,12 @@ class HybridVAControl(signalControl.signalControl):
         return queueExtend
 
     def getSecondsPerMeterTraffic(self):
-        activeLanes = self._getActiveLanes()
+        activeLanes = self.getActiveLanes()
         spmts = [self.secondsPerMeterTrafficDict[lane] for lane in activeLanes]
         return max(spmts)
 
     def getNearVehicleCatchDistance(self):
-        activeLanes = self._getActiveLanes()
+        activeLanes = self.getActiveLanes()
         nvcd = [self.nearVehicleCatchDistanceDict[lane] for lane in activeLanes]
         return max(nvcd)
 
