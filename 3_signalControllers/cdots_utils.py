@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
-@file    scoarutils.py
+@file    cdots_utils.py
 @author  Craig Rafter
 @date    19/08/2018
 
-contains the functions and utility calculation for the SCOAR controller
+contains the functions and utility calculation for the CDOTS controller
 """
 import signalControl, readJunctionData, traci
 import signalTools as sigTools
@@ -15,10 +15,16 @@ import traci.constants as tc
 from cooperativeAwarenessMessage import CAMChannel
 
 
+
+
 class stageOptimiser():
     def __init__(self, signalController):
         self.sigCtrl = signalController
         self.Nstages = self.sigCtrl.Nstages
+        self.stageCycleFreq = 2  # stage appears once in every N cycles
+
+        # Internal seeded Random Number Generator (RNG)
+        self.RNG = np.random.RandomState(1)
 
         # Emission constants
         self.CO2 = tc.VAR_CO2EMISSION
@@ -35,13 +41,32 @@ class stageOptimiser():
                             'lgv': 1, 'hgv': 1, 'bus': 1}
 
         self.numLanesServed = self.getNumLanesServed()
+        self.queueNormFactors = self.getQueueNormFactors()
+
+        self.P_dblDeckBus = 0.7  # Probability of bus being double decker
+        # Max passengers on Alexander Dennis Enviro 400 (E400)
+        self.dblDeckPaxMax = 90
+        # Max passengers on Alexander Dennis Enviro 200 (E200)
+        self.sglDeckPaxMax = 76
+        # Scaling based on time of day traffic demand
+        self.busPaxScaling = {'OFF': 0.3, 'INTER': 0.6, 'PEAK': 0.9}
+
+        # Distribution of passengers in a car, mean occupancy = 1.55 as in lit
+        # self.passengerDist = 12*[1] + 6*[2] + [3, 4]
+        self.carOccupancyDist = sigTools.weightedRandomDraw([1,2,3,4], 1.55)
+        self.occupancyDict = {}
 
     def getNextStageIndex(self):
         try:
+            # If there's only two stages anyway, cycle to next stage
+            if self.Nstages < 3:
+                return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
+
             laneCosts = np.array(self.getLaneCosts())
             return laneCosts.argmax()
         except:
-            return None
+            # If there's a problem cycle to next stage
+            return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
     def getLaneCosts(self):
         # determine oncoming vehicles in each lane
@@ -53,7 +78,16 @@ class stageOptimiser():
                 cost.append(1)
             else:
                 costs.append(0) 
-        return costs
+        return np.array(costs)
+
+    def getQueueNormFactors(self):
+        qNormFactors = []
+        qLenMaxDict = self.getControlledRoadLength()
+        for stageIndex in range(self.Nstages):
+            stageEdges = self.getActiveEdges(stageIndex)
+            qNormFactors.append(max([qLenMaxDict[e] for e in stageEdges]))
+        return np.array(qNormFactors)
+
 
     def getQueueLength(self):
         queueLengths = []
@@ -63,9 +97,9 @@ class stageOptimiser():
                     self.sigCtrl.getFurthestStationaryVehicle(self.vehiclesPerStage[stageIndex]))
             else:
                 queueLengths.append(0)
-        return queueLengths
+        return np.array(queueLengths)
 
-    def getWaitinginfo(self):
+    def getWaitingInfo(self):
         waitingInfo = []
         for stageIndex, vehicleSet in enumerate(self.vehiclesPerStage):
             totalWait = 0.0
@@ -75,7 +109,8 @@ class stageOptimiser():
                 waitTime = self.sigCtrl.stopCounter.subResults[vehID][tc.VAR_WAITING_TIME]
                 totalWait += waitTime
                 maxWait = max(maxWait, waitTime)
-            waitingInfo.append({'total': totalWait, 'max': maxWait})
+            waitingInfo.append({'total': np.array(totalWait), 
+                                'max': np.array(maxWait)})
         return waitingInfo
 
     def getStopInfo(self):
@@ -88,17 +123,50 @@ class stageOptimiser():
                 Nstops = self.sigCtrl.stopCounter.stopCountDict[vehID]
                 totalStops += Nstops
                 maxStops = max(maxStops, Nstops)
-            stopInfo.append({'total': totalStops, 'max': maxStops})
+            stopInfo.append({'total': np.array(totalStops), 
+                             'max': np.array(maxStops)})
         return stopInfo
 
-    def getSpeedCost(self):
-        pass
-
-    def getAccelCost(self):
-        pass
 
     def getTotalPassengers(self):
-        pass
+        totalPassengers = []
+        for vehicleSet in self.vehiclesPerStage:
+            paxCount = 0
+            # vehicle set is empty for active lane so wont process
+            for vehID in vehicleSet:
+                try:
+                    paxCount += self.occupancyDict[vehID]
+                except KeyError:
+                    vType = self.sigCtrl.emissionCounter.vTypeDict[vehID]
+                    if 'car' in vType:
+                        # DfT NTS0905 occupancy avg 1.55. Here we achieve this by 
+                        # having cars with 1 or 2 pax from weighted uniform dist
+                        # Npassengers = int(1+(round(rng.rand()<0.55)))
+                        # OR
+                        # From choice distribution with weighted numbers 1-4
+                        # and mean 1.55 
+                        Npassengers = self.RNG.choice(self.carOccupancyDist)
+                    elif 'lgv' in vType:
+                        Npassengers = 1 
+                    elif 'hgv' in vType:
+                        Npassengers = 1 
+                    elif 'motorcycle' in vType:
+                        Npassengers = 1 
+                    elif 'bus' in vType:
+                        isDblDecker = self.RNG.rand() <= self.P_dblDeckBus
+                        if isDblDecker:
+                            Npassengers = (self.dblDeckPaxMax
+                                           * self.busPaxScaling[self.sigCtrl.mode])
+                        else:
+                            Npassengers = (self.sglDeckPaxMax
+                                           * self.busPaxScaling[self.sigCtrl.mode])
+                    else:
+                        Npassengers = 1 
+
+                    paxCount += Npassengers
+                    self.occupancyDict[vehID] = Npassengers
+            totalPassengers.append(paxCount)
+        return np.array(totalPassengers)
 
     def getVehicleTypeCost(self):
         vTypeCost = []
@@ -109,10 +177,11 @@ class stageOptimiser():
                 vType = self.sigCtrl.emissionCounter.vTypeDict[vehID]
                 totalCost += self.vTypeWeight[vType.split('_')[-1]]
             vTypeCost.append(totalCost)
-        return vTypeCost
+        return np.array(vTypeCost)
 
-    def getSpecialVehicleCost(self):
-        pass
+    def getNumVehicles(self):
+        numVehicles = [len(vSet) for vSet in self.vehiclesPerStage]
+        return np.array(vTypeCost)
 
     def getLoopWaiting(self):
         stageWaiting = []
@@ -136,7 +205,7 @@ class stageOptimiser():
             else:
                 stageWaiting.append(0)
 
-        return stageWaiting
+        return np.array(stageWaiting)
 
     def getNotTurningRatio(self):
         nonTurningRatio = []
@@ -149,7 +218,7 @@ class stageOptimiser():
                 if signal['BLINKER_LEFT'] or signal['BLINKER_RIGHT']:
                     Nturning += 1
             nonTurningRatio.append(1.0 - (Nturning/float(len(vehicleSet))))
-        return nonTurningRatio
+        return np.array(nonTurningRatio)
 
     def getNumLanesServed(self):
         numLanes = []
@@ -169,6 +238,9 @@ class stageOptimiser():
                 timeDeltas.append(0.0)
         return np.array(timeDeltas)
 
+    def getStagesSinceLastCall(self):
+        return np.array(self.sigCtrl.stagesSinceLastCall)
+
     def getEmissions(self):
         emissionInfo = []
         for vehicleSet in self.vehiclesPerStage:
@@ -180,7 +252,8 @@ class stageOptimiser():
                 for emission in emissionList:
                     totalEmissions[emission] += emDict[emission]
                     maxEmissions[emission] = max(maxEmissions[emission], emDict[emission])
-            emissionInfo.append({'total': totalEmissions, 'max': maxEmissions})
+            emissionInfo.append({'total': np.array(totalEmissions), 
+                                 'max': np.array(maxEmissions)})
         return emissionInfo
 
     def getVehiclesPerStage(self):
@@ -191,6 +264,48 @@ class stageOptimiser():
             else:
                 self.vehiclesPerStage.append([])
 
+        return self.vehiclesPerStage
+
+    def getControlledRoadLength(self):
+        qLenMaxDict = defaultdict(float)
+        for edge in self.sigCtrl.controlledEdges.keys():
+            for lane in self.sigCtrl.controlledEdges[edge]
+                qLenMaxDict[edge] += traci.lane.getLength(lane+'_0')
+        return qLenMaxDict 
+
+    def getSpeedCost(self):
+        pass
+
+    def getAccelCost(self):
+        pass
+
+    def getTravelTimeInfo(self):
+        # total, min, and max travel time for waiting vehicles
+        pass
+
+    def getTravelDistanceInfo(self):
+        # total, min, max distace travelled by waiting vehicles
+        pass
+
+    def getEmergencyVehicleStatus(self):
+        "Detect and provision for emergency vehicles"
+        pass
+
+    def sharedTransportDetection(self):
+        "detect public or shared transport and allow priority"
+        pass 
+
+    def getSpecialVehicleCost(self):
+        pass
+
     def relNorm(self, x):
         data = np.array(x)
         return data.astype(float)/data.max()
+
+    def rank(self, costArray):
+        costs = np.array(costArray)
+        rankArray = np.zeros_like(costArray)
+        costAlloc = self.Nstages - 2  # Nstages must be at least 3 for this to happen anyway
+        for idx in costs.argsort()[::-1]:
+            rankArray[idx] = max(0, costAlloc)
+            costAlloc -= 1 
