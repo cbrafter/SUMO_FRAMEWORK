@@ -35,6 +35,7 @@ class CDOTS(signalControl.signalControl):
         self.mode = self.getMode()
         self.Nstages = len(self.junctionData.stages[self.mode])
         self.stageLastCallTime = [0.0]*self.Nstages
+        self.stagesSinceLastCall = [0.0]*self.Nstages
         self.currentStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
@@ -125,7 +126,7 @@ class CDOTS(signalControl.signalControl):
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
         self.getSubscriptionResults()
-        self.CAM.channelUpdate(self.subResults, self.TIME_SEC)
+        self.CAM.channelUpdate(self.subResults, self.TIME_SEC, CDOTS=True)
         # else:
         #     self.CAMactive = False
 
@@ -197,8 +198,12 @@ class CDOTS(signalControl.signalControl):
             # how long since the stage was last used
             self.stageLastCallTime[self.currentStageIndex] = self.TIME_SEC
             nextStageIndex = self.stageOptimiser.getNextStage()
-            if nextStageIndex is None:
-                nextStageIndex = (self.currentStageIndex + 1) % self.Nstages
+            # Count how many stages have been called since stage last used
+            for i in range(self.Nstages):
+                if i != nextStageIndex:
+                    self.stagesSinceLastCall[i] += 1
+                else:
+                    self.stagesSinceLastCall = 0
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
