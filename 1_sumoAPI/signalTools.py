@@ -181,6 +181,7 @@ def flatten(listOfLists):
 class StopCounter(object):
     def __init__(self):
         self.stopCountDict = defaultdict(int)
+        self.waitingDict = defaultdict(float)
         self.WAIT = tc.VAR_WAITING_TIME
         self.speedTol = 1e-3
         self.stopSubscription()  # makes self.subkey
@@ -200,6 +201,8 @@ class StopCounter(object):
         
         try:
             for vehID in self.subResults.keys():
+                if self.subResults[vehID][self.WAIT] > 0.0:
+                    self.waitingDict[vehID] += 0.1
                 if 0.099 < self.subResults[vehID][self.WAIT] < 0.101:
                     self.stopCountDict[vehID] += 1
         except KeyError:
@@ -439,7 +442,9 @@ def powerset(iterable, excludeZero=True):
         return itertools.chain.from_iterable(itertools.combinations(s, r) for r in range(len(s)+1))
 
 def vehicleSignalParser(traciSignal):
-    binarySignal = '{:014d}'.format(int(bin(9)[2:]))[::-1]
+    # converts decimal signal from traci to binary and decodes the bits
+    # to their corresponding statuses
+    binarySignal = '{:014d}'.format(int(bin(traciSignal)[2:]))[::-1]
     signalCode = {'BLINKER_RIGHT': int(binarySignal[0]),
                   'BLINKER_LEFT': int(binarySignal[1]),
                   'BLINKER_EMERGENCY': int(binarySignal[2]),
@@ -455,3 +460,38 @@ def vehicleSignalParser(traciSignal):
                   'EMERGENCY_RED': int(binarySignal[12]),
                   'EMERGENCY_YELLOW': int(binarySignal[13])}
     return signalCode
+
+def weightedRandomDraw(choices, targetMean, maxits=100000, TOL=False):
+    distribution = choices[:]  # copy choices
+    # quit early if already converged
+    if np.isclose(np.mean(distribution, targetMean):
+        return distribution
+
+    assert min(choices) >= targetMean, "Min choice out of bound > target"
+    assert max(choices) <= targetMean, "Max choice out of bound < target"
+
+    # auto tolerance based on one order of magnitude smaller than least
+    # significant number
+    if not TOL:
+        TOL = 10**-(len(str(targetMean).split('.')[-1]) + 1)
+    weightDict = {k: 1 for k in choices}  # make weighting dictionary
+    iters = 0  # set initial iteration counter
+    mean = targetMean - 100  # set inital mean != target
+    # calculate if the distribution mean isn't close to the target mean
+    # and we haven't exceeded the iteration limit
+    while not np.isclose(mean, targetMean, atol=TOL) and iters < maxits:
+        for k in weightDict.keys():
+            # if mean too small, add to values that would increase it
+            if mean < targetMean and k > mean:
+                weightDict[k] += 1
+            # if mean too large add to values that would shrink it
+            elif mean >= targetMean and k < mean:
+                weightDict[k] += 1
+
+        distribution = []  # new list to write revised distribution into
+        for k, v in weightDict.items():
+            distribution += [k]*v
+        mean = np.mean(distribution)
+        iters += 1
+    
+    return distribution
