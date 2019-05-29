@@ -51,7 +51,7 @@ class CAMChannel(object):
         else:
             return TIME_SEC - vData['Tgen']
 
-    def channelUpdate(self, vehicleData, TIME_SEC):
+    def channelUpdate(self, vehicleData, TIME_SEC, CDOTS=False):
         # Receive fata from "channel"
         self.receiveData = self.channelData.copy()
         
@@ -121,8 +121,13 @@ class CAMChannel(object):
                         nextNGC = self.channelData[vehID]['NGC']
                     else:
                         nextNGC = 0
-                    signal = signalTools.vehicleSignalParser(
+                    
+                    # Only get extra data if controller is CDOTS
+                    if CDOTS:
+                        signal = sigTools.vehicleSignalParser(
                                 self.channelData[vehID][tc.VAR_SIGNALS])
+                    else:
+                        signal = None
                     self.transmitData[vehID] = {'pos': vehPosition,
                                                 'h': vehHeading,
                                                 'v': vehVelocity,
