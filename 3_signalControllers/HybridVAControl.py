@@ -94,7 +94,8 @@ class HybridVAControl(signalControl.signalControl):
         traci.junction.subscribeContext(self.junctionData.id, 
             tc.CMD_GET_VEHICLE_VARIABLE, 
             self.scanRange, 
-            varIDs=(tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED, tc.VAR_TYPE))
+            varIDs=(tc.VAR_POSITION, tc.VAR_ANGLE, tc.VAR_SPEED,
+                    tc.VAR_TYPE, tc.VAR_LANE_ID))
 
         # only subscribe to loop params if necessary
         if self.loopIO:
@@ -275,6 +276,35 @@ class HybridVAControl(signalControl.signalControl):
             for edge in self.controlledEdges[edges]:
                 targetLanes += self.edgeLaneMap[edge]
 
+        targetLanes = set(targetLanes)
+        for lane in targetLanes:
+            laneHeading = self.allLaneInfo[lane]['heading']
+            headingUpper = laneHeading + headingTol
+            headingLower = laneHeading - headingTol
+            for vehID in self.CAM.receiveData.keys():
+                vehHeading = self.CAM.receiveData[vehID]['heading']
+                vehLane = self.CAM.receiveData[vehID]['lane']
+
+                # If on correct heading +- TOL degrees
+                headingCheck = headingLower <= vehHeading <= headingUpper
+                # If in vehicle in the targetLane
+                laneCheck = vehLane in targetLanes
+                if headingCheck and laneCheck:
+                    vehicles.append(vehID)
+
+        vehicles = sigTools.unique(vehicles)
+        return vehicles
+
+    def DEPRECATED_getOncomingVehicles(self, headingTol=15):
+        # Oncoming if (in active lane & heading matches oncoming heading & 
+        # is in lane bounds)
+        # DEPRECATED due to SUMO reporting wrong coords, thus causing errors
+        vehicles = []
+        targetLanes = []
+        for edges in self.getActiveEdges():
+            for edge in self.controlledEdges[edges]:
+                targetLanes += self.edgeLaneMap[edge]
+
         for lane in targetLanes:
             laneHeading = self.allLaneInfo[lane]['heading']
             headingUpper = laneHeading + headingTol
@@ -285,8 +315,8 @@ class HybridVAControl(signalControl.signalControl):
             lowerYBound = min(laneBounds['y1'], laneBounds['y2'])
             upperYBound = max(laneBounds['y1'], laneBounds['y2'])
             for vehID in self.CAM.receiveData.keys():
-                vehicleXcoord = self.CAM.receiveData[vehID]['pos'][0]
-                vehicleYcoord = self.CAM.receiveData[vehID]['pos'][1]
+                vehicleXcoord = self.CAM.receiveData[vehID]['coords'][0]
+                vehicleYcoord = self.CAM.receiveData[vehID]['coords'][1]
                 # If on correct heading pm 10deg
                 if (headingLower < laneHeading < headingUpper
                   # If in lane x bounds
@@ -350,11 +380,11 @@ class HybridVAControl(signalControl.signalControl):
         maxDistance = -1
         haltVelocity = 0.01 
         for ID in vehIDs:
-            vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
+            vehPosition = np.array(self.CAM.receiveData[ID]['coords'])
             distance = sigTools.getDistance(vehPosition, self.jcnPosition)
             # sumo defines a vehicle as halted if v< 0.01 m/s
             if distance > maxDistance \
-              and self.CAM.receiveData[ID]['v'] < haltVelocity:
+              and self.CAM.receiveData[ID]['speed'] < haltVelocity:
                 furthestID = ID
                 maxDistance = distance
 
@@ -364,7 +394,7 @@ class HybridVAControl(signalControl.signalControl):
         nearestID = ''
         
         for ID in vehIDs:
-            vehPosition = np.array(self.CAM.receiveData[ID]['pos'])
+            vehPosition = np.array(self.CAM.receiveData[ID]['coords'])
             distance = sigTools.getDistance(vehPosition, self.jcnPosition)
             if distance < minDistance:
                 nearestID = ID
@@ -497,13 +527,13 @@ class HybridVAControl(signalControl.signalControl):
         # If a vehicle detected and within catch distance
         if (nearestVeh['id'] != '') and (nearestVeh['distance'] <= catchDistance):
             # if not invalid and travelling faster than SPM velocity
-            vdata = self.CAM.receiveData[nearestVeh['id']]
-            if (vdata['v'] > haltVelocity):
-                dt = abs(self.TIME_SEC - vdata['Tgen'])
-                distance = abs(nearestVeh['distance'] - vdata['v']*dt)
+            vData = self.CAM.receiveData[nearestVeh['id']]
+            if (vData['speed'] > haltVelocity):
+                dt = abs(self.TIME_SEC - vData['Tgen'])
+                distance = abs(nearestVeh['distance'] - vData['speed']*dt)
                 distance = sigTools.ceilRound(distance, 0.1)
-                gpsExtend = distance/vdata['v']
-                gpsExtend = sigTools.ceilRound(distance/vdata['v'], 0.1)
+                gpsExtend = distance/vData['speed']
+                gpsExtend = sigTools.ceilRound(distance/vData['speed'], 0.1)
 
                 if gpsExtend > 2*self.threshold:
                     gpsExtend = 0.0

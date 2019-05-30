@@ -115,7 +115,7 @@ class stageOptimiser():
                       self.getNotTurningRatio(),
                       stopInfo/absNumVehicles,
                       waitInfo/absNumVehicles,
-                      self.getQueueLength(),
+                      self.getQueueLength()/self.queueNormFactors,
                       self.getLoopWaiting()]
         return np.array(costMatrix)
 

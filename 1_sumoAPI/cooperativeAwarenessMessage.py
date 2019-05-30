@@ -73,10 +73,12 @@ class CAMChannel(object):
 
             # else update channel
             if vehID in RxKeys:
-                dx = sigTools.getDistance(self.receiveData[vehID]['pos'],
-                                          self.transmitData[vehID]['pos'])
-                dh = abs(self.receiveData[vehID]['h'] - self.transmitData[vehID]['h'])
-                dv = abs(self.receiveData[vehID]['v'] - self.transmitData[vehID]['v'])
+                dx = sigTools.getDistance(self.receiveData[vehID]['coords'],
+                                          self.transmitData[vehID]['coords'])
+                dh = abs(self.receiveData[vehID]['heading']
+                         - self.transmitData[vehID]['heading'])
+                dv = abs(self.receiveData[vehID]['speed']
+                         - self.transmitData[vehID]['speed'])
                 dt = TIME_SEC - self.receiveData[vehID]['Tgen']
                 TGenCam = self.getTGenCam(self.receiveData[vehID], TIME_SEC)
             # No data for this vehicle received yet, force trigger onto channel
@@ -117,25 +119,29 @@ class CAMChannel(object):
                                              self.jcnGeometry)
                 if inRange:
                     vehHeading = vehicleData[vehID][tc.VAR_ANGLE]
+                    vehLane = vehicleData[vehID][tc.VAR_LANE_ID]
+                    vehVelocity = vehicleData[vehID][tc.VAR_SPEED]
+                    # Add noise to heading if needed
                     if self.noise:
                         vehHeading = self.addHeadingError(vehHeading)
-                    vehVelocity = vehicleData[vehID][tc.VAR_SPEED]
-                    if vehID in compareKeys:
-                        nextNGC = self.channelData[vehID]['NGC']
-                    else:
-                        nextNGC = 0
-                    
                     # Only get extra data if controller is CDOTS
                     if self.CDOTS:
                         signal = sigTools.vehicleSignalParser(
                                     vehicleData[vehID][tc.VAR_SIGNALS])
                     else:
                         signal = None
-                    self.transmitData[vehID] = {'pos': vehPosition,
-                                                'h': vehHeading,
-                                                'v': vehVelocity,
+                    # Calculate NGC
+                    if vehID in compareKeys:
+                        nextNGC = self.channelData[vehID]['NGC']
+                    else:
+                        nextNGC = 0
+                    # Make dictionary for this data packet
+                    self.transmitData[vehID] = {'coords': vehPosition,
+                                                'heading': vehHeading,
+                                                'speed': vehVelocity,
                                                 'Tgen': TIME_SEC,
                                                 'signal': signal,
+                                                'lane': vehLane,
                                                 'NGC': nextNGC}
 
     def isPktError(self):
