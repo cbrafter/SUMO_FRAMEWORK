@@ -464,11 +464,12 @@ def vehicleSignalParser(traciSignal):
 def weightedRandomDraw(choices, targetMean, maxits=100000, TOL=False):
     distribution = choices[:]  # copy choices
     # quit early if already converged
-    if np.isclose(np.mean(distribution, targetMean):
+    if np.isclose(np.mean(distribution), targetMean):
         return distribution
 
-    assert min(choices) >= targetMean, "Min choice out of bound > target"
-    assert max(choices) <= targetMean, "Max choice out of bound < target"
+    # check the calculation can be done
+    assert min(choices) <= targetMean, "Min choice out of bound > target"
+    assert max(choices) >= targetMean, "Max choice out of bound < target"
 
     # auto tolerance based on one order of magnitude smaller than least
     # significant number
@@ -488,10 +489,17 @@ def weightedRandomDraw(choices, targetMean, maxits=100000, TOL=False):
             elif mean >= targetMean and k < mean:
                 weightDict[k] += 1
 
-        distribution = []  # new list to write revised distribution into
-        for k, v in weightDict.items():
-            distribution += [k]*v
-        mean = np.mean(distribution)
+            # we could test this after each for loop but we get faster
+            # convergence doing it this way (more effort, less iters)
+            distribution = []  # new list to write revised distribution into
+            for k, v in weightDict.items():
+                distribution += [k]*v
+            mean = np.mean(distribution)
+            if np.isclose(mean, targetMean, atol=TOL):
+                break
         iters += 1
+
+    if not np.isclose(mean, targetMean, atol=TOL) or iters == maxits:
+        print("WARNING: Result may not have converged!")
     
-    return distribution
+    return distribution, weightDict
