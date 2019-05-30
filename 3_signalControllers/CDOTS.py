@@ -23,8 +23,8 @@ import cdots_utils as cutils
 
 class CDOTS(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
-                 scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
-                 PER=0., noise=False, pedStageActive=False):
+                 scanRange=250, loopIO=True, CAMoverride=False, model='simpleT',
+                 PER=0., noise=False, pedStageActive=False, activationArray=None):
         super(CDOTS, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -35,7 +35,7 @@ class CDOTS(signalControl.signalControl):
         self.mode = self.getMode()
         self.Nstages = len(self.junctionData.stages[self.mode])
         self.stageLastCallTime = [0.0]*self.Nstages
-        self.stagesSinceLastCall = [0.0]*self.Nstages
+        self.stagesSinceLastCall = [0]*self.Nstages
         self.currentStageIndex = 0
         traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
             self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
@@ -78,7 +78,6 @@ class CDOTS(signalControl.signalControl):
         self.secondsPerMeterTrafficDict =\
             {lane: carLen/speedLimDict[lane] for lane in lanes}
 
-
         # Pedestrian parameters
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
@@ -92,13 +91,13 @@ class CDOTS(signalControl.signalControl):
             self.hasPedStage = False
 
         # Stage calculation utility
-        self.stageOptimiser = cutils.stageOptimiser(self)
+        self.stageOptimiser = cutils.stageOptimiser(self, activationArray)
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
                               scanRange=self.scanRange,
                               CAMoverride=CAMoverride,
-                              PER=PER, noise=noise)
+                              PER=PER, noise=noise, CDOTS=True)
 
         # subscribe to vehicle params
         traci.junction.subscribeContext(self.junctionData.id, 
@@ -126,7 +125,7 @@ class CDOTS(signalControl.signalControl):
         # packet delay + only get packets towards the end of the second
         #if (not self.TIME_MS % self.packetRate) and (not 50 < self.TIME_MS % 1000 < 650):
         self.getSubscriptionResults()
-        self.CAM.channelUpdate(self.subResults, self.TIME_SEC, CDOTS=True)
+        self.CAM.channelUpdate(self.subResults, self.TIME_SEC)
         # else:
         #     self.CAMactive = False
 
@@ -197,13 +196,13 @@ class CDOTS(signalControl.signalControl):
             # record the most recent end time for a stage so we can calculate 
             # how long since the stage was last used
             self.stageLastCallTime[self.currentStageIndex] = self.TIME_SEC
-            nextStageIndex = self.stageOptimiser.getNextStage()
+            nextStageIndex = self.stageOptimiser.getNextStageIndex()
             # Count how many stages have been called since stage last used
             for i in range(self.Nstages):
                 if i != nextStageIndex:
                     self.stagesSinceLastCall[i] += 1
                 else:
-                    self.stagesSinceLastCall = 0
+                    self.stagesSinceLastCall[i] = 0
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
