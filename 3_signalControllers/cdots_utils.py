@@ -13,6 +13,7 @@ import numpy as np
 from collections import defaultdict
 import traci.constants as tc
 from cooperativeAwarenessMessage import CAMChannel
+import traceback
 
 
 class stageOptimiser():
@@ -50,8 +51,6 @@ class stageOptimiser():
         self.dblDeckPaxMax = 90
         # Max passengers on Alexander Dennis Enviro 200 (E200)
         self.sglDeckPaxMax = 76
-        # Scaling based on time of day traffic demand
-        self.busPaxScaling = {'OFF': 0.3, 'INTER': 0.6, 'PEAK': 0.9}
 
         # Distribution of passengers in a car, mean occupancy = 1.55 as in lit
         # self.passengerDist = 12*[1] + 6*[2] + [3, 4]
@@ -62,44 +61,61 @@ class stageOptimiser():
         try:
             # If there's only two stages anyway, cycle to next stage
             if self.Nstages < 3:
+                if self.sigCtrl.junctionData.id == 'junc3': print("Too few stages")
                 return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
             # stage must appear once every N cycles
+            # Override on cycle appearence only
             stagesSinceLastCall = np.array(self.sigCtrl.stagesSinceLastCall)
             if max(stagesSinceLastCall) > self.stageCycleFreq*self.Nstages:
+                if self.sigCtrl.junctionData.id == 'junc3': print("Cycle override")
                 return stagesSinceLastCall.argmax()
 
             # Stage must appear every N seconds
-            timeSinceLastGreen = np.array(self.getTimeSinceLastGreen())
-            if max(timeSinceLastGreen) > self.maxRedTime:
-                return timeSinceLastGreen.argmax()
+            # timeSinceLastGreen = np.array(self.getTimeSinceLastGreen())
+            # if max(timeSinceLastGreen) > self.maxRedTime:
+            #     if self.sigCtrl.junctionData.id == 'junc3': print("Time override")
+            #     return timeSinceLastGreen.argmax()
 
             # If we're free to se
             costMatrix = self.getCostMatrix()
             assert self.activationArray.shape[0] == costMatrix.shape[0]
+            rankMatrix = costMatrix.copy()
             # All cost matrix entries need ranking except the loop
-            costMatrix[:-1] = [self.rank(row) for row in rankMatrix[:-1]]
-            costMatrix = self.activationArray*costMatrix
+            rankMatrix[:-1] = [self.rank(row) for row in rankMatrix[:-1]]
+            rankMatrix = self.activationArray*rankMatrix
 
-            return costMatrix.sum(axis=0).argmax()
-        except:
+            if self.sigCtrl.junctionData.id == 'junc3': 
+                np.set_printoptions(precision=3, suppress=True)
+                print(costMatrix, 3)
+                print(rankMatrix)
+                print(rankMatrix.sum(axis=0))
+            return rankMatrix.sum(axis=0).argmax()
+        except Exception as e:
             # If there's a problem cycle to next stage
+            if self.sigCtrl.junctionData.id == 'junc3':
+                print(str(e))
+                traceback.print_exc()
             return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
     def getCostMatrix(self):
         # determine oncoming vehicles in each lane
         self.getVehiclesPerStage()
         NumVehicles = self.getNumVehicles().astype(float)
+        # need abs so dividing -1's don't incur sign change and no div by 0
+        absNumVehicles = np.abs(NumVehicles)
+        stopInfo = np.array([data['total'] for data in self.getStopInfo()])
+        waitInfo = np.array([data['total'] for data in self.getWaitingInfo()])
         # Rows are specific costs, cols are stages
-        rank = self.rank
+        # We omit stageSinceLastCall as it duplicates getTimeSinceLastGreen
+        # and we already have an override for it if it gets too high
         costMatrix = [self.getTimeSinceLastGreen(),
-                      self.getStagesSinceLastCall(),
                       NumVehicles,
                       self.getTotalPassengers(),
                       self.getNotTurningRatio(),
-                      self.getStopInfo()['total']/NumVehicles,
-                      self.getWaitingInfo()['total']/NumVehicles,
-                      self.getQueueLength()/self.queueNormFactors,
+                      stopInfo/absNumVehicles,
+                      waitInfo/absNumVehicles,
+                      self.getQueueLength(),
                       self.getLoopWaiting()]
         return np.array(costMatrix)
 
@@ -109,25 +125,27 @@ class stageOptimiser():
         for stageIndex in range(self.Nstages):
             stageEdges = self.sigCtrl.getActiveEdges(stageIndex)
             maxLen = max(qLenMaxDict[e] for e in stageEdges)
-            qNormFactors.append(max(maxLen, self.sigCtrl.scanRange))
+            qNormFactors.append(min(maxLen, self.sigCtrl.scanRange))
         return np.array(qNormFactors, dtype=np.float)
-
 
     def getQueueLength(self):
         queueLengths = []
         for stageIndex in range(self.Nstages):
             if stageIndex != self.sigCtrl.currentStageIndex:
-                queueLengths.append(
-                    self.sigCtrl.getFurthestStationaryVehicle(self.vehiclesPerStage[stageIndex]))
+                vData = self.sigCtrl.getFurthestStationaryVehicle(
+                            self.vehiclesPerStage[stageIndex])
+                # append dist only, is -1 if none anyway
+                queueLengths.append(vData[1])
             else:
-                queueLengths.append(0)
+                queueLengths.append(-1)
         return np.array(queueLengths)
 
     def getWaitingInfo(self):
         waitingInfo = []
-        for stageIndex, vehicleSet in enumerate(self.vehiclesPerStage):
-            totalWait = 0.0
-            maxWait = 0.0
+        for vehicleSet in self.vehiclesPerStage:
+            init = 0.0 if len(vehicleSet) else -1
+            totalWait = init
+            maxWait = init
             # vehicle set is empty for active lane so wont process
             for vehID in vehicleSet:
                 waitTime = self.sigCtrl.stopCounter.subResults[vehID][tc.VAR_WAITING_TIME]
@@ -140,8 +158,9 @@ class stageOptimiser():
     def getStopInfo(self):
         stopInfo = []
         for vehicleSet in self.vehiclesPerStage:
-            totalStops = 0.0
-            maxStops = 0.0
+            init = 0.0 if len(vehicleSet) else -1
+            totalStops = init
+            maxStops = init
             # vehicle set is empty for active lane so wont process
             for vehID in vehicleSet:
                 Nstops = self.sigCtrl.stopCounter.stopCountDict[vehID]
@@ -151,11 +170,26 @@ class stageOptimiser():
                              'max': np.array(maxStops)})
         return stopInfo
 
+    def getCarPassengers(self):
+        return self.RNG.choice(self.carOccupancyDist)
+
+    def getBusPassengers(self, maxOccupancy=90):
+        # Define boundaries for 3 quantiles (tertile)
+        Tertile1 = int(0.33*maxOccupancy)
+        Tertile2 = int(0.67*maxOccupancy)
+        if self.sigCtrl.mode == 'OFF':
+            return self.RNG.randint(1, Tertile1)
+        elif self.sigCtrl.mode == 'INTER':
+            return self.RNG.randint(Tertile1, Tertile2)
+        elif self.sigCtrl.mode == 'PEAK':
+            return self.RNG.randint(Tertile2, maxOccupancy)
+        else:
+            return self.RNG.randint(1, maxOccupancy)
 
     def getTotalPassengers(self):
         totalPassengers = []
         for vehicleSet in self.vehiclesPerStage:
-            paxCount = 0
+            paxCount = 0 if len(vehicleSet) else -1
             # vehicle set is empty for active lane so wont process
             for vehID in vehicleSet:
                 try:
@@ -169,7 +203,7 @@ class stageOptimiser():
                         # OR
                         # From choice distribution with weighted numbers 1-4
                         # and mean 1.55 
-                        Npassengers = self.RNG.choice(self.carOccupancyDist)
+                        Npassengers = self.getCarPassengers()
                     elif 'lgv' in vType:
                         Npassengers = 1 
                     elif 'hgv' in vType:
@@ -179,11 +213,9 @@ class stageOptimiser():
                     elif 'bus' in vType:
                         isDblDecker = self.RNG.rand() <= self.P_dblDeckBus
                         if isDblDecker:
-                            Npassengers = (self.dblDeckPaxMax
-                                           * self.busPaxScaling[self.sigCtrl.mode])
+                            Npassengers = self.getBusPassengers(self.dblDeckPaxMax)
                         else:
-                            Npassengers = (self.sglDeckPaxMax
-                                           * self.busPaxScaling[self.sigCtrl.mode])
+                            Npassengers = self.getBusPassengers(self.sglDeckPaxMax)
                     else:
                         Npassengers = 1 
 
@@ -195,7 +227,7 @@ class stageOptimiser():
     def getVehicleTypeCost(self):
         vTypeCost = []
         for vehicleSet in self.vehiclesPerStage:
-            totalCost = 0.0
+            totalCost = 0 if len(vehicleSet) else -1
             # vehicle set is empty for active lane so wont process
             for vehID in vehicleSet:
                 vType = self.sigCtrl.emissionCounter.vTypeDict[vehID]
@@ -204,7 +236,10 @@ class stageOptimiser():
         return np.array(vTypeCost)
 
     def getNumVehicles(self):
-        numVehicles = [len(vSet) for vSet in self.vehiclesPerStage]
+        numVehicles = []
+        for vehicleSet in self.vehiclesPerStage:
+            Nveh = len(vehicleSet)
+            numVehicles.append(Nveh if Nveh else -1)
         return np.array(numVehicles)
 
     def getLoopWaiting(self):
@@ -218,16 +253,19 @@ class stageOptimiser():
                 # see if a loop has been triggered recently. If so there might
                 # be a vehicle waiting, only loop until confirmation
                 for edge in edges:
-                    for loop in self.laneInductors[edge]:
-                        if self.subResults[loop][flowConst] < 0.5:
+                    for loop in self.sigCtrl.laneInductors[edge]:
+                        if self.sigCtrl.subResults[loop][flowConst] < 0.5:
                             detect = 1
                             break
                     if detect:
                         break
-                stageWaiting.append(detect)
+                if len(self.sigCtrl.laneInductors):
+                    stageWaiting.append(detect)
+                else:
+                    # Doesn't get ranked so 0 not -1
+                    stageWaiting.append(0)
             else:
                 stageWaiting.append(0)
-
         return np.array(stageWaiting)
 
     def getNotTurningRatio(self):
@@ -240,10 +278,11 @@ class stageOptimiser():
                 signal = self.sigCtrl.CAM.receiveData[vehID]['signal']
                 if signal['BLINKER_LEFT'] or signal['BLINKER_RIGHT']:
                     Nturning += 1
-            if len(vehicleSet) > 0:
+            
+            if len(vehicleSet):
                 nonTurningRatio.append(1.0 - (Nturning/float(len(vehicleSet))))
             else:
-                nonTurningRatio.append(1)
+                nonTurningRatio.append(-1)
         return np.array(nonTurningRatio)
 
     def getNumLanesServed(self):
@@ -270,8 +309,9 @@ class stageOptimiser():
     def getEmissions(self):
         emissionInfo = []
         for vehicleSet in self.vehiclesPerStage:
-            totalEmissions = {k: 0.0 for k in emissionList}
-            maxEmissions = {k: 0.0 for k in emissionList}
+            init = 0.0 if len(vehicleSet) else -1
+            totalEmissions = {k: init for k in emissionList}
+            maxEmissions = {k: init for k in emissionList}
             # vehicle set is empty for active lane so wont process
             for vehID in vehicleSet:
                 emDict = self.sigCtrl.emissionCounter.emissionCountDict[vehID]
@@ -286,10 +326,10 @@ class stageOptimiser():
         self.vehiclesPerStage = []
         for stageIndex in range(self.Nstages):
             if stageIndex != self.sigCtrl.currentStageIndex:
-                self.vehiclesPerStage.append(self.sigCtrl.getOncomingVehicles(stageIndex))
+                self.vehiclesPerStage.append(self.sigCtrl.getOncomingVehicles(stageIndexOverride=stageIndex))
             else:
                 self.vehiclesPerStage.append([])
-
+        if self.sigCtrl.junctionData.id == 'junc3': print(self.vehiclesPerStage)
         return self.vehiclesPerStage
 
     def getControlledRoadLength(self):
