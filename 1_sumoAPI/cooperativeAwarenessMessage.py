@@ -8,7 +8,8 @@ import numpy as np
 
 class CAMChannel(object):
     def __init__(self, jcnPosition, jcnCtrlRegion,
-                 scanRange=250, CAMoverride=False, PER=0., noise=False):
+                 scanRange=250, CAMoverride=False, PER=0., noise=False,
+                 CDOTS=False):
         self.TGenCamMin = 0.1 # Min time for CAM generation 10Hz/100ms/0.1sec
         self.TGenCamMax = 1.0 # Max time for CAM generation 1Hz/1000ms/1sec
         self.TGenCamDCC = 0.1 # CAM generation time under channel congestion
@@ -30,6 +31,8 @@ class CAMChannel(object):
 
         self.scanRange = scanRange
         self.jcnGeometry = (jcnPosition, jcnCtrlRegion)
+
+        self.CDOTS = CDOTS  # we only want signal data if controller is CDOTS
  
     def getDCCstate(self, CAMoverride = False): 
         return {'RELAXED': CAMoverride if CAMoverride else self.TGenCamMin,
@@ -51,7 +54,7 @@ class CAMChannel(object):
         else:
             return TIME_SEC - vData['Tgen']
 
-    def channelUpdate(self, vehicleData, TIME_SEC, CDOTS=False):
+    def channelUpdate(self, vehicleData, TIME_SEC):
         # Receive fata from "channel"
         self.receiveData = self.channelData.copy()
         
@@ -123,9 +126,9 @@ class CAMChannel(object):
                         nextNGC = 0
                     
                     # Only get extra data if controller is CDOTS
-                    if CDOTS:
+                    if self.CDOTS:
                         signal = sigTools.vehicleSignalParser(
-                                self.channelData[vehID][tc.VAR_SIGNALS])
+                                    vehicleData[vehID][tc.VAR_SIGNALS])
                     else:
                         signal = None
                     self.transmitData[vehID] = {'pos': vehPosition,
@@ -136,7 +139,7 @@ class CAMChannel(object):
                                                 'NGC': nextNGC}
 
     def isPktError(self):
-        return self.random.random_sample() < self.PER
+        return self.random.rand() < self.PER
 
     def addGPSNoise(self, coord):
         # 99.7% data within 3 sigma (std. dev) 5/3 ~ 1.67
@@ -144,4 +147,7 @@ class CAMChannel(object):
         return coord[0]+xerr, coord[1]+yerr
 
     def addHeadingError(self, heading):
-        return 20*self.random.random_sample() - 10 + heading
+        # Normal += 10deg 99.7% of the time (10/3 ~ 3.3)
+        # We don't %359 as it makes the cyclic boundaries easier to deal with
+        # In reality we made need a better mapping systems
+        return heading + sign*self.random.normal(0, 3.3)
