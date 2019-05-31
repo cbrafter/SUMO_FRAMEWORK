@@ -153,7 +153,8 @@ class CAMChannel(object):
         return coord[0]+xerr, coord[1]+yerr
 
     def addHeadingError(self, heading):
-        # Normal += 10deg 99.7% of the time (10/3 ~ 3.3)
+        # Normal += 20deg 99.7% of the time (20/3 ~ 6.67)
         # We don't %359 as it makes the cyclic boundaries easier to deal with
-        # In reality we made need a better mapping systems
-        return heading + sign*self.random.normal(0, 3.3)
+        # In reality we made need a better cyclic mapping system as a vehicle
+        # would only report a heading between 0-360
+        return heading + sign*self.random.normal(0, 6.67)
