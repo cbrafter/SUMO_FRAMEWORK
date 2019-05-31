@@ -296,6 +296,7 @@ class CDOTS(signalControl.signalControl):
             for edge in self.controlledEdges[edges]:
                 targetLanes += self.edgeLaneMap[edge]
 
+        # make set of target lanes for faster lookup
         targetLanes = set(targetLanes)
         for lane in targetLanes:
             laneHeading = self.allLaneInfo[lane]['heading']
@@ -304,7 +305,6 @@ class CDOTS(signalControl.signalControl):
             for vehID in self.CAM.receiveData.keys():
                 vehHeading = self.CAM.receiveData[vehID]['heading']
                 vehLane = self.CAM.receiveData[vehID]['lane']
-
                 # If on correct heading +- TOL degrees
                 headingCheck = headingLower <= vehHeading <= headingUpper
                 # If in vehicle in the targetLane

@@ -77,7 +77,7 @@ class stageOptimiser():
             #     if self.sigCtrl.junctionData.id == 'junc3': print("Time override")
             #     return timeSinceLastGreen.argmax()
 
-            # If we're free to se
+            # Get cost matrix if the special cases aren't set
             costMatrix = self.getCostMatrix()
             assert self.activationArray.shape[0] == costMatrix.shape[0]
             rankMatrix = costMatrix.copy()
@@ -90,15 +90,15 @@ class stageOptimiser():
             #     print(costMatrix, 3)
             #     print(rankMatrix)
             #     print(rankMatrix.sum(axis=0))
+
             # Add tiny amount of uniform random noise to randomise argmax when
             # ranks are tied
             rankTotal = self.tieBreak(rankMatrix.sum(axis=0))
             return rankTotal.argmax()
         except Exception as e:
             # If there's a problem cycle to next stage
-            if self.sigCtrl.junctionData.id == 'junc3':
-                print(str(e))
-                traceback.print_exc()
+            print(str(e))
+            traceback.print_exc()
             return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
     def getCostMatrix(self):
@@ -123,6 +123,7 @@ class stageOptimiser():
         return np.array(costMatrix)
 
     def getQueueNormFactors(self):
+        # returns the maximum length a queue can have in each stage
         qNormFactors = []
         qLenMaxDict = self.getControlledRoadLength()
         for stageIndex in range(self.Nstages):
@@ -288,6 +289,7 @@ class stageOptimiser():
         return np.array(nonTurningRatio)
 
     def getNumLanesServed(self):
+        # get number of lanes served by each stage
         numLanes = []
         for stageIndex, time in enumerate(self.sigCtrl.stageLastCallTime):
             if stageIndex != self.sigCtrl.currentStageIndex:
@@ -297,6 +299,7 @@ class stageOptimiser():
         return np.array(numLanes)
 
     def getTimeSinceLastGreen(self):
+        # Work out the time difference now and when each stage was last called
         timeDeltas = []
         for stageIndex, time in enumerate(self.sigCtrl.stageLastCallTime):
             if stageIndex != self.sigCtrl.currentStageIndex:
@@ -306,15 +309,18 @@ class stageOptimiser():
         return np.array(timeDeltas)
 
     def getStagesSinceLastCall(self):
+        # access stagesSinceLastCall from the signal controller as array
         return np.array(self.sigCtrl.stagesSinceLastCall)
 
     def getEmissions(self):
+        # Calculate total and max emissions for waiting vehicles
         emissionInfo = []
         for vehicleSet in self.vehiclesPerStage:
+            # initial value -1 if there is no data for this stage
             init = 0.0 if len(vehicleSet) else -1
             totalEmissions = {k: init for k in emissionList}
             maxEmissions = {k: init for k in emissionList}
-            # vehicle set is empty for active lane so wont process
+            # vehicle set is empty for active lane so won't process
             for vehID in vehicleSet:
                 emDict = self.sigCtrl.emissionCounter.emissionCountDict[vehID]
                 for emission in emissionList:
@@ -325,16 +331,19 @@ class stageOptimiser():
         return emissionInfo
 
     def getVehiclesPerStage(self):
+        # get the oncoming vehicles associated with each stage
         self.vehiclesPerStage = []
         for stageIndex in range(self.Nstages):
+            # Only calculate for inactive stages
             if stageIndex != self.sigCtrl.currentStageIndex:
                 self.vehiclesPerStage.append(self.sigCtrl.getOncomingVehicles(stageIndexOverride=stageIndex))
             else:
                 self.vehiclesPerStage.append([])
-        if self.sigCtrl.junctionData.id == 'junc3': print(self.vehiclesPerStage)
+        # if self.sigCtrl.junctionData.id == 'junc3': print(self.vehiclesPerStage)
         return self.vehiclesPerStage
 
     def getControlledRoadLength(self):
+        # Return max length of road for eahc controlled stage
         qLenMaxDict = defaultdict(float)
         for edge in self.sigCtrl.controlledEdges.keys():
             for lane in self.sigCtrl.controlledEdges[edge]:
@@ -342,9 +351,11 @@ class stageOptimiser():
         return qLenMaxDict 
 
     def getSpeedCost(self):
+        # Get speed limits for each stage
         pass
 
     def getAccelCost(self):
+        # Work out which queue will accelerate faster
         pass
 
     def getTravelTimeInfo(self):
@@ -356,21 +367,25 @@ class stageOptimiser():
         pass
 
     def getEmergencyVehicleStatus(self):
-        "Detect and provision for emergency vehicles"
+        # Detect and provision for emergency vehicles
         pass
 
     def sharedTransportDetection(self):
-        "detect public or shared transport and allow priority"
+        # detect public or shared transport and allow priority
         pass 
 
     def getSpecialVehicleCost(self):
+        # Make provisions for emergency vehicles or other vehicles that need
+        # want prioritisation
         pass
 
     def relNorm(self, x):
+        # Norm data based on the maximum data
         data = np.array(x)
-        return data.astype(float)/data.max()
+        return data.astype(float)/abs(data.max())
 
     def rank(self, costArray):
+        # Podium rank the data
         costs = self.tieBreak(costArray)
         rankArray = np.zeros_like(costArray)
         costAlloc = self.Nstages - 2  # Nstages must be at least 3 for this to happen anyway
