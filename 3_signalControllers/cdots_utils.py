@@ -371,7 +371,7 @@ class stageOptimiser():
         return data.astype(float)/data.max()
 
     def rank(self, costArray):
-        costs = np.array(costArray)
+        costs = self.tieBreak(costArray)
         rankArray = np.zeros_like(costArray)
         costAlloc = self.Nstages - 2  # Nstages must be at least 3 for this to happen anyway
         for idx in costs.argsort()[::-1]:
