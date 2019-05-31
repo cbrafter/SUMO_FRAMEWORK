@@ -90,7 +90,10 @@ class stageOptimiser():
                 print(costMatrix, 3)
                 print(rankMatrix)
                 print(rankMatrix.sum(axis=0))
-            return rankMatrix.sum(axis=0).argmax()
+            # Add tiny amount of uniform random noise to randomise argmax when
+            # ranks are tied
+            rankTotal = self.tieBreak(rankMatrix.sum(axis=0))
+            return rankTotal.argmax()
         except Exception as e:
             # If there's a problem cycle to next stage
             if self.sigCtrl.junctionData.id == 'junc3':
@@ -171,6 +174,11 @@ class stageOptimiser():
         return stopInfo
 
     def getCarPassengers(self):
+        # DfT NTS0905 occupancy avg 1.55. Here we achieve this by 
+        # having cars with 1 or 2 pax from weighted uniform dist
+        # Npassengers = int(1+(round(rng.rand()<0.55)))
+        # OR From choice distribution with weighted numbers 1-4
+        # and mean 1.55 
         return self.RNG.choice(self.carOccupancyDist)
 
     def getBusPassengers(self, maxOccupancy=90):
@@ -197,12 +205,6 @@ class stageOptimiser():
                 except KeyError:
                     vType = self.sigCtrl.emissionCounter.vTypeDict[vehID]
                     if 'car' in vType:
-                        # DfT NTS0905 occupancy avg 1.55. Here we achieve this by 
-                        # having cars with 1 or 2 pax from weighted uniform dist
-                        # Npassengers = int(1+(round(rng.rand()<0.55)))
-                        # OR
-                        # From choice distribution with weighted numbers 1-4
-                        # and mean 1.55 
                         Npassengers = self.getCarPassengers()
                     elif 'lgv' in vType:
                         Npassengers = 1 
@@ -380,3 +382,9 @@ class stageOptimiser():
                 rankArray[idx] = max(0, costAlloc)
             costAlloc -= 1
         return rankArray
+
+    def tieBreak(self, vec):
+        # Adds a tiny amount of random noise to the rank vector so that argmax
+        # doesn't bias towards the first index with max value
+        randomness = self.RNG.rand(len(vec))*1e-6
+        return vec + randomness
