@@ -13,6 +13,7 @@ import sys
 import os
 from collections import defaultdict
 import pandas as pd
+import traceback
 
 
 def convertTripData(data):
@@ -155,33 +156,39 @@ workpool = mp.Pool(processes=nproc)
 
 for outerFolder in resultFoldersLv1:
     for innerFolder in glob(outerFolder+'/*'):
-        print('Parsing: '+ innerFolder)
-        tripFiles = glob(innerFolder+'/trip*.xml')
-        emissionFiles = glob(innerFolder+'/emission*.csv')
-        tripFiles.sort()
-        emissionFiles.sort()
-        tripOutfile = outputFolder +\
-            '-'.join(innerFolder.split('/')[-2:])+'-tripinfo.csv'
-        emissionOutfile = outputFolder +\
-            '-'.join(innerFolder.split('/')[-2:])+'-emissions.csv'
+        try:
+            print('Parsing: '+ innerFolder)
+            tripFiles = glob(innerFolder+'/trip*.xml')
+            emissionFiles = glob(innerFolder+'/emission*.csv')
+            tripFiles.sort()
+            emissionFiles.sort()
+            tripOutfile = outputFolder +\
+                '-'.join(innerFolder.split('/')[-2:])+'-tripinfo.csv'
+            emissionOutfile = outputFolder +\
+                '-'.join(innerFolder.split('/')[-2:])+'-emissions.csv'
 
-        # Run parsers in parallel
-        # Parse trip data
-        resultData = workpool.map(trip_parser, tripFiles, chunksize=1)
-        resultData = [line for file in resultData for line in file]
+            # Run parsers in parallel
+            # Parse trip data
+            resultData = workpool.map(trip_parser, tripFiles, chunksize=1)
+            resultData = [line for file in resultData for line in file]
 
-        with open(tripOutfile, 'w') as ofile:
-            cols = ['controller', 'model', 'run', 'cvp', 'pedStage', "depart", "origin",
-                    "departDelay", "arrival", "destination", "duration",
-                    "routeLength", "timeLoss", "vType", "speedFactor",
-                    "journeyTime", "connected", "delay", "stops"]
-            ofile.write(','.join(cols) + '\n')
-            for line in resultData:
-                ofile.write(line)
+            with open(tripOutfile, 'w') as ofile:
+                cols = ['controller', 'model', 'run', 'cvp', 'pedStage', "depart", "origin",
+                        "departDelay", "arrival", "destination", "duration",
+                        "routeLength", "timeLoss", "vType", "speedFactor",
+                        "journeyTime", "connected", "delay", "stops"]
+                ofile.write(','.join(cols) + '\n')
+                for line in resultData:
+                    ofile.write(line)
 
-        # Parse emission data
-        resultData = workpool.map(em_parser, emissionFiles, chunksize=1)
-        resultData = pd.concat(resultData)
-        resultData.to_csv(emissionOutfile, index=False)
+            # Parse emission data
+            resultData = workpool.map(em_parser, emissionFiles, chunksize=1)
+            resultData = pd.concat(resultData)
+            resultData.to_csv(emissionOutfile, index=False)
+        except Exception as e:
+            print(str(e))
+            traceback.print_exc()
+
+
 
 print('~DONE~')
