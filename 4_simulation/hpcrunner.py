@@ -39,7 +39,7 @@ configs = list(product(models, tlControllers[:1], CAVratios[:1], runIDs, pedStag
 # MATS configurations
 configs += list(product(models, tlControllers[1:-2], CAVratios, runIDs, pedStage)) # 198
 # CDOTS configurations
-configs = list(product(models[1:-1], tlControllers[-2:], CAVratios,
+configs += list(product(models[1:-1], tlControllers[-2:], CAVratios,
                        runIDs[:1], pedStage[-1:], activationArrays))
 # configs = list(product(['sellyOak_avg'], tlControllers[:1], CAVratios[:1], runIDs, pedStage))
 # configs += list(product(['sellyOak_avg'], tlControllers[1:], CAVratios, runIDs, pedStage))

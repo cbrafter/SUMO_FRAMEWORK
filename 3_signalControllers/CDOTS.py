@@ -197,7 +197,7 @@ class CDOTS(signalControl.signalControl):
             # how long since the stage was last used
             self.stageLastCallTime[self.currentStageIndex] = self.TIME_SEC
             nextStageIndex = self.stageOptimiser.getNextStageIndex()
-            if self.junctionData.id == 'junc3': print(nextStageIndex)
+            # if self.junctionData.id == 'junc3': print(nextStageIndex)
             # Count how many stages have been called since stage last used
             for i in range(self.Nstages):
                 if i != nextStageIndex:

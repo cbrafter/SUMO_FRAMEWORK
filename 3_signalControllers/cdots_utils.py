@@ -85,11 +85,11 @@ class stageOptimiser():
             rankMatrix[:-1] = [self.rank(row) for row in rankMatrix[:-1]]
             rankMatrix = self.activationArray*rankMatrix
 
-            if self.sigCtrl.junctionData.id == 'junc3': 
-                np.set_printoptions(precision=3, suppress=True)
-                print(costMatrix, 3)
-                print(rankMatrix)
-                print(rankMatrix.sum(axis=0))
+            # if self.sigCtrl.junctionData.id == 'junc3': 
+            #     np.set_printoptions(precision=3, suppress=True)
+            #     print(costMatrix, 3)
+            #     print(rankMatrix)
+            #     print(rankMatrix.sum(axis=0))
             # Add tiny amount of uniform random noise to randomise argmax when
             # ranks are tied
             rankTotal = self.tieBreak(rankMatrix.sum(axis=0))
