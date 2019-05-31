@@ -17,12 +17,15 @@ import traci
 import signalTools as sigTools
 import traceback
 
+
 def simulation(configList, GUIbool=False):
     try:
         timer = sigTools.simTimer()
         timer.start()
-        modelName, tlLogic, CVP, run, pedStage, procID = configList
-        pedStr = '_ped' if pedStage else ''
+        if len(configList) == 6:
+            modelName, tlLogic, CVP, run, pedStage, procID = configList
+        else:
+            modelName, tlLogic, CVP, run, pedStage, activationArray, procID = configList
         # split returns list so whether or not selly in name right base given 
         modelBase = modelName.split('_')[0]
         hostname = socket.gethostname()
@@ -47,7 +50,15 @@ def simulation(configList, GUIbool=False):
                         'CDOTSslow': CDOTS.CDOTS}
         tlController = tlControlMap[tlLogic]
 
-        exportPath = '/hardmem/results/' + tlLogic + pedStr + '/' + modelName + '/'
+        # Define output folder
+        pedStr = '_ped' if pedStage else ''
+        if 'CDOTS' in tlLogic:
+            activStr = ''.join(str(bit) for bit in activationArray)
+            exportPath = ('/hardmem/results/{}{}/{}/{}/'
+                          .format(tlLogic, pedStr, modelName, activStr))
+        else:
+            exportPath = ('/hardmem/results/{}{}/{}/'
+                          .format(tlLogic, pedStr, modelName))
 
         # Check if model copy for this process exists
         if not os.path.isdir(model):
@@ -84,17 +95,24 @@ def simulation(configList, GUIbool=False):
         controllerList = []
         # Turn loops off if CAV ratio > 50%
         for junction in junctionsList:
+            CAMmod = 1.0 if 'slow' in tlLogic else False
+            loopCtrl = 'HVA' in tlLogic
+            noise = 'slow' in tlLogic
+            PER = 0.5 if noise else 0.0
             if ('HVA' in tlLogic) or ('GPSVA' in tlLogic): 
-                CAMmod = 1.0 if 'slow' in tlLogic else False
-                loopCtrl = 'HVA' in tlLogic
-                noise = 'slow' in tlLogic
-                PER = 0.5 if noise else 0.0
                 controllerList.append(tlController(junction, 
                                                    loopIO=loopCtrl,
                                                    CAMoverride=CAMmod,
                                                    model=modelBase,
                                                    PER=PER, noise=noise,
                                                    pedStageActive=pedStage))
+            elif 'CDOTS' in tlLogic:
+                controllerList.append(tlController(junction, 
+                                                   CAMoverride=CAMmod,
+                                                   model=modelBase,
+                                                   PER=PER, noise=noise,
+                                                   pedStageActive=pedStage,
+                                                   activationArray=activationArray))
             else:
                 controllerList.append(tlController(junction, pedStageActive=pedStage))
 

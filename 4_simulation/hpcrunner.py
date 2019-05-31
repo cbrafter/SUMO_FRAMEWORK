@@ -21,10 +21,11 @@ import random
 timer = sigTools.simTimer()
 timer.start()
 models = ['sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
-tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA']
+tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA', 'CDOTS', 'CDOTSslow']
 pedStage = [True, False]
 CAVratios = np.linspace(0, 1, 11)
 runIDs = list(range(1,51))
+activationArrays = list(product(*([[1]]*1+[[0,1]]*7)))
 PBS_ARRAYID = int(sys.argv[-1])
 nproc = 16
 nsims = 32
@@ -33,15 +34,18 @@ stopIndex = (PBS_ARRAYID + 1) * nsims
 
 configs = []
 
-# Test configurations, don't run TRANSYT for lo and hi cases
+# TRANSYT configurations
 configs = list(product(models, tlControllers[:1], CAVratios[:1], runIDs, pedStage)) # 2
-configs += list(product(models, tlControllers[1:], CAVratios, runIDs, pedStage)) # 198
-
+# MATS configurations
+configs += list(product(models, tlControllers[1:-2], CAVratios, runIDs, pedStage)) # 198
+# CDOTS configurations
+configs = list(product(models[1:-1], tlControllers[-2:], CAVratios,
+                       runIDs[:1], pedStage[-1:], activationArrays))
 # configs = list(product(['sellyOak_avg'], tlControllers[:1], CAVratios[:1], runIDs, pedStage))
 # configs += list(product(['sellyOak_avg'], tlControllers[1:], CAVratios, runIDs, pedStage))
 
 #sort configurations to process most intensive case first
-configs.sort(key=lambda x: x[3], reverse=False)
+# configs.sort(key=lambda x: x[3], reverse=False)
 # randomise configs so that long running jobs aren't bunched
 random.seed(1)
 random.shuffle(configs)
