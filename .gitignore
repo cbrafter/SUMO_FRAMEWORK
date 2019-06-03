@@ -16,4 +16,5 @@ info
 singularityConfig.txt
 *.zip
 *.log
-
+*.out
+*.cprof
