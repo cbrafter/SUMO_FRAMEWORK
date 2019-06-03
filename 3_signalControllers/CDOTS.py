@@ -312,8 +312,7 @@ class CDOTS(signalControl.signalControl):
                 if headingCheck and laneCheck:
                     vehicles.append(vehID)
 
-        vehicles = sigTools.unique(vehicles)
-        return vehicles
+        return sigTools.unique(vehicles)
 
     def getActiveEdges(self, stageIndexOverride=None):
         return sigTools.lane2edge(self.getActiveLanes(stageIndexOverride=stageIndexOverride))
