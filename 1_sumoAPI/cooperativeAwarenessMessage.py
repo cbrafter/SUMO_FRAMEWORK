@@ -63,16 +63,14 @@ class CAMChannel(object):
         self.setTGenCamDCC(numCAVs)
 
         # transmit the last CAMs on the channel
-        self.channelData = {}
-        chanKeys = self.transmitData.keys()
-        RxKeys = self.receiveData.keys()
-        for vehID in chanKeys:
+        self.channelData = {} 
+        for vehID in self.transmitData.keys():
             # if packet error do not update channel
-            if self.isPktError():
+            if self.noise and self.isPktError():
                 continue
 
             # else update channel
-            if vehID in RxKeys:
+            if vehID in self.receiveData.keys():
                 dx = sigTools.getDistance(self.receiveData[vehID]['coords'],
                                           self.transmitData[vehID]['coords'])
                 dh = abs(self.receiveData[vehID]['heading']
@@ -103,7 +101,6 @@ class CAMChannel(object):
 
         # Get new data for transmission from the vehicles
         self.transmitData = {}
-        compareKeys = self.channelData.keys()
         # check subscription has data
         if vehicleData != None:
             for vehID in vehicleData.keys():
@@ -131,7 +128,7 @@ class CAMChannel(object):
                     else:
                         signal = None
                     # Calculate NGC
-                    if vehID in compareKeys:
+                    if vehID in self.channelData.keys():
                         nextNGC = self.channelData[vehID]['NGC']
                     else:
                         nextNGC = 0
@@ -157,4 +154,4 @@ class CAMChannel(object):
         # We don't %359 as it makes the cyclic boundaries easier to deal with
         # In reality we made need a better cyclic mapping system as a vehicle
         # would only report a heading between 0-360
-        return heading + sign*self.random.normal(0, 6.67)
+        return heading + self.random.normal(0, 6.67)
