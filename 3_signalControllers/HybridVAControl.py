@@ -292,8 +292,7 @@ class HybridVAControl(signalControl.signalControl):
                 if headingCheck and laneCheck:
                     vehicles.append(vehID)
 
-        vehicles = sigTools.unique(vehicles)
-        return vehicles
+        return sigTools.unique(vehicles)
 
     def DEPRECATED_getOncomingVehicles(self, headingTol=15):
         # Oncoming if (in active lane & heading matches oncoming heading & 
