@@ -61,14 +61,14 @@ class stageOptimiser():
         try:
             # If there's only two stages anyway, cycle to next stage
             if self.Nstages < 3:
-                if self.sigCtrl.junctionData.id == 'junc3': print("Too few stages")
+                # if self.sigCtrl.junctionData.id == 'junc3': print("Too few stages")
                 return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
             # stage must appear once every N cycles
             # Override on cycle appearence only
             stagesSinceLastCall = np.array(self.sigCtrl.stagesSinceLastCall)
             if max(stagesSinceLastCall) > self.stageCycleFreq*self.Nstages:
-                if self.sigCtrl.junctionData.id == 'junc3': print("Cycle override")
+                # if self.sigCtrl.junctionData.id == 'junc3': print("Cycle override")
                 return stagesSinceLastCall.argmax()
 
             # Stage must appear every N seconds
