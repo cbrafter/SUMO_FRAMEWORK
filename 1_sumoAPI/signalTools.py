@@ -22,6 +22,7 @@ import sys
 import itertools
 import traceback
 
+
 def getIntergreen(dist):
     # diam (m) <10 & 10-18 & 19-27 & 28-37 & 38-46 & 47-55 & 56-64 & >65
     # time (s)  5  &   6   &   7   &   8   &   9   &  10   &  11   &  12
@@ -131,12 +132,12 @@ def getRouteDict():
 
 
 def isInRange(vehPosition, scanRange, jcnGeometry):
-    center, JCR = jcnGeometry # jcnPos, jcnCtrlRegion
-    distance = hypot(*(vehPosition - center))
-    c1 = distance < scanRange
+    # center, JCR = jcnGeometry # jcnPos, jcnCtrlRegion
+    # distance = hypot(*(vehPosition - jcnGeometry[0]))
+    c1 = hypot(*(vehPosition - jcnGeometry[0])) < scanRange
     # shorten variable name and check box is in bounds
-    c2 = JCR['W'] <= vehPosition[0] <= JCR['E']
-    c3 = JCR['S'] <= vehPosition[1] <= JCR['N']
+    c2 = jcnGeometry[1]['W'] <= vehPosition[0] <= jcnGeometry[1]['E']
+    c3 = jcnGeometry[1]['S'] <= vehPosition[1] <= jcnGeometry[1]['N']
     return (c1 and c2 and c3)
 
 
@@ -155,23 +156,30 @@ class vTypeDict(defaultdict):
         self[key] = traci.vehicle.getTypeID(key)
         return self[key]
 
+
 class emissionDict(defaultdict):
     def __missing__(self, key):
-        CO2 = tc.VAR_CO2EMISSION
-        CO = tc.VAR_COEMISSION
-        HC = tc.VAR_HCEMISSION
-        PMX = tc.VAR_PMXEMISSION
-        NOX = tc.VAR_NOXEMISSION
-        FUEL = tc.VAR_FUELCONSUMPTION
-        self[key] = {CO2: 0.0, CO: 0.0, HC: 0.0,
-                     PMX: 0.0, NOX: 0.0, FUEL: 0.0}
+        # CO2 = tc.VAR_CO2EMISSION
+        # CO = tc.VAR_COEMISSION
+        # HC = tc.VAR_HCEMISSION
+        # PMX = tc.VAR_PMXEMISSION
+        # NOX = tc.VAR_NOXEMISSION
+        # FUEL = tc.VAR_FUELCONSUMPTION
+        self[key] = {tc.VAR_CO2EMISSION: 0.0,
+                     tc.VAR_COEMISSION: 0.0,
+                     tc.VAR_HCEMISSION: 0.0,
+                     tc.VAR_PMXEMISSION: 0.0,
+                     tc.VAR_NOXEMISSION: 0.0,
+                     tc.VAR_FUELCONSUMPTION: 0.0}
         return self[key]
 
 
+
 def getDistance(A, B):
-    x1, y1 = A
-    x2, y2 = B
-    return hypot(x1-x2, y1-y2)
+    # x1, y1 = A
+    # x2, y2 = B
+    # return hypot(x1-x2, y1-y2)
+    return hypot(A[0]-B[0], A[1]-B[1])
 
 
 def flatten(listOfLists):
@@ -247,7 +255,7 @@ class EmissionCounter(object):
     def getSubscriptionResults(self):
         return traci.edge.getContextSubscriptionResults(self.subkey)
         
-    def getEmissions(self, time):
+    def getEmissionsOLD(self, time):
         self.subResults = self.getSubscriptionResults()
 
         try:
@@ -279,6 +287,41 @@ class EmissionCounter(object):
             pass
             # print("Emissions Writer: AttributeError")
             # traceback.print_exc()
+
+    def getEmissions(self, time):
+        self.subResults = self.getSubscriptionResults()
+
+        try:
+            # If new second, add per second emissions to total
+            if not time%1000:
+                for vehID in self.subResults.keys():
+                    if vehID not in self.vTypeDict.keys():
+                        self.vTypeDict[vehID] = self.subResults[vehID][self.vType]
+                    for emission in self.emissionList:
+                        # Track maximum per second emissions
+                        self.emissionMonitor[vehID][emission] = \
+                            max(self.emissionMonitor[vehID][emission],
+                                self.subResults[vehID][emission])
+                        # Add max per second counts to total
+                        self.emissionCountDict[vehID][emission] += \
+                            self.emissionMonitor[vehID][emission]
+
+                # reset monitor for next second
+                self.emissionMonitor = emissionDict()
+
+            else:
+                # Check for max per second emissions in this time step
+                for vehID in self.subResults.keys():
+                    # Track maximum per second emissions
+                    for emission in self.emissionList:
+                        self.emissionMonitor[vehID][emission] = \
+                            max(self.emissionMonitor[vehID][emission],
+                                self.subResults[vehID][emission])
+        except KeyError:
+            pass
+
+        except AttributeError:
+            pass
 
     def writeEmissions(self, filename):
         with open(filename, 'w') as f:
@@ -444,21 +487,31 @@ def powerset(iterable, excludeZero=True):
 def vehicleSignalParser(traciSignal):
     # converts decimal signal from traci to binary and decodes the bits
     # to their corresponding statuses
-    binarySignal = '{:014d}'.format(int(bin(traciSignal)[2:]))[::-1]
-    signalCode = {'BLINKER_RIGHT': int(binarySignal[0]),
-                  'BLINKER_LEFT': int(binarySignal[1]),
-                  'BLINKER_EMERGENCY': int(binarySignal[2]),
-                  'BRAKELIGHT': int(binarySignal[3]),
-                  'FRONTLIGHT': int(binarySignal[4]),
-                  'FOGLIGHT': int(binarySignal[5]),
-                  'HIGHBEAM': int(binarySignal[6]),
-                  'BACKDRIVE': int(binarySignal[7]),
-                  'WIPER': int(binarySignal[8]),
-                  'DOOR_OPEN_LEFT': int(binarySignal[9]),
-                  'DOOR_OPEN_RIGHT': int(binarySignal[10]),
-                  'EMERGENCY_BLUE': int(binarySignal[11]),
-                  'EMERGENCY_RED': int(binarySignal[12]),
-                  'EMERGENCY_YELLOW': int(binarySignal[13])}
+    binarySignal = map(int, '{:04d}'.format(int(bin(traciSignal)[2:]))[::-1])
+    signalCode = {'BLINKER_RIGHT': binarySignal[0],
+                  'BLINKER_LEFT': binarySignal[1],
+                  'BLINKER_EMERGENCY': binarySignal[2],
+                  'BRAKELIGHT': binarySignal[3]}
+    return signalCode
+
+def vehicleSignalParserFull(traciSignal):
+    # converts decimal signal from traci to binary and decodes the bits
+    # to their corresponding statuses
+    binarySignal = map(int, '{:014d}'.format(int(bin(traciSignal)[2:]))[::-1])
+    signalCode = {'BLINKER_RIGHT': binarySignal[0],
+                  'BLINKER_LEFT': binarySignal[1],
+                  'BLINKER_EMERGENCY': binarySignal[2],
+                  'BRAKELIGHT': binarySignal[3],
+                  'FRONTLIGHT': binarySignal[4],
+                  'FOGLIGHT': binarySignal[5],
+                  'HIGHBEAM': binarySignal[6],
+                  'BACKDRIVE': binarySignal[7],
+                  'WIPER': binarySignal[8],
+                  'DOOR_OPEN_LEFT': binarySignal[9],
+                  'DOOR_OPEN_RIGHT': binarySignal[10],
+                  'EMERGENCY_BLUE': binarySignal[11],
+                  'EMERGENCY_RED': binarySignal[12],
+                  'EMERGENCY_YELLOW': binarySignal[13]}
     return signalCode
 
 def weightedRandomDraw(choices, targetMean, maxits=100000, TOL=False):
