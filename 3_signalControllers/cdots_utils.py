@@ -57,7 +57,7 @@ class stageOptimiser():
         self.carOccupancyDist = sigTools.weightedRandomDraw([1,2,3,4], 1.55)[0]
         self.occupancyDict = {}
 
-    def getNextStageIndex(self):
+    def getNextStageIndex(self, mode='REL'):
         try:
             # If there's only two stages anyway, cycle to next stage
             if self.Nstages < 3:
@@ -81,15 +81,19 @@ class stageOptimiser():
             costMatrix = self.getCostMatrix()
             assert self.activationArray.shape[0] == costMatrix.shape[0]
             rankMatrix = costMatrix.copy()
-            # All cost matrix entries need ranking except the loop
-            rankMatrix[:-1] = [self.rank(row) for row in rankMatrix[:-1]]
+            if mode == 'RANK':
+                # All cost matrix entries need ranking except the loop
+                rankMatrix[:-1] = [self.rank(row) for row in rankMatrix[:-1]]
+            else:
+                rankMatrix[:-1] = [self.relNorm(row) for row in rankMatrix[:-1]]
+                rankMatrix[rankMatrix < 0] = 0
             rankMatrix = self.activationArray*rankMatrix
 
-            # if self.sigCtrl.junctionData.id == 'junc3': 
-            #     np.set_printoptions(precision=3, suppress=True)
-            #     print(costMatrix, 3)
-            #     print(rankMatrix)
-            #     print(rankMatrix.sum(axis=0))
+            if self.sigCtrl.junctionData.id == 'junc3': 
+                np.set_printoptions(precision=3, suppress=True)
+                print(costMatrix, 3)
+                print(rankMatrix)
+                print(rankMatrix.sum(axis=0))
 
             # Add tiny amount of uniform random noise to randomise argmax when
             # ranks are tied
@@ -115,10 +119,10 @@ class stageOptimiser():
         costMatrix = [self.getTimeSinceLastGreen(),
                       NumVehicles,
                       self.getTotalPassengers(),
-                      self.getNotTurningRatio(),
                       stopInfo/absNumVehicles,
                       waitInfo/absNumVehicles,
                       self.getQueueLength()/self.queueNormFactors,
+                      self.getNotTurningRatio(),
                       self.getLoopWaiting()]
         return np.array(costMatrix)
 
@@ -379,10 +383,13 @@ class stageOptimiser():
         # want prioritisation
         pass
 
-    def relNorm(self, x):
+    def relNorm(self, data):
         # Norm data based on the maximum data
-        data = np.array(x)
-        return data.astype(float)/abs(data.max())
+        divisor = abs(data.max())
+        divisor = divisor if divisor > 1e-6 else 1.0
+        result = data.astype(float)/divisor
+        result[result < 0] = 0 
+        return result
 
     def rank(self, costArray):
         # Podium rank the data
