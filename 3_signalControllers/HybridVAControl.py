@@ -326,8 +326,7 @@ class HybridVAControl(signalControl.signalControl):
                   # Then append vehicle
                     vehicles.append(vehID)
 
-        vehicles = sigTools.unique(vehicles)
-        return vehicles
+        return sigTools.unique(vehicles)
 
     def getActiveLanes(self):
         # Get the current control string to find the green lights
