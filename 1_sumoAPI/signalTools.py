@@ -174,6 +174,11 @@ class emissionDict(defaultdict):
         return self[key]
 
 
+class delayDefaultDict(defaultdict):
+    def __missing__(self, key):
+        self[key] = [0, 0]
+        return self[key]
+
 
 def getDistance(A, B):
     # x1, y1 = A
@@ -336,6 +341,69 @@ class EmissionCounter(object):
                 # Don't write terminating comma
                 dataStr = dataStr[:-1] + '\n'
                 f.write(dataStr)
+
+
+class PIMonitor(object):
+    def __init__(self):
+        self.stopCountDict = defaultdict(int)
+        self.waitingDict = defaultdict(float)
+        self.delayDict = delayDefaultDict()
+        self.WAIT = tc.VAR_WAITING_TIME
+        self.ARRIVED = tc.VAR_ARRIVED_VEHICLES_IDS
+        self.DEPARTED = tc.VAR_DEPARTED_VEHICLES_IDS
+        self.speedTol = 1e-3
+        self.subscription()  # makes self.subkey
+
+    def subscription(self):
+        self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        traci.edge.subscribeContext(self.subkey, 
+                                    tc.CMD_GET_VEHICLE_VARIABLE, 
+                                    1000000, 
+                                    varIDs=(self.WAIT,))
+
+    def getSubscriptionResults(self):
+        return traci.edge.getContextSubscriptionResults(self.subkey)
+
+    def getPIUpdate(self, simTime):
+        self.subResults = self.getSubscriptionResults()
+        
+        try:
+            for vehID in self.subResults.keys():
+                # If the vehicle has entered then add first time stamp
+                if vehID not in self.delayDict.keys():
+                    self.delayDict[vehID][0] = simTime*1e-3
+                # Count stops and waiting
+                if self.subResults[vehID][self.WAIT] > 0.0:
+                    self.waitingDict[vehID] += 0.1
+                if 0.099 < self.subResults[vehID][self.WAIT] < 0.101:
+                    self.stopCountDict[vehID] += 1
+
+            for vehID in self.delayDict.keys():
+                if vehID not in self.subResults.keys() and self.delayDict[vehID][1] == 0:
+                    self.delayDict[vehID][1] = simTime*1e-3
+
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
+
+    def getPI(self):
+        # using journey time as no way to get all info needed cheaply yet
+        # Only consider vehicles who have finished their journeys
+        finishedIDs = [k for k in self.delayDict.keys() if self.delayDict[k][1]]
+        delays = [v[1]-v[0] for k,v in self.delayDict.items() if k in finishedIDs]
+        delays = np.array([x for x in delays if x >= 0])
+        stops = np.array([self.stopCountDict[k] for k in finishedIDs])
+        return delays.mean(), stops.mean()
+
+    def writeStops(self, filename):
+        with open(filename, 'w') as f:
+            f.write('vehID,stops\n')
+            vehIDs = self.stopCountDict.keys()
+            vehIDs.sort()
+            for vehID in vehIDs:
+                f.write('{},{}\n'.format(vehID, self.stopCountDict[vehID]))
+
 
 class simTimer(object):
     def __init__(self):
