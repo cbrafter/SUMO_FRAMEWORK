@@ -68,7 +68,7 @@ class stageOptimiser():
             # Override on cycle appearence only
             stagesSinceLastCall = np.array(self.sigCtrl.stagesSinceLastCall)
             if max(stagesSinceLastCall) > self.stageCycleFreq*self.Nstages:
-                # if self.sigCtrl.junctionData.id == 'junc3': print("Cycle override")
+                if self.sigCtrl.junctionData.id == 'junc3': print("CYCLE OVERRIDE")
                 return stagesSinceLastCall.argmax()
 
             # Stage must appear every N seconds
@@ -91,9 +91,10 @@ class stageOptimiser():
 
             if self.sigCtrl.junctionData.id == 'junc3': 
                 np.set_printoptions(precision=3, suppress=True)
-                print(costMatrix, 3)
+                print(costMatrix)
                 print(rankMatrix)
                 print(rankMatrix.sum(axis=0))
+                print(rankMatrix.sum(axis=0).argmax())
 
             # Add tiny amount of uniform random noise to randomise argmax when
             # ranks are tied
@@ -386,16 +387,19 @@ class stageOptimiser():
     def relNorm(self, data):
         # Norm data based on the maximum data
         divisor = abs(data.max())
-        divisor = divisor if divisor > 1e-6 else 1.0
-        result = data.astype(float)/divisor
-        result[result < 0] = 0 
+        # set negative divisors to 1.0 so they don't affect result
+        divisor = float(divisor) if divisor > 1e-6 else 1.0
+        result = data/divisor  # divide all quantities by max value
+        # All negative values to zero so they don't contribute to sum
+        result[result < 0] = 0
         return result
 
     def rank(self, costArray):
         # Podium rank the data
         costs = self.tieBreak(costArray)
         rankArray = np.zeros_like(costArray)
-        costAlloc = self.Nstages - 2  # Nstages must be at least 3 for this to happen anyway
+        # Nstages must be at least 3 for this to happen anyway
+        costAlloc = self.Nstages - 2
         for idx in costs.argsort()[::-1]:
             # only assign costs where to stages where there is data
             if costs[idx] < 0:
@@ -408,5 +412,5 @@ class stageOptimiser():
     def tieBreak(self, vec):
         # Adds a tiny amount of random noise to the rank vector so that argmax
         # doesn't bias towards the first index with max value
-        randomness = self.RNG.rand(len(vec))*1e-6
+        randomness = self.RNG.rand(*vec.shape)*1e-6
         return vec + randomness
