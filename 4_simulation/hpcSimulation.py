@@ -117,7 +117,8 @@ def simulation(configList, GUIbool=False):
                 controllerList.append(tlController(junction, pedStageActive=pedStage))
 
         # Step simulation while there are vehicles
-        simTime, simActive = 0, True
+        # we use traci method for initial value in case begin != 0
+        simTime, simActive = traci.simulation.getCurrentTime(), True
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
         limitExtend = 15*60 # check again in 15 mins if things seem ok
         stopCounter = sigTools.StopCounter()
