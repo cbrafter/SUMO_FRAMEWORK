@@ -16,9 +16,11 @@ import CDOTS
 import traci
 import signalTools as sigTools
 import traceback
+from scipy.optimize import minimize
+import numpy as np
 
 
-def simulation(configList, GUIbool=False):
+def simulation(configList, GUIbool=False, weights=np.ones(8)):
     try:
         timer = sigTools.simTimer()
         timer.start()
@@ -75,8 +77,8 @@ def simulation(configList, GUIbool=False):
 
         # Edit the the output filenames in sumoConfig
         optConfigGen(modelName, configFile, exportPath, 
-              CVP=CVP, stepSize=stepSize, 
-              run=seed, port=simport, seed=seed)
+                     CVP=CVP, stepSize=stepSize, 
+                     run=seed, port=simport, seed=seed)
 
         # Connect to model
         connector = sumoConnect.sumoConnect(configFile, gui=GUIbool, port=simport)
@@ -119,9 +121,11 @@ def simulation(configList, GUIbool=False):
         # Step simulation while there are vehicles
         # we use traci method for initial value in case begin != 0
         simTime, simActive = traci.simulation.getCurrentTime(), True
+        endTime = 34200*1000  # sumo config handles begin, end is manual
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
         limitExtend = 15*60 # check again in 15 mins if things seem ok
-        stopCounter = sigTools.StopCounter()
+        piMonitor = sigTools.PIMonitor()
+        #stopCounter = sigTools.StopCounter()
         emissionCounter = sigTools.EmissionCounter()
         stopFilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         emissionFilename = exportPath+'emissions_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
@@ -134,12 +138,13 @@ def simulation(configList, GUIbool=False):
         while simActive:
             traci.simulationStep()
             simTime += timeDelta
-            stopCounter.getStops()
+            piMonitor.getPIUpdate(simTime)
+            #stopCounter.getStops()
             emissionCounter.getEmissions(simTime)
 
             for controller in controllerList:
                 if 'CDOTS' in tlLogic:
-                    controller.process(time=simTime, stopCounter=stopCounter, 
+                    controller.process(time=simTime, stopCounter=piMonitor, 
                                        emissionCounter=emissionCounter)
                 else:
                     controller.process(time=simTime)
@@ -147,11 +152,12 @@ def simulation(configList, GUIbool=False):
             # reduce calls to traci to 1 per simulation min to improve performance
             # flag will always be positive int while there are vehicles no need for else
             if not simTime % oneMinute: 
-                simActive = traci.simulation.getMinExpectedNumber()
+                # simActive = traci.simulation.getMinExpectedNumber()
+                simActive = simTime < endTime
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
                 if timer.runtime() > timeLimit:
-                    stopCounter.writeStops(stopFilename)
+                    piMonitor.writeStops(stopFilename)
                     emissionCounter.writeEmissions(emissionFilename)
                     if sigTools.isSimGridlocked(modelBase, simTime):
                         connector.disconnect()
@@ -163,7 +169,7 @@ def simulation(configList, GUIbool=False):
         connector.disconnect()
 
         # save stops and emissions files
-        stopCounter.writeStops(stopFilename)
+        piMonitor.writeStops(stopFilename)
         emissionCounter.writeEmissions(emissionFilename)
 
         timer.stop()
@@ -171,7 +177,7 @@ def simulation(configList, GUIbool=False):
               .format(modelName, tlLogic, run, int(CVP*100), pedStage,
                       timer.strTime(), time.ctime()))
         sys.stdout.flush()
-        return (True, configList)
+        return piMonitor.getPI()
     except Exception as e:
         # Print if an experiment fails and provide repr of params to repeat run
         timer.stop()
@@ -179,9 +185,9 @@ def simulation(configList, GUIbool=False):
         print(str(e))
         traceback.print_exc()
         sys.stdout.flush()
-        return (False, configList)
+        return 1e6, 1e6  # if we fail we return a worse result
     finally:
-        stopCounter.writeStops(stopFilename)
+        piMonitor.writeStops(stopFilename)
         sys.stdout.flush()
         # remove spawned model folder
         try:
@@ -189,3 +195,19 @@ def simulation(configList, GUIbool=False):
                 shutil.rmtree(model)
         except:
             print('Could not remove folder: '+ model)
+
+
+def unifyPI(delay, stops, delayBase=100.0, stopBase=10.0):
+    return 0.5*((delay/float(delayBase)) + (stops/float(stopBase)))
+
+
+def optimiser(config):
+    modelName, tlLogic, CVP, run, pedStage, activationArray, procID = config
+    meanDelay, meanStops = simulation(config)
+
+    def optFunc(x):
+        delay, stops = simulation(config, weights=x)
+        return unifyPI(delay, stops, meanDelay, meanStops)
+
+    inits = np.ones_like(activationArray)
+    Xmin = minimize(optFunc, inits, method='Nelder-Mead')
