@@ -18,10 +18,18 @@ import traceback
 
 class stageOptimiser():
     def __init__(self, signalController, activationArray=np.ones(7),
-                 weightArray=np.ones(7)):
+                 weightArray=np.ones(7, dtype=float)):
         self.sigCtrl = signalController
-        self.activationArray = np.array([activationArray]).T
-        self.weightArray = np.array([activationArray]).T
+        # dim expanstion maxes array to col vector
+        # no np.newaxis as lists can be expanded with the function
+        self.activationArray = np.expand_dims(activationArray, 1)
+        try:
+            self.weightArray = np.array(activationArray, dtype=float)
+            self.weightArray[self.weightArray>0] = weightArray
+            self.weightArray = np.expand_dims(self.weightArray, 1)
+        except:
+            self.weightArray = np.expand_dims(activationArray, 1)
+
         self.Nstages = self.sigCtrl.Nstages
         self.stageCycleFreq = 2  # stage appears once in every N cycles
         self.maxRedTime = 300  # stage must appear once every 5 mins
@@ -68,7 +76,7 @@ class stageOptimiser():
             # Override on cycle appearence only
             stagesSinceLastCall = np.array(self.sigCtrl.stagesSinceLastCall)
             if max(stagesSinceLastCall) > self.stageCycleFreq*self.Nstages:
-                if self.sigCtrl.junctionData.id == 'junc3': print("CYCLE OVERRIDE")
+                # if self.sigCtrl.junctionData.id == 'junc3': print("CYCLE OVERRIDE")
                 return stagesSinceLastCall.argmax()
 
             # Stage must appear every N seconds
@@ -87,14 +95,17 @@ class stageOptimiser():
             else:
                 rankMatrix[:-1] = [self.relNorm(row) for row in rankMatrix[:-1]]
                 rankMatrix[rankMatrix < 0] = 0
+            # blank out 
             rankMatrix = self.activationArray*rankMatrix
+            rankMatrix = self.weightArray*rankMatrix
 
-            if self.sigCtrl.junctionData.id == 'junc3': 
-                np.set_printoptions(precision=3, suppress=True)
-                print(costMatrix)
-                print(rankMatrix)
-                print(rankMatrix.sum(axis=0))
-                print(rankMatrix.sum(axis=0).argmax())
+            # if self.sigCtrl.junctionData.id == 'junc3':
+            #     np.set_printoptions(precision=3, suppress=True)
+            #     print(self.weightArray.T)
+            #     print(costMatrix)
+            #     print(rankMatrix)
+            #     print(rankMatrix.sum(axis=0))
+            #     print(rankMatrix.sum(axis=0).argmax())
 
             # Add tiny amount of uniform random noise to randomise argmax when
             # ranks are tied
@@ -123,8 +134,8 @@ class stageOptimiser():
                       stopInfo/absNumVehicles,
                       waitInfo/absNumVehicles,
                       self.getQueueLength()/self.queueNormFactors,
-                      self.getNotTurningRatio(),
-                      self.getLoopWaiting()]
+                      self.getNotTurningRatio()]
+                      #self.getLoopWaiting()]
         return np.array(costMatrix)
 
     def getQueueNormFactors(self):

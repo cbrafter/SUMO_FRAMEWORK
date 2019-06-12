@@ -7,7 +7,7 @@ import numpy as np
 import multiprocessing as mp
 from itertools import product
 from glob import glob
-from hpcSimulation import simulation
+from optSimulation import optimiser
 sys.path.insert(0, '../1_sumoAPI')
 sys.path.insert(0, '../3_signalControllers')
 import signalTools as sigTools
@@ -25,50 +25,32 @@ tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA', 'CDOTS', 'CDOTSslow']
 pedStage = [True, False]
 CAVratios = np.linspace(0, 1, 11)
 runIDs = list(range(1,51))
-activationArrays = list(product(*([[1]]*1+[[0,1]]*7)))
-PBS_ARRAYID = int(sys.argv[-1])
-nproc = 16
-nsims = 32
-startIndex = PBS_ARRAYID * nsims
-stopIndex = (PBS_ARRAYID + 1) * nsims
+activationArrays = list(product(*([[1]]*1+[[0,1]]*6)))
+nproc = 7
 
 configs = []
-
-# TRANSYT configurations
-#configs = list(product(models, tlControllers[:1], CAVratios[:1], runIDs, pedStage)) # 2
-# MATS configurations
-#configs += list(product(models, tlControllers[1:-2], CAVratios, runIDs, pedStage)) # 198
+# modelName, tlLogic, CVP, run, pedStage, (activationArray), procID
 # CDOTS configurations
-configs = list(product(models[1:-1], tlControllers[-2:], CAVratios,
-                       runIDs[:1], pedStage[:1], activationArrays))
-# configs = list(product(['sellyOak_avg'], tlControllers[:1], CAVratios[:1], runIDs, pedStage))
-# configs += list(product(['sellyOak_avg'], tlControllers[1:], CAVratios, runIDs, pedStage))
+configs = [['sellyOak_avg', 'CDOTS', 1.0, 1, False, activationArrays[-1], 1],
+           ['sellyOak_avg', 'CDOTSslow', 1.0, 1, False, activationArrays[-1], 2],
+           ['sellyOak_avg', 'CDOTS', 0.5, 1, False, activationArrays[-1], 3],
+           ['sellyOak_avg', 'CDOTSslow', 0.5, 1, False, activationArrays[-1], 4],
+           ['sellyOak_avg', 'CDOTS', 0.1, 1, False, activationArrays[-1], 5],
+           ['sellyOak_avg', 'CDOTSslow', 0.1, 1, False, activationArrays[-1], 6],]
 
 #sort configurations to process most intensive case first
 # configs.sort(key=lambda x: x[3], reverse=False)
 # randomise configs so that long running jobs aren't bunched
-random.seed(1)
-random.shuffle(configs)
-
-if stopIndex >= len(configs):
-    if startIndex >= len(configs):
-        print("PBS_ARRAYID indexes beyond #configs")
-        sys.exit()
-    configs = configs[startIndex:]
-else:
-    configs = configs[startIndex:stopIndex]
-
-for i in range(len(configs)):
-    configs[i] = list(configs[i])
-    configs[i].append(i%nsims)
 
 print('# simulations: '+str(len(configs)))
-print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
+nproc = min(nproc, len(configs))
 workpool = mp.Pool(processes=nproc)
+print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # Run simualtions in parallel.
 try:
-    result = workpool.map(simulation, configs, chunksize=1)
+    result = workpool.map(optimiser, configs, chunksize=1)
+    for r in results: print(r)
 except Exception as e:
     print(e)
     traceback.print_exc()

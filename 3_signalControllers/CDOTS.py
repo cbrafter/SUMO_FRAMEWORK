@@ -24,7 +24,8 @@ import cdots_utils as cutils
 class CDOTS(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
                  scanRange=250, loopIO=True, CAMoverride=False, model='simpleT',
-                 PER=0., noise=False, pedStageActive=False, activationArray=None):
+                 PER=0., noise=False, pedStageActive=False,
+                 activationArray=np.ones(7), weightArray=np.ones(7, dtype=float)):
         super(CDOTS, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -91,7 +92,9 @@ class CDOTS(signalControl.signalControl):
             self.hasPedStage = False
 
         # Stage calculation utility
-        self.stageOptimiser = cutils.stageOptimiser(self, activationArray)
+        self.stageOptimiser = cutils.stageOptimiser(self,
+                                                    activationArray=activationArray,
+                                                    weightArray=weightArray)
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,

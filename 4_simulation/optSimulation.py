@@ -20,7 +20,7 @@ from scipy.optimize import minimize
 import numpy as np
 
 
-def simulation(configList, GUIbool=False, weights=np.ones(8)):
+def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
     try:
         timer = sigTools.simTimer()
         timer.start()
@@ -114,7 +114,8 @@ def simulation(configList, GUIbool=False, weights=np.ones(8)):
                                                    model=modelBase,
                                                    PER=PER, noise=noise,
                                                    pedStageActive=pedStage,
-                                                   activationArray=activationArray))
+                                                   activationArray=activationArray,
+                                                   weightArray=weightArray))
             else:
                 controllerList.append(tlController(junction, pedStageActive=pedStage))
 
@@ -203,11 +204,25 @@ def unifyPI(delay, stops, delayBase=100.0, stopBase=10.0):
 
 def optimiser(config):
     modelName, tlLogic, CVP, run, pedStage, activationArray, procID = config
-    meanDelay, meanStops = simulation(config)
+    initDelay, initStops = simulation(config)
 
     def optFunc(x):
         delay, stops = simulation(config, weights=x)
-        return unifyPI(delay, stops, meanDelay, meanStops)
+        return unifyPI(delay, stops, initDelay, initStops)
 
-    inits = np.ones_like(activationArray)
-    Xmin = minimize(optFunc, inits, method='Nelder-Mead')
+    AA = np.array(activationArray)
+    inits = np.ones_like(AA[AA > 0], dtype=float)
+    opts = {'maxiter': 100, 'xatol': 0.1, 'fatol': 0.01, 'adaptive': False}
+    Xmin = minimize(optFunc, inits, method='Nelder-Mead', tol=0.01, options=opts)
+
+    return activationArray, Xmin
+
+
+def test(config):
+    a, b = 2, 4
+    def of(x):
+        return unifyPI(abs(x[0]), abs(x[1]), a, b)
+    inits = np.ones(2)
+    Xmin = minimize(of, inits, method='Nelder-Mead', tol=0.01)
+    return Xmin
+
