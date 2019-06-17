@@ -85,10 +85,10 @@ class stageOptimiser():
             #     if self.sigCtrl.junctionData.id == 'junc3': print("Time override")
             #     return timeSinceLastGreen.argmax()
 
-            # Get cost matrix if the special cases aren't set
-            costMatrix = self.getCostMatrix()
-            assert self.activationArray.shape[0] == costMatrix.shape[0]
-            rankMatrix = costMatrix.copy()
+            # Get utility matrix if the special cases aren't set
+            utilMatrix = self.getUtilityMatrix()
+            assert self.activationArray.shape[0] == utilMatrix.shape[0]
+            rankMatrix = utilMatrix.copy()
             if mode == 'RANK':
                 # All cost matrix entries need ranking except the loop
                 rankMatrix[:-1] = [self.rank(row) for row in rankMatrix[:-1]]
@@ -102,7 +102,7 @@ class stageOptimiser():
             # if self.sigCtrl.junctionData.id == 'junc3':
             #     np.set_printoptions(precision=3, suppress=True)
             #     print(self.weightArray.T)
-            #     print(costMatrix)
+            #     print(utilMatrix)
             #     print(rankMatrix)
             #     print(rankMatrix.sum(axis=0))
             #     print(rankMatrix.sum(axis=0).argmax())
@@ -117,7 +117,7 @@ class stageOptimiser():
             traceback.print_exc()
             return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
-    def getCostMatrix(self):
+    def getUtilityMatrix(self):
         # determine oncoming vehicles in each lane
         self.getVehiclesPerStage()
         NumVehicles = self.getNumVehicles().astype(float)

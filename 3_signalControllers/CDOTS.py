@@ -199,14 +199,8 @@ class CDOTS(signalControl.signalControl):
             # record the most recent end time for a stage so we can calculate 
             # how long since the stage was last used
             self.stageLastCallTime[self.currentStageIndex] = self.TIME_SEC
-            nextStageIndex = self.stageOptimiser.getNextStageIndex()
+            
             # if self.junctionData.id == 'junc3': print(nextStageIndex)
-            # Count how many stages have been called since stage last used
-            for i in range(self.Nstages):
-                if i != nextStageIndex:
-                    self.stagesSinceLastCall[i] += 1
-                else:
-                    self.stagesSinceLastCall[i] = 0
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
@@ -218,16 +212,20 @@ class CDOTS(signalControl.signalControl):
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
+                nextStageIndex = self.stageOptimiser.getNextStageIndex()
                 self.pedStage = False
                 currentStage = self.pedCtrlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
                 self.currentStageIndex = nextStageIndex
+                self.updateStageCalls()
             # No ped action, normal cycle
             else:
+                nextStageIndex = self.stageOptimiser.getNextStageIndex()
                 currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
                 self.currentStageIndex = nextStageIndex
                 self.stagesSinceLastPedStage += 1
+                self.updateStageCalls()
             
             self.transitionObject.newTransition(
                 self.junctionData.id, currentStage, nextStage)
@@ -246,6 +244,14 @@ class CDOTS(signalControl.signalControl):
         self.stageTime = elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = float(min(self.stageTime, self.maxGreenTime))
+
+    def updateStageCalls(self):
+        # Count how many stages have been called since stage last used
+        for i in range(self.Nstages):
+            if i != self.currentStageIndex:
+                self.stagesSinceLastCall[i] += 1
+            else:
+                self.stagesSinceLastCall[i] = 0
 
     def cancelQueueExtend(self):
         # cancels queue extend if traffic queue can't move
