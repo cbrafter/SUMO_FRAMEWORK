@@ -207,12 +207,12 @@ def optimiser(config):
     initDelay, initStops = simulation(config)
 
     def optFunc(x):
-        delay, stops = simulation(config, weights=x)
+        delay, stops = simulation(config, weightArray=x)
         return unifyPI(delay, stops, initDelay, initStops)
 
     AA = np.array(activationArray)
     inits = np.ones_like(AA[AA > 0], dtype=float)
-    opts = {'maxiter': 100, 'xatol': 0.1, 'fatol': 0.01, 'adaptive': False}
+    opts = {'maxiter': 100, 'xatol': 0.1, 'fatol': 0.01, 'adaptive': True}
     Xmin = minimize(optFunc, inits, method='Nelder-Mead', tol=0.01, options=opts)
 
     return activationArray, Xmin
@@ -225,4 +225,3 @@ def test(config):
     inits = np.ones(2)
     Xmin = minimize(of, inits, method='Nelder-Mead', tol=0.01)
     return Xmin
-
