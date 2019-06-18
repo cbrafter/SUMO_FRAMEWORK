@@ -122,7 +122,8 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
         # Step simulation while there are vehicles
         # we use traci method for initial value in case begin != 0
         simTime, simActive = traci.simulation.getCurrentTime(), True
-        endTime = 34200*1000  # sumo config handles begin, end is manual
+        # Begin 07:30 (config file), end 08:30
+        endTime = 30600*1000  # sumo config handles begin, end is manual
         timeLimit = 1*60*60  # 1 hours in seconds for time limit
         limitExtend = 15*60 # check again in 15 mins if things seem ok
         piMonitor = sigTools.PIMonitor()
@@ -154,6 +155,7 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
             # flag will always be positive int while there are vehicles no need for else
             if not simTime % oneMinute: 
                 # simActive = traci.simulation.getMinExpectedNumber()
+                # print(time.strftime('%X', time.gmtime(simTime*1e-3)), piMonitor.getPI())
                 simActive = simTime < endTime
                 # stop sim to free resources if taking longer than ~10 hours
                 # i.e. the sim is gridlocked
@@ -207,14 +209,18 @@ def optimiser(config):
     initDelay, initStops = simulation(config)
 
     def optFunc(x):
-        delay, stops = simulation(config, weightArray=x)
-        return unifyPI(delay, stops, initDelay, initStops)
+        try:
+            delay, stops = simulation(config, weightArray=x)
+            return unifyPI(delay, stops, initDelay, initStops)
+        except:
+            print('Fail on:', config, x)
+            return unifyPI(initDelay, initStops, initDelay, initStops)
 
     AA = np.array(activationArray)
     inits = np.ones_like(AA[AA > 0], dtype=float)
     opts = {'maxiter': 100, 'xatol': 0.1, 'fatol': 0.01, 'adaptive': True}
     Xmin = minimize(optFunc, inits, method='Nelder-Mead', tol=0.01, options=opts)
-
+    print(config, Xmin)
     return activationArray, Xmin
 
 
