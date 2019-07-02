@@ -153,7 +153,7 @@ class CDOTS(signalControl.signalControl):
             # get GPS extend
             try:
                 if self.numCAVs > 0:
-                    gpsExtend = self.getGPSextension()
+                    gpsExtend = self.getCVextension()
                 else:
                     gpsExtend = None
             except:
@@ -182,7 +182,7 @@ class CDOTS(signalControl.signalControl):
         elif elapsedTime > self.minGreenTime\
           and np.isclose(elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
             # print('checking')
-            gpsExtend = self.getGPSextension()
+            gpsExtend = self.getCVextension()
         # process stage as normal
         else:
             pass
@@ -512,7 +512,7 @@ class CDOTS(signalControl.signalControl):
             loopExtend = 0.0
         return loopExtend
 
-    def getGPSextension(self):
+    def getCVextension(self):
         # If active and on the second, or transition then make stage descision
         oncomingVeh = self.getOncomingVehicles()
         haltVelocity = 0.01

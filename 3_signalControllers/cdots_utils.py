@@ -395,6 +395,10 @@ class stageOptimiser():
         # want prioritisation
         pass
 
+    def getSpeedFactor(self):
+        # penalty for users who exceed the speed limit by more than 10%
+        pass
+
     def relNorm(self, data):
         # Norm data based on the maximum data
         divisor = abs(data.max())
