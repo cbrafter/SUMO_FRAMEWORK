@@ -16,9 +16,9 @@ import CDOTS
 import traci
 import signalTools as sigTools
 import traceback
+import numpy as np
 
-
-def simulation(configList, GUIbool=False):
+def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
     try:
         timer = sigTools.simTimer()
         timer.start()
@@ -100,21 +100,23 @@ def simulation(configList, GUIbool=False):
             noise = 'slow' in tlLogic
             PER = 0.5 if noise else 0.0
             if ('HVA' in tlLogic) or ('GPSVA' in tlLogic): 
-                controllerList.append(tlController(junction, 
-                                                   loopIO=loopCtrl,
-                                                   CAMoverride=CAMmod,
-                                                   model=modelBase,
-                                                   PER=PER, noise=noise,
-                                                   pedStageActive=pedStage))
+                ctrl = tlController(junction, 
+                                    loopIO=loopCtrl,
+                                    CAMoverride=CAMmod,
+                                    model=modelBase,
+                                    PER=PER, noise=noise,
+                                    pedStageActive=pedStage)
             elif 'CDOTS' in tlLogic:
-                controllerList.append(tlController(junction, 
-                                                   CAMoverride=CAMmod,
-                                                   model=modelBase,
-                                                   PER=PER, noise=noise,
-                                                   pedStageActive=pedStage,
-                                                   activationArray=activationArray))
+                ctrl = tlController(junction, 
+                                    CAMoverride=CAMmod,
+                                    model=modelBase,
+                                    PER=PER, noise=noise,
+                                    pedStageActive=pedStage,
+                                    activationArray=activationArray,
+                                    weightArray=weightArray)
             else:
-                controllerList.append(tlController(junction, pedStageActive=pedStage))
+                ctrl = tlController(junction, pedStageActive=pedStage)
+            controllerList.append(ctrl)
 
         # Step simulation while there are vehicles
         # we use traci method for initial value in case begin != 0
