@@ -102,22 +102,23 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
             noise = 'slow' in tlLogic
             PER = 0.5 if noise else 0.0
             if ('HVA' in tlLogic) or ('GPSVA' in tlLogic): 
-                controllerList.append(tlController(junction, 
-                                                   loopIO=loopCtrl,
-                                                   CAMoverride=CAMmod,
-                                                   model=modelBase,
-                                                   PER=PER, noise=noise,
-                                                   pedStageActive=pedStage))
+                ctrl = tlController(junction, 
+                                    loopIO=loopCtrl,
+                                    CAMoverride=CAMmod,
+                                    model=modelBase,
+                                    PER=PER, noise=noise,
+                                    pedStageActive=pedStage)
             elif 'CDOTS' in tlLogic:
-                controllerList.append(tlController(junction, 
-                                                   CAMoverride=CAMmod,
-                                                   model=modelBase,
-                                                   PER=PER, noise=noise,
-                                                   pedStageActive=pedStage,
-                                                   activationArray=activationArray,
-                                                   weightArray=weightArray))
+                ctrl = tlController(junction, 
+                                    CAMoverride=CAMmod,
+                                    model=modelBase,
+                                    PER=PER, noise=noise,
+                                    pedStageActive=pedStage,
+                                    activationArray=activationArray,
+                                    weightArray=weightArray)
             else:
-                controllerList.append(tlController(junction, pedStageActive=pedStage))
+                ctrl = tlController(junction, pedStageActive=pedStage)
+            controllerList.append(ctrl)
 
         # Step simulation while there are vehicles
         # we use traci method for initial value in case begin != 0
@@ -211,7 +212,9 @@ def optimiser(config):
     def optFunc(x):
         try:
             delay, stops = simulation(config, weightArray=x)
-            return unifyPI(delay, stops, initDelay, initStops)
+            PI = unifyPI(delay, stops, initDelay, initStops)
+            print(config, delay, stops, initDelay, initStops, PI)
+            return PI
         except:
             print('Fail on:', config, x)
             return unifyPI(initDelay, initStops, initDelay, initStops)
@@ -220,6 +223,8 @@ def optimiser(config):
     inits = np.ones_like(AA[AA > 0], dtype=float)
     opts = {'maxiter': 100, 'xatol': 0.1, 'fatol': 0.01, 'adaptive': True}
     Xmin = minimize(optFunc, inits, method='Nelder-Mead', tol=0.01, options=opts)
+    # opts = {'maxiter': 100, 'xtol': 0.1, 'ftol': 0.01}
+    # Xmin = minimize(optFunc, inits, method='Powell', tol=0.01, options=opts)
     print(config, Xmin)
     return activationArray, Xmin
 

@@ -7,7 +7,7 @@ import numpy as np
 import multiprocessing as mp
 from itertools import product
 from glob import glob
-from optSimulation import optimiser
+from optSimulation import optimiser, simulation
 sys.path.insert(0, '../1_sumoAPI')
 sys.path.insert(0, '../3_signalControllers')
 import signalTools as sigTools
@@ -36,7 +36,16 @@ configs = [['sellyOak_avg', 'CDOTS', 1.0, 1, False, activationArrays[-1], 1],
            ['sellyOak_avg', 'CDOTS', 0.5, 1, False, activationArrays[-1], 3],
            ['sellyOak_avg', 'CDOTSslow', 0.5, 1, False, activationArrays[-1], 4],
            ['sellyOak_avg', 'CDOTS', 0.1, 1, False, activationArrays[-1], 5],
-           ['sellyOak_avg', 'CDOTSslow', 0.1, 1, False, activationArrays[-1], 6],]
+           ['sellyOak_avg', 'CDOTSslow', 0.1, 1, False, activationArrays[-1], 6]]
+
+configs = [['sellyOak_avg', 'CDOTS', 1.0, 1, False, (1,1,1,1,1,1,1), 3],
+           ['sellyOak_avg', 'CDOTSslow', 1.0, 1, False, (1,1,1,1,1,1,1), 4]]
+
+configs = [['sellyOak_avg', 'CDOTS', 1.0, 1, False, activationArrays[-1], 1],
+           ['sellyOak_avg', 'CDOTS', 0.7, 1, False, activationArrays[-1], 2],
+           ['sellyOak_avg', 'CDOTS', 0.5, 1, False, activationArrays[-1], 3],
+           ['sellyOak_avg', 'CDOTS', 0.3, 1, False, activationArrays[-1], 4],
+           ['sellyOak_avg', 'CDOTS', 0.1, 1, False, activationArrays[-1], 5]]
 
 #sort configurations to process most intensive case first
 # configs.sort(key=lambda x: x[3], reverse=False)
@@ -49,8 +58,7 @@ workpool = mp.Pool(processes=nproc)
 print('Starting simulation on {} cores'.format(nproc)+' '+time.ctime())
 # Run simualtions in parallel.
 try:
-    result = workpool.map(optimiser, configs, chunksize=1)
-    for r in results: print(r)
+    result = workpool.map(simulation, configs, chunksize=1)
 except Exception as e:
     print(e)
     traceback.print_exc()
@@ -65,11 +73,6 @@ finally:
     #         pass
     timer.stop()
     # Inform of failed expermiments
-    if all([r[0] for r in result]):
-        print('Simulations complete, no errors, exectime: '+timer.strTime())
-    else:
-        print('Simulations aborted, exectime: '+timer.strTime())
-        print('Failed Experiment Runs:')
-        for r in result:
-            if not r[0]:
-                print(r[1])
+    print('Simulations complete, exectime: '+timer.strTime())
+    for i, r in enumerate(result):
+        print(configs[i], r)
