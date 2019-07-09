@@ -148,24 +148,24 @@ else:
 
 
 # recursive glob using ** notation to expand folders needs python3
-resultFoldersLv1 = glob(dataFolder+'*/')
+controllerFolders = [x for x in glob(dataFolder+'*/') if 'CDOTS' not in x]
 
 # define work pool
 nproc = 16
 workpool = mp.Pool(processes=nproc)
 
-for outerFolder in resultFoldersLv1:
-    for innerFolder in glob(outerFolder+'/*'):
+for ctrlFolder in controllerFolders:
+    for modelFolder in glob(ctrlFolder+'/*'):
         try:
-            print('Parsing: '+ innerFolder)
-            tripFiles = glob(innerFolder+'/trip*.xml')
-            emissionFiles = glob(innerFolder+'/emission*.csv')
+            print('Parsing: '+ modelFolder)
+            tripFiles = glob(modelFolder+'/trip*.xml')
+            emissionFiles = glob(modelFolder+'/emission*.csv')
             tripFiles.sort()
             emissionFiles.sort()
             tripOutfile = outputFolder +\
-                '-'.join(innerFolder.split('/')[-2:])+'-tripinfo.csv'
+                '-'.join(modelFolder.split('/')[-2:])+'-tripinfo.csv'
             emissionOutfile = outputFolder +\
-                '-'.join(innerFolder.split('/')[-2:])+'-emissions.csv'
+                '-'.join(modelFolder.split('/')[-2:])+'-emissions.csv'
 
             # Run parsers in parallel
             # Parse trip data
