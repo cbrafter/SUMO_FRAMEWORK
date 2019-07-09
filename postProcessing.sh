@@ -9,8 +9,13 @@
 # Load required modules
 module load python/3.5.1
 
+# tidy output files
+cd /scratch/cbr1g15/SUMOsingularity/
+FOLDERNAME=$(ls CBRSUMO* | head -1)
+mkdir $(python -c "import sys; print(sys.argv[-1].split('.')[-1])" $FOLDERNAME)
+
 # Change to the working directory
-cd /scratch/cbr1g15/SUMOsingularity/SUMO_FRAMEWORK/5_resultsAnalysis
+cd ./SUMO_FRAMEWORK/5_resultsAnalysis
 
 # Parse results
 echo "-> PARSING RESULTS..."
@@ -20,3 +25,4 @@ echo "PARSING COMPLETE"
 echo "Clearing temp model files..."
 rm -rf SUMO_FRAMEWORK/2_models/sellyOak_*_*
 echo "Temp model files cleared."
+
