@@ -38,6 +38,28 @@ def savePDF(pdfFile, figure):
 
 data = pd.read_csv('./SurveyData_clean.csv')
 
+def likertMap(x):
+    """"Maps a likert 1-5 scale to -1 - 1 for sentiment analysis"""
+    if x >= 4.9:
+        return 1
+    elif 3.9 <= x <= 4.1:
+        return 0.5
+    elif 1.9 <= x <= 2.1:
+        return -0.5
+    elif .9 <= x <= 1.1:
+            return -1
+    else:
+        return 0
+        
+def enumSeries(pdSeries):
+    """Enumerates text field series""""
+    assert pdSeries.dtype == 'O', 'ERROR: Series must be string type objects'
+    cleanSeries = pdSeries.fillna('NA')
+    uniqueVals = sorted(cleanSeries.unique())
+    labelMap = {k:v for v,k in enumerate(uniqueVals)}
+    return cleanSeries.apply(lambda x: labelMap[x]), labelMap
+    
+
 pdfFileName = 'surveyPlots.pdf'
 figuresPDF = PdfPages(pdfFileName)
 
@@ -247,7 +269,7 @@ for group in groups:
 
 # create plot
 index = np.arange(n_groups)
-bar_width = 0.25
+bar_width = 0.5
 
 rects1 = plt.bar(index, FIRST, bar_width,
 color='C0', label='1st')
@@ -266,7 +288,7 @@ plt.grid(axis='y', linestyle='--', linewidth=1, alpha=0.5)
 plt.grid(axis='y', linestyle=':', linewidth=1, alpha=0.5, which='minor')
 plt.ylabel('Percentage', fontsize=axsize-2)
 plt.title('Most Frequently Used Transport Mode', fontsize=tsize-4)
-plt.xticks(index, ('Car', 'EV', 'Bus', 'Motorbike', 'LGV', 'HGV', 'None'), fontsize=ticksize, fontweight='bold', rotation=90)
+plt.xticks(index, ('Car', 'EV', 'Bus', 'M/cycle', 'LGV', 'HGV', 'None'), fontsize=ticksize, fontweight='bold', rotation=90)
 plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.26), ncol=3, fontsize=axsize-4)
 savePDF(figuresPDF, fig)
 
@@ -601,14 +623,14 @@ for group in groups:
 # create plot
 fig, ax = plt.subplots()
 index = np.arange(n_groups)
-bar_width = 0.2
+bar_width = 0.25
 
 rects1 = plt.bar(index, YES, bar_width,
-color='C2',
+color='C0',
 label='Yes')
 
 rects2 = plt.bar(index + bar_width, NO, bar_width,
-color='C3',
+color='C1',
 label='No')
 
 rects3 = plt.bar(index + 2*bar_width, NA, bar_width,
