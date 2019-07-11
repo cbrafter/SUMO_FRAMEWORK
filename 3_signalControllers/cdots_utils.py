@@ -18,7 +18,7 @@ import traceback
 
 class stageOptimiser():
     def __init__(self, signalController, activationArray=np.ones(7),
-                 weightArray=np.ones(7, dtype=float)):
+                 weightArray=np.ones(7, dtype=float), sync=False):
         self.sigCtrl = signalController
         # dim expanstion maxes array to col vector
         # no np.newaxis as lists can be expanded with the function
