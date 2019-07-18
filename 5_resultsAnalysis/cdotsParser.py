@@ -41,7 +41,10 @@ def getDelay(vType, netModel, origin, destination, journeyTime):
         assert freeflowTime is not None
         assert freeflowTime > -1.0
         return abs(journeyTime - freeflowTime)
-    except:
+    except Exception as e:
+        print(vType, model, origin, destination)
+        print(str(e))
+        traceback.print_exc()
         return -1
 
 
@@ -56,7 +59,7 @@ def getStopInfo(fname):
 
 
 def trip_parser(fileName):
-    controller, model, fileTxt = fileName.split('/')[-3:]
+    controller, model, activation, fileTxt = fileName.split('/')[-4:]
     if '_ped' in controller:
         controller = controller.split('_')[0]
         pedStage = True
@@ -156,7 +159,7 @@ workpool = mp.Pool(processes=nproc)
 
 for ctrlFolder in controllerFolders:
     for modelFolder in glob(ctrlFolder+'/*'):
-        for activationFolder in glob(modelFolder+'/*')
+        for activationFolder in glob(modelFolder+'/*'):
             try:
                 print('Parsing: '+ activationFolder)
                 tripFiles = glob(activationFolder+'/trip*.xml')
