@@ -23,10 +23,10 @@ import cdots_utils as cutils
 
 class CDOTS(signalControl.signalControl):
     def __init__(self, junctionData, minGreenTime=10., maxGreenTime=60.,
-                 scanRange=250, loopIO=True, CAMoverride=False, model='simpleT',
+                 scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
                  PER=0., noise=False, pedStageActive=False,
                  activationArray=np.ones(7), weightArray=np.ones(7, dtype=float),
-                 sync=False):
+                 sync=False, junctions=None):
         super(CDOTS, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -93,9 +93,16 @@ class CDOTS(signalControl.signalControl):
             self.hasPedStage = False
 
         # Stage calculation utility
+        self.sync = sync
+        if self.sync:
+            self.getSyncDict()
+            self.getSyncRelations()
+            self.sync = self.junctionData.id in self.syncDict.keys()
+
         self.stageOptimiser = cutils.stageOptimiser(self,
                                                     activationArray=activationArray,
-                                                    weightArray=weightArray)
+                                                    weightArray=weightArray,
+                                                    sync=self.sync)
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -213,6 +220,8 @@ class CDOTS(signalControl.signalControl):
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
+                if self.sync:
+                    self.stageOptimiser.getSyncVector()
                 nextStageIndex = self.stageOptimiser.getNextStageIndex()
                 self.pedStage = False
                 currentStage = self.pedCtrlString
@@ -221,6 +230,8 @@ class CDOTS(signalControl.signalControl):
                 self.updateStageCalls()
             # No ped action, normal cycle
             else:
+                if self.sync:
+                    self.stageOptimiser.getSyncVector()
                 nextStageIndex = self.stageOptimiser.getNextStageIndex()
                 currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
                 nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
@@ -622,3 +633,113 @@ class CDOTS(signalControl.signalControl):
             return 'OFF'
         else:
             return 'INTER'
+
+    def getSyncDict(self):
+        self.syncDict = defaultdict(list)
+        self.syncDict['junc3'] = ['junc12']
+        self.syncDict['junc12'] = ['junc3']
+        self.syncDict['junc7'] = ['junc8']
+        self.syncDict['junc8'] = ['junc7']
+        self.syncDict['junc4'] = ['junc5']
+        self.syncDict['junc5'] = ['junc4', 'junc6']
+        self.syncDict['junc6'] = ['junc5']
+        #self.syncDict['junc9'] = ['junc10', junc11'] # only has two stages
+        self.syncDict['junc10'] = ['junc11']
+
+    def setSyncJunctions(self, junctions):
+        self.syncJuncs = {}
+        for j in junctions:
+            if j.junctionData.id in self.syncDict[self.junctionData.id]:
+                self.syncJuncs[j.junctionData.id] = j
+
+    def getSyncRelations(self):
+        # Stages from coordinating junction the stage at this junction
+        # receives from
+        # Format: <JUNCTIONID>_<STAGEID>_<DIRECTION>
+        self.syncRels = {}
+        # JUNCTION 3
+        if self.junctionData.id == 'junc3':
+            self.syncRels['junc3_0'] = {'primary': ['junc12_0_D'],
+                                        'secondary': ['junc12_1_R', 'junc12_3_L']}
+            self.syncRels['junc3_1'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc3_2'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc3_3'] = {'primary': [],
+                                        'secondary': []}
+        # JUNCTION 12
+        elif self.junctionData.id == 'junc12':
+            self.syncRels['junc12_0'] = {'primary': [],
+                                         'secondary': []}
+            self.syncRels['junc12_1'] = {'primary': [],
+                                         'secondary': []}
+            self.syncRels['junc12_2'] = {'primary': ['junc3_2_D'],
+                                         'secondary': ['junc3_1_L', 'junc3_3_R']}
+            self.syncRels['junc12_3'] = {'primary': [],
+                                         'secondary': []}
+        # JUNCTION 7
+        elif self.junctionData.id == 'junc7':
+            self.syncRels['junc7_0'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc7_1'] = {'primary': ['junc8_0_D'],
+                                        'secondary': ['junc8_2_L']}
+            self.syncRels['junc7_2'] = {'primary': [],
+                                        'secondary': []}
+        # JUNCTION 8
+        elif self.junctionData.id == 'junc8':
+            self.syncRels['junc8_0'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc8_1'] = {'primary': ['junc7_1_D'],
+                                        'secondary': ['junc7_2_L']}
+            self.syncRels['junc8_2'] = {'primary': [],
+                                        'secondary': []}
+        # JUNCTION 4
+        elif self.junctionData.id == 'junc4':
+            self.syncRels['junc4_0'] = {'primary': ['junc5_0_D'],
+                                        'secondary': ['junc5_1_R', 'junc5_3_L']}
+            self.syncRels['junc4_1'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc4_2'] = {'primary': [],
+                                        'secondary': []}
+        # JUNCTION 5
+        elif self.junctionData.id == 'junc5':
+            self.syncRels['junc5_0'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc5_1'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc5_2'] = {'primary': ['junc4_1_D', 'junc6_1_D'],
+                                        'secondary': ['junc4_2_R', 'junc6_2_R']}
+            self.syncRels['junc5_3'] = {'primary': [],
+                                        'secondary': []}
+        # JUNCTION 6
+        elif self.junctionData.id == 'junc6':
+            self.syncRels['junc6_0'] = {'primary': ['junc5_2_D'],
+                                        'secondary': ['junc5_1_L', 'junc5_3_R']}
+            self.syncRels['junc6_1'] = {'primary': [],
+                                        'secondary': []}
+            self.syncRels['junc6_2'] = {'primary': [],
+                                        'secondary': []}
+        # JUNCTION 9
+        # elif self.junctionData.id == 'junc9':
+        #     self.syncRels['junc'] = ['junc']
+        # JUNCTION 10
+        elif self.junctionData.id == 'junc10':
+            self.syncRels['junc10_0'] = {'primary': [],
+                                         'secondary': []}
+            self.syncRels['junc10_1'] = {'primary': ['junc11_0_D'],
+                                         'secondary': []}
+            self.syncRels['junc10_2'] = {'primary': [],
+                                         'secondary': []}
+            self.syncRels['junc10_3'] = {'primary': [],
+                                         'secondary': []}
+        else:
+            pass
+
+    def getID(self):
+        return self.junctionData.id
+
+    def getStageID(self):
+        return self.junctionData.stages[self.mode][self.currentStageIndex].id
+
+    def getSyncString(self):
+        return self.getID() + '_' + self.getStageID()
