@@ -9,8 +9,11 @@ import numpy as np
 import pandas as pd
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.ticker as tck
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 # Use T1 fonts for plots not bitmap
@@ -18,6 +21,7 @@ rcParams['ps.useafm'] = True
 rcParams['pdf.use14corefonts'] = True
 rcParams['text.usetex'] = True
 plt.rcParams["font.family"] = "Times New Roman"
+plt.rcParams.update({'figure.max_open_warning': 0})
 # We're using tex fonts so we need to bolden all text in the preambles
 # not with fontweight='bold'
 rcParams['text.latex.preamble'] = \
@@ -38,21 +42,24 @@ def savePDF(pdfFile, figure):
 
 data = pd.read_csv('./SurveyData_clean.csv')
 
+def rangeMap(x, inRange, outRange):
+    """"Maps a range e.g. 1-5 scale to -1 - 1 for sentiment analysis
+    using an affine transformation
+    https://math.stackexchange.com/questions/377169/calculating-a-value-inside-one-range-to-a-value-of-another-range
+    e.g. rangeMap(3, [1, 5], [-1, 1]) >> 0"""
+    inMin, inMax = [float(val) for val in sorted(inRange)]
+    outMin, outMax = [float(val) for val in sorted(outRange)]
+    slope = (outMax - outMin) / (inMax - inMin)
+    return (x - inMin) * slope + outMin
+
 def likertMap(x):
-    """"Maps a likert 1-5 scale to -1 - 1 for sentiment analysis"""
-    if x >= 4.9:
-        return 1
-    elif 3.9 <= x <= 4.1:
-        return 0.5
-    elif 1.9 <= x <= 2.1:
-        return -0.5
-    elif .9 <= x <= 1.1:
-            return -1
-    else:
-        return 0
+    return rangeMap(x, [1, 5], [-1, 1])
+    
+def likertMap10(x):
+    return rangeMap(x, [1, 10], [-1, 1])
         
 def enumSeries(pdSeries):
-    """Enumerates text field series""""
+    """Enumerates text field series"""
     assert pdSeries.dtype == 'O', 'ERROR: Series must be string type objects'
     cleanSeries = pdSeries.fillna('NA')
     uniqueVals = sorted(cleanSeries.unique())
@@ -153,6 +160,10 @@ plt.ylabel('Percentage', fontsize=axsize)
 plt.title('Social Media Data Sharing Acceptance', fontsize=tsize-4)
 plt.grid(axis='y', linestyle='--', linewidth=1, alpha=0.5)
 savePDF(figuresPDF, fig)
+print('Social Media Mean Score', data.socialMediaAcceptance.mean())
+print('Social Media Median Score', data.socialMediaAcceptance.median())
+print('Social Media Std Score', data.socialMediaAcceptance.std())
+print('Social Media Sentiment Score', 100*data.socialMediaAcceptance.apply(likertMap10).mean())
 
 # Social Media Acceptance 1-5: down sample the above likert
 objects = []
@@ -553,14 +564,17 @@ x_pos = np.arange(1, len(objects)+1)
 fig = plt.figure()
 plt.bar(x_pos, objects, align='center', width=0.5)
 plt.xticks(x_pos, fontsize=ticksize, fontweight='bold')
-plt.ylim([0,25])
+plt.ylim([0,24])
 plt.yticks(np.arange(0,25,2), fontsize=ticksize, fontweight='bold')
 plt.xlabel('Likert Scale', fontsize=axsize)
 plt.ylabel('Percentage', fontsize=axsize)
 plt.title('UTM Data Sharing Willlingness', fontsize=tsize-2)
 plt.grid(axis='y', linestyle='--', linewidth=1, alpha=0.5)
 savePDF(figuresPDF, fig)
-
+print('UTM Mean Score', data.UTMAcceptance.mean())
+print('UTM Median Score', data.UTMAcceptance.median())
+print('UTM Std Score', data.UTMAcceptance.std())
+print('UTM Sentiment Score', 100*data.UTMAcceptance.apply(likertMap10).mean())
 
 objects = []
 data['UTMAcceptanceDS'] = ((data.UTMAcceptance/2.0)+0.1).apply(np.round).apply(int)
@@ -597,7 +611,6 @@ plt.ylabel('Percentage', fontsize=axsize)
 plt.title('Service Delivery Method Preference', fontsize=tsize-2)
 plt.grid(axis='y', linestyle='--', linewidth=1, alpha=0.5)
 savePDF(figuresPDF, fig)
-
 
 
 ###########################################################################
@@ -651,8 +664,50 @@ savePDF(figuresPDF, fig)
 
 
 ###########################################################################
-# SECTION 6: Correlations
+# SECTION 6: Correlations and other Trends
 ###########################################################################
+data.deliveryMode.fillna('NA', inplace=True)
+objects = ['position', 'speed', 'signals', 'passengers', 'totalStops', 'stopTime',
+           'duration', 'distance', 'emissionClass', 'vehicleType', 'speedFactor']
+labels = ['Position', 'Speed', 'Signals', 'Passengers', 'Total Stops', 'Stop Time',
+          'Duration', 'Distance', 'Emission Class', 'Vehicle Type', 'Speed Factor']
+x_pos = np.arange(len(objects))
+values = []
+for col in objects:
+    values.append(data[col].dropna().apply(likertMap).mean())
 
+values= np.array(values)
+colors = ['C0' if x > 0 else 'C1' for x in values]
+cmapPos = cm.get_cmap('summer')
+cmapNeg = cm.get_cmap('autumn')
+def cmapFn(x):
+    if x >= 0:
+        return cmapPos(abs(1-x))
+    else:
+        return cmapNeg(1-abs(x))
+barColors = list(map(cmapFn, 1.0*values)) # scale values to max
+
+fig = plt.figure(figsize=(7,4))
+cmapCB= matplotlib.colors.ListedColormap([cmapFn(x) for x in np.linspace(-1,1,1000)])
+normCB= matplotlib.colors.Normalize(vmin=-100,vmax=100)
+
+# Using contourf to provide my colorbar info, then clearing the figure
+Z = [[0,0],[0,0]]
+levels = np.arange(-100, 100.1, 0.1)
+CS3 = plt.contourf(Z, levels, cmap=cmapCB)
+plt.clf()
+
+plt.bar(x_pos, 100.0*values, align='center', width=0.5, color=barColors)
+plt.xticks(x_pos, labels, fontsize=ticksize, fontweight='bold', rotation=90)
+plt.ylim([-20,60])
+plt.yticks(np.arange(-20,61,10), fontsize=ticksize, fontweight='bold')
+ax = plt.gca()
+ax.yaxis.set_minor_locator(tck.MultipleLocator(5))
+plt.grid(axis='y', linestyle='--', linewidth=1, alpha=0.5, which='both')
+plt.ylabel('Percentage', fontsize=axsize)
+plt.title('Data Sharing Sentiment Score', fontsize=tsize-2)
+cbarObj = plt.colorbar(CS3, pad=0.01)
+cbarObj.set_ticks(np.arange(-100,101,25))
+savePDF(figuresPDF, fig)
 
 figuresPDF.close()
