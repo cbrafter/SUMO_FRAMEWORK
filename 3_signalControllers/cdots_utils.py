@@ -19,10 +19,8 @@ import traceback
 class stageOptimiser():
     def __init__(self, signalController, activationArray=np.ones(7),
                  weightArray=np.ones(7, dtype=float), sync=False,
-                 syncFactor=0.25):
+                 syncFactor=0.25, syncMode='PS'):
         self.sigCtrl = signalController
-        self.sync = sync
-        self.syncStrength = syncFactor*self.Nstages
         # dim expanstion maxes array to col vector
         # no np.newaxis as lists can be expanded with the function
         self.activationArray = np.expand_dims(activationArray, 1)
@@ -36,6 +34,11 @@ class stageOptimiser():
         self.Nstages = self.sigCtrl.Nstages
         self.stageCycleFreq = 2  # stage appears once in every N cycles
         self.maxRedTime = 300  # stage must appear once every 5 mins
+        # Sync settings
+        self.sync = sync
+        self.syncStrength = syncFactor*self.Nstages
+        self.syncMode = syncMode
+        self.syncModeWeights = {'P': [1, 0], 'PS': [1, 1], 'Ps': [1, 0.5]}
 
         # Internal seeded Random Number Generator (RNG)
         self.RNG = np.random.RandomState(1)
@@ -70,8 +73,9 @@ class stageOptimiser():
 
     def getNextStageIndex(self, mode='REL'):
         try:
-            # If there's only two stages anyway, cycle to next stage
-            if self.Nstages < 3:
+            # If there's only two stages anyway, cycle to next stage OR
+            # If there are no CAVs providing control data, cycle to next stage
+            if self.Nstages < 3 or self.sigCtrl.numCAVs < 1:
                 # if self.sigCtrl.junctionData.id == 'junc3': print("Too few stages")
                 return (self.sigCtrl.currentStageIndex + 1) % self.Nstages
 
@@ -114,9 +118,12 @@ class stageOptimiser():
             # ranks are tied
             if self.sync:
                 rankTotal = rankMatrix.sum(axis=0) + self.syncStrength*self.syncVector
+                # make sure the sync doesn't cause the same stage twice in a row
+                rankTotal[self.sigCtrl.currentStageIndex] = 0.0
                 rankTotal = self.tieBreak(rankTotal)
                 # if self.sigCtrl.junctionData.id == 'junc3': 
-                #     print rankMatrix.sum(axis=0).argmax(), rankTotal.argmax()
+                #     print(self.syncVector)
+                #     print(rankMatrix.sum(axis=0).argmax(), rankTotal.argmax())
             else:
                 rankTotal = self.tieBreak(rankMatrix.sum(axis=0))
             return rankTotal.argmax()
@@ -447,66 +454,114 @@ class stageOptimiser():
             stageIdMap[stage.id] = i
         return stageIdMap
 
+    def turnCountFilter(self, direction, turnCounts):
+        if direction == 'D' and turnCounts['DIRECT'] > 0:
+            return self.syncModeWeights[self.syncMode][0]
+        elif direction == 'L' and turnCounts['LEFT'] > 0:
+            return self.syncModeWeights[self.syncMode][1]
+        elif direction == 'R' and turnCounts['RIGHT'] > 0:
+            return self.syncModeWeights[self.syncMode][1]
+        else:
+            return 0
+
     def getSyncVector(self):
         try:
-            stageIdMap = self.getStageIDMap()
+            # Map stage ID to the current sequence
+            stageIDMap = self.getStageIDMap()
             # Need to calculate sync vector every time as stage order may change
-            syncVector = np.zeros(self.Nstages)
-            for jID, junctionObj in self.sigCtrl.syncJuncs.items():
-                Tremaining = junctionObj.maxGreenTime - junctionObj.getElapsedTime()
-                juncStageID = junctionObj.getSyncString()
+            # Type must be into for bitwise OR later on
+            self.syncVector = np.zeros(self.Nstages, dtype=int)
+            # for every junction ID and object in the dict of junctions we sync with
+            for adjID, adjJunc in self.sigCtrl.syncJuncs.items():
+                syncVector = np.zeros(self.Nstages, dtype=int)
+                # Get the junction ID appended with the ID of the current stage
+                # from the junction to sync with
+                adjStageID = adjJunc.getSyncString()
+                adjStageIDint = int(adjStageID.split('_')[-1])
                 # If the target junction is less than halfway through its max
-                # stage then receive vehicles, else give vehicles
-                if Tremaining <= 0.5*junctionObj.maxGreenTime:
-                    turnCounts = junctionObj.stageOptimiser.getTurnCounts()
-                    targetIDMap = junctionObj.stageOptimiser.getStageIDMap()
-                    # Receive vehicles
-                    for stage, relation in self.sigCtrl.syncRels.items():
-                        stageID, direction = stage.split('_')[1:]
-                        if turnCounts['DIRECT'] > 0 and juncStageID in relation['primary']:
-                            syncVector[stageIdMap[stageID]] = 1
-                        elif juncStageID in relation['secondary']:
-                            if direction == 'L' and turnCounts['LEFT'] > 0:
-                                syncVector[stageIdMap[stageID]] = 1
-                            elif direction == 'R' and turnCounts['RIGHT'] > 0:
-                                syncVector[stageIdMap[stageID]] = 1
+                # stage then its less likely to change so receive vehicles
+                stageCutoff = 0.5*adjJunc.getAvgStageTime()[adjStageIDint]
+                if adjJunc.elapsedTime <= stageCutoff:
+                    turnCounts = adjJunc.stageOptimiser.getTurnCounts()
+                    # get the sync relationships from the SOURCE to the SINK
+                    # SRC: ADJ JUNC | SNK: THIS JUNC
+                    for snkStage, coordStages in self.sigCtrl.syncRels.items():
+                        snkStageID = snkStage.split('_')[-1]
+                        snkStageIDint = int(snkStageID)
+                        # check if we have stages in the adjacent junctions
+                        # sync strings
+                        for srcStage in coordStages:
+                            # If this junction present in the target stages sync strings
+                            # only sync if its the surrent stage of the adj junc
+                            if adjStageID not in srcStage:
+                                continue
+                            # get the stage id and flow direction for the stages
+                            # that will send vehicles to the adjacent junction
+                            srcStageID, direction = srcStage.split('_')[1:]
+                            turns = turnCounts[int(srcStageID)]
+                            # Only sync if there are vehicles travelling ato
+                            # this junction from the sync stage
+                            # turns = {'DIRECT':1,'LEFT':1, 'RIGHT':1}
+                            syncVector[stageIDMap[snkStageID]] =\
+                                max(syncVector[stageIDMap[snkStageID]],
+                                    self.turnCountFilter(direction, turns))
+                # The target junction is over halfway through its stage so is 
+                # likely to change soon. Therefore send it vehicles
                 else:
+                    # As we're sending vehicles, get this junctions turn counts
                     turnCounts = self.sigCtrl.stageOptimiser.getTurnCounts()
-                    # Send vehicles
-                    for stage, relation in junctionObj.syncRels.items():
-                        for stage in relation['primary']:
-                            if self.sigCtrl.junctionData.id in stage:
-                                stageID, direction = stage.split('_')[1:]
-                                if direction == 'L' and turnCounts['LEFT'] > 0:
-                                    syncVector[stageIdMap[stageID]] = 1
-                        for stage in relation['secondary']:
-                            if self.sigCtrl.junctionData.id in stage:
-                                stageID, direction = stage.split('_')[1:]
-                                elif direction == 'R' and turnCounts['RIGHT'] > 0:
-                                    syncVector[stageIdMap[stageID]] = 1
-            self.syncVector = syncVector
+                    # get the sync relationships for the adjacent junction
+                    # SRC: THIS JUNC | SNK: ADJ JUNC
+                    for snkStage, coordStages in adjJunc.syncRels.items():
+                        # check if we have stages in the adjacent junctions
+                        # sync strings i.e. stage we can send vehicles to
+                        for srcStage in coordStages:
+                            # If this junction present in the target stages' sync strings
+                            if self.sigCtrl.junctionData.id not in srcStage:
+                                continue
+                            # get the stage id and flow direction for the stages
+                            # that will send vehicles to the adjacent junction
+                            srcStageID, direction = srcStage.split('_')[1:]
+                            turns = turnCounts[int(srcStageID)]
+                            # Only sync if there are vehiles travelling along the
+                            # sync path
+                            # turns = {'DIRECT':1,'LEFT':1, 'RIGHT':1}
+                            syncVector[stageIDMap[srcStageID]] =\
+                                max(syncVector[stageIDMap[srcStageID]],
+                                    self.turnCountFilter(direction, turns))
+                # bitwise or the stage vectors to capture all syncing stages
+                # need np.maximum to do max along array
+                self.syncVector = np.maximum(self.syncVector, syncVector)
+                if self.sigCtrl.junctionData.id == 'junc3':
+                    print(self.syncVector, adjJunc.elapsedTime <= stageCutoff,
+                          self.sigCtrl.mode)
         except Exception as e:
             self.syncVector = np.zeros(self.Nstages)
-            print(str(e))
+            print(self.sigCtrl.junctionData.id, str(e))
             traceback.print_exc()
-            raise(e)
+            # raise(e)
 
     def getTurnCounts(self):
         turnCounts = []
+        if not hasattr(self, 'vehiclesPerStage'):
+            self.getVehiclesPerStage()
         for vehicleSet in self.vehiclesPerStage:
             turnDict = defaultdict(int)
+            turnDict['DIRECT'] = 0
+            turnDict['LEFT'] = 0
+            turnDict['RIGHT'] = 0
             # Ndirect = 0.0  #  num vehicles that don't want to turn
             # vehicle set is empty for active lane so won't process
             for vehID in vehicleSet:
-                signal = self.sigCtrl.CAM.receiveData[vehID]['signal']
-                if signal['BLINKER_LEFT']:
-                    turnDict['LEFT'] += 1
-                elif signal['BLINKER_RIGHT']:
-                    turnDict['RIGHT'] += 1
-                else:
-                    turnDict['DIRECT'] += 1
-            if len(vehicleSet):
-                turnCounts.append(turnDict)
-            else:
-                turnCounts.append(-1)
+                try:
+                    signal = self.sigCtrl.CAM.receiveData[vehID]['signal']
+                    if signal['BLINKER_LEFT']:
+                        turnDict['LEFT'] += 1
+                    elif signal['BLINKER_RIGHT']:
+                        turnDict['RIGHT'] += 1
+                    else:
+                        turnDict['DIRECT'] += 1
+                except:
+                    pass # print('No vehID: ', vehID)
+            turnCounts.append(turnDict)
         return turnCounts

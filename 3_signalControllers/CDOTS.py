@@ -26,7 +26,7 @@ class CDOTS(signalControl.signalControl):
                  scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
                  PER=0., noise=False, pedStageActive=False,
                  activationArray=np.ones(7), weightArray=np.ones(7, dtype=float),
-                 sync=False, junctions=None):
+                 sync=False, junctions=None, syncFactor=0.25, syncMode='PS'):
         super(CDOTS, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
@@ -102,7 +102,14 @@ class CDOTS(signalControl.signalControl):
         self.stageOptimiser = cutils.stageOptimiser(self,
                                                     activationArray=activationArray,
                                                     weightArray=weightArray,
-                                                    sync=self.sync)
+                                                    sync=self.sync,
+                                                    syncFactor=syncFactor,
+                                                    syncMode=syncMode)
+
+        # Rolling average stage length
+        self.stageAvgs = {k.id: [self.maxGreenTime/2.0]*10
+                          for k in self.junctionData.stages[self.mode]}
+        self.stageAvgIndexer = [0]*self.Nstages
 
         # setup CAM channel
         self.CAM = CAMChannel(self.jcnPosition, self.jcnCtrlRegion,
@@ -144,8 +151,8 @@ class CDOTS(signalControl.signalControl):
         # If there's no ITS enabled vehicles present use VA ctrl
         self.numCAVs = len(self.CAM.receiveData)
         isControlInterval = not self.TIME_MS % 1000
-        elapsedTime = self.getElapsedTime()
-        Tremaining = self.stageTime - elapsedTime
+        self.elapsedTime = self.getElapsedTime()
+        Tremaining = self.stageTime - self.elapsedTime
         if self.pedStage:
             pass  # no calculations needed for ped stage
         elif Tremaining <= 5.0:
@@ -176,10 +183,10 @@ class CDOTS(signalControl.signalControl):
                 updateTime = gpsExtend
             else:
                 fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
-                updateTime = max(0.0, fixedTime-elapsedTime)
+                updateTime = max(0.0, fixedTime-self.elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
-        elif elapsedTime <= 0.11 and self.numCAVs > 0:
+        elif self.elapsedTime <= 0.11 and self.numCAVs > 0:
             try:
                 queueExtend = self.getQueueExtension()
                 self.updateStageTime(queueExtend)
@@ -187,8 +194,8 @@ class CDOTS(signalControl.signalControl):
                 pass
             # print(self.junctionData.id, self.stageTime)
         # run GPS extend only to check if queue cancelation needed
-        elif elapsedTime > self.minGreenTime\
-          and np.isclose(elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
+        elif self.elapsedTime > self.minGreenTime\
+          and np.isclose(self.elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
             # print('checking')
             gpsExtend = self.getCVextension()
         # process stage as normal
@@ -207,7 +214,8 @@ class CDOTS(signalControl.signalControl):
             # record the most recent end time for a stage so we can calculate 
             # how long since the stage was last used
             self.stageLastCallTime[self.currentStageIndex] = self.TIME_SEC
-            
+            # Update running average stage time
+            self.updateStageAvg(self.elapsedTime)
             # if self.junctionData.id == 'junc3': print(nextStageIndex)
             # change mode only at this point to avoid changing the stage time
             # mid-process
@@ -251,9 +259,9 @@ class CDOTS(signalControl.signalControl):
 
     def updateStageTime(self, updateTime):
         # update time is the seconds to add
-        elapsedTime = self.getElapsedTime()
-        Tremaining = self.stageTime - elapsedTime
-        self.stageTime = elapsedTime + max(updateTime, Tremaining)
+        self.elapsedTime = self.getElapsedTime()
+        Tremaining = self.stageTime - self.elapsedTime
+        self.stageTime = self.elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = float(min(self.stageTime, self.maxGreenTime))
 
@@ -267,10 +275,10 @@ class CDOTS(signalControl.signalControl):
 
     def cancelQueueExtend(self):
         # cancels queue extend if traffic queue can't move
-        elapsedTime = self.getElapsedTime()
-        if elapsedTime >= self.minGreenTime:
+        self.elapsedTime = self.getElapsedTime()
+        if self.elapsedTime >= self.minGreenTime:
             # x = self.stageTime
-            self.stageTime = elapsedTime
+            self.stageTime = self.elapsedTime
             # print(self.junctionData.id, x, self.stageTime)
 
     def getElapsedTime(self):
@@ -659,79 +667,51 @@ class CDOTS(signalControl.signalControl):
         self.syncRels = {}
         # JUNCTION 3
         if self.junctionData.id == 'junc3':
-            self.syncRels['junc3_0'] = {'primary': ['junc12_0_D'],
-                                        'secondary': ['junc12_1_R', 'junc12_3_L']}
-            self.syncRels['junc3_1'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc3_2'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc3_3'] = {'primary': [],
-                                        'secondary': []}
+            self.syncRels['junc3_0'] = ['junc12_0_D', 'junc12_1_R', 'junc12_3_L']
+            self.syncRels['junc3_1'] = []
+            self.syncRels['junc3_2'] = []
+            self.syncRels['junc3_3'] = []
         # JUNCTION 12
         elif self.junctionData.id == 'junc12':
-            self.syncRels['junc12_0'] = {'primary': [],
-                                         'secondary': []}
-            self.syncRels['junc12_1'] = {'primary': [],
-                                         'secondary': []}
-            self.syncRels['junc12_2'] = {'primary': ['junc3_2_D'],
-                                         'secondary': ['junc3_1_L', 'junc3_3_R']}
-            self.syncRels['junc12_3'] = {'primary': [],
-                                         'secondary': []}
+            self.syncRels['junc12_0'] = []
+            self.syncRels['junc12_1'] = []
+            self.syncRels['junc12_2'] = ['junc3_2_D','junc3_1_L', 'junc3_3_R']
+            self.syncRels['junc12_3'] = []
         # JUNCTION 7
         elif self.junctionData.id == 'junc7':
-            self.syncRels['junc7_0'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc7_1'] = {'primary': ['junc8_0_D'],
-                                        'secondary': ['junc8_2_L']}
-            self.syncRels['junc7_2'] = {'primary': [],
-                                        'secondary': []}
+            self.syncRels['junc7_0'] = []
+            self.syncRels['junc7_1'] = ['junc8_0_D', 'junc8_2_L']
+            self.syncRels['junc7_2'] = []
         # JUNCTION 8
         elif self.junctionData.id == 'junc8':
-            self.syncRels['junc8_0'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc8_1'] = {'primary': ['junc7_1_D'],
-                                        'secondary': ['junc7_2_L']}
-            self.syncRels['junc8_2'] = {'primary': [],
-                                        'secondary': []}
+            self.syncRels['junc8_0'] = []
+            self.syncRels['junc8_1'] = ['junc7_1_D', 'junc7_2_L']
+            self.syncRels['junc8_2'] = []
         # JUNCTION 4
         elif self.junctionData.id == 'junc4':
-            self.syncRels['junc4_0'] = {'primary': ['junc5_0_D'],
-                                        'secondary': ['junc5_1_R', 'junc5_3_L']}
-            self.syncRels['junc4_1'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc4_2'] = {'primary': [],
-                                        'secondary': []}
+            self.syncRels['junc4_0'] = ['junc5_0_D', 'junc5_1_R', 'junc5_3_L']
+            self.syncRels['junc4_1'] = []
+            self.syncRels['junc4_2'] = []
         # JUNCTION 5
         elif self.junctionData.id == 'junc5':
-            self.syncRels['junc5_0'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc5_1'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc5_2'] = {'primary': ['junc4_1_D', 'junc6_1_D'],
-                                        'secondary': ['junc4_2_R', 'junc6_2_R']}
-            self.syncRels['junc5_3'] = {'primary': [],
-                                        'secondary': []}
+            self.syncRels['junc5_0'] = []
+            self.syncRels['junc5_1'] = []
+            self.syncRels['junc5_2'] = ['junc4_1_D', 'junc6_1_D', 'junc4_2_R', 'junc6_2_R']
+            self.syncRels['junc5_3'] = []
         # JUNCTION 6
         elif self.junctionData.id == 'junc6':
-            self.syncRels['junc6_0'] = {'primary': ['junc5_2_D'],
-                                        'secondary': ['junc5_1_L', 'junc5_3_R']}
-            self.syncRels['junc6_1'] = {'primary': [],
-                                        'secondary': []}
-            self.syncRels['junc6_2'] = {'primary': [],
-                                        'secondary': []}
+            self.syncRels['junc6_0'] = ['junc5_2_D', 'junc5_1_L', 'junc5_3_R']
+            self.syncRels['junc6_1'] = []
+            self.syncRels['junc6_2'] = []
         # JUNCTION 9
         # elif self.junctionData.id == 'junc9':
         #     self.syncRels['junc'] = ['junc']
         # JUNCTION 10
         elif self.junctionData.id == 'junc10':
-            self.syncRels['junc10_0'] = {'primary': [],
-                                         'secondary': []}
-            self.syncRels['junc10_1'] = {'primary': ['junc11_0_D'],
-                                         'secondary': []}
-            self.syncRels['junc10_2'] = {'primary': [],
-                                         'secondary': []}
-            self.syncRels['junc10_3'] = {'primary': [],
-                                         'secondary': []}
+            self.syncRels['junc10_0'] = []
+            self.syncRels['junc10_1'] = ['junc11_0_D']
+            self.syncRels['junc10_2'] = []
+            self.syncRels['junc10_3'] = []
         else:
             pass
 
@@ -743,3 +723,17 @@ class CDOTS(signalControl.signalControl):
 
     def getSyncString(self):
         return self.getID() + '_' + self.getStageID()
+
+    def getAvgStageTime(self):
+        means = [0.0]*self.Nstages
+        for stageID in self.stageAvgs.keys():
+            means[int(stageID)] = sigTools.mean(self.stageAvgs[stageID])
+        return means
+
+    def updateStageAvg(self, time):
+        stageID = self.junctionData.stages[self.mode][self.currentStageIndex].id
+        intID = int(stageID)
+        self.stageAvgs[stageID][self.stageAvgIndexer[intID]] = time
+        self.stageAvgIndexer[intID] += 1
+        self.stageAvgIndexer[intID] %= 10
+
