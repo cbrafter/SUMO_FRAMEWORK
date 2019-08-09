@@ -19,7 +19,7 @@ import traceback
 class stageOptimiser():
     def __init__(self, signalController, activationArray=np.ones(7),
                  weightArray=np.ones(7, dtype=float), sync=False,
-                 syncFactor=0.25, syncMode='PS'):
+                 syncFactor=0.0, syncMode='PS'):
         self.sigCtrl = signalController
         # dim expanstion maxes array to col vector
         # no np.newaxis as lists can be expanded with the function
@@ -532,9 +532,9 @@ class stageOptimiser():
                 # bitwise or the stage vectors to capture all syncing stages
                 # need np.maximum to do max along array
                 self.syncVector = np.maximum(self.syncVector, syncVector)
-                if self.sigCtrl.junctionData.id == 'junc3':
-                    print(self.syncVector, adjJunc.elapsedTime <= stageCutoff,
-                          self.sigCtrl.mode)
+                # if self.sigCtrl.junctionData.id == 'junc3':
+                #     print(self.syncVector, adjJunc.elapsedTime <= stageCutoff,
+                #           self.sigCtrl.mode)
         except Exception as e:
             self.syncVector = np.zeros(self.Nstages)
             print(self.sigCtrl.junctionData.id, str(e))

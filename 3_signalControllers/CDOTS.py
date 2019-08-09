@@ -26,7 +26,7 @@ class CDOTS(signalControl.signalControl):
                  scanRange=250, loopIO=False, CAMoverride=False, model='simpleT',
                  PER=0., noise=False, pedStageActive=False,
                  activationArray=np.ones(7), weightArray=np.ones(7, dtype=float),
-                 sync=False, junctions=None, syncFactor=0.25, syncMode='PS'):
+                 sync=False, junctions=None, syncFactor=0.0, syncMode='NO'):
         super(CDOTS, self).__init__()
         self.junctionData = junctionData
         self.setTransitionTime(self.junctionData.id)
