@@ -35,12 +35,18 @@ class CDOTS(signalControl.signalControl):
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.mode = self.getMode()
-        self.Nstages = len(self.junctionData.stages[self.mode])
+        self.model = model
+        self.currentStageIndex = 0
+        if 'selly' not in self.model:
+            self.Nstages = len(self.junctionData.stages)
+            traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
+                self.junctionData.stages[self.currentStageIndex].controlString)
+        else:
+            self.Nstages = len(self.junctionData.stages[self.mode])
+            traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
+                self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.stageLastCallTime = [0.0]*self.Nstages
         self.stagesSinceLastCall = [0]*self.Nstages
-        self.currentStageIndex = 0
-        traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
-            self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.setModelName(model)
         self.scanRange = scanRange
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
@@ -83,7 +89,10 @@ class CDOTS(signalControl.signalControl):
         # Pedestrian parameters
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
-        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
+        if 'selly' not in self.model:
+            self.pedCtrlString = 'r'*len(self.junctionData.stages[self.currentStageIndex].controlString)
+        else:
+            self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.stagesSinceLastPedStage = 0
         juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
                               'junc5', 'junc6', 'junc7']
@@ -107,8 +116,13 @@ class CDOTS(signalControl.signalControl):
                                                     syncMode=syncMode)
 
         # Rolling average stage length
-        self.stageAvgs = {k.id: [self.maxGreenTime/2.0]*10
-                          for k in self.junctionData.stages[self.mode]}
+        if 'selly' not in self.model:
+            self.stageAvgs = {k.id: [self.maxGreenTime/2.0]*10
+                              for k in self.junctionData.stages}   
+        else:
+            self.stageAvgs = {k.id: [self.maxGreenTime/2.0]*10
+                              for k in self.junctionData.stages[self.mode]}
+            
         self.stageAvgIndexer = [0]*self.Nstages
 
         # setup CAM channel
@@ -130,6 +144,8 @@ class CDOTS(signalControl.signalControl):
                 tc.CMD_GET_INDUCTIONLOOP_VARIABLE, 
                 250, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
+
+        self.stageData = []
 
     def process(self, time=None, stopCounter=None, emissionCounter=None):
         self.TIME_MS = time if time is not None else self.getCurrentSUMOtime()
@@ -182,7 +198,10 @@ class CDOTS(signalControl.signalControl):
             elif loopExtend is None and gpsExtend is not None:
                 updateTime = gpsExtend
             else:
-                fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
+                if 'selly' in self.model:
+                    fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
+                else:
+                    fixedTime = self.junctionData.stages[self.currentStageIndex].period
                 updateTime = max(0.0, fixedTime-self.elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
@@ -217,6 +236,18 @@ class CDOTS(signalControl.signalControl):
             # Update running average stage time
             self.updateStageAvg(self.elapsedTime)
             # if self.junctionData.id == 'junc3': print(nextStageIndex)
+            # Log info about the stages
+            if 'selly' in self.model:
+                self.stageData.append((self.junctionData.id,
+                                       self.junctionData.stages[self.mode][self.currentStageIndex].id,
+                                       self.TIME_SEC,
+                                       self.elapsedTime))
+            else:
+                self.stageData.append((self.junctionData.id,
+                                       self.junctionData.stages[self.currentStageIndex].id,
+                                       self.TIME_SEC,
+                                       self.elapsedTime))
+            
             # change mode only at this point to avoid changing the stage time
             # mid-process
             self.mode = self.getMode()
@@ -224,7 +255,10 @@ class CDOTS(signalControl.signalControl):
             if self.hasPedStage and self.stagesSinceLastPedStage > self.Nstages and not self.pedStage:
                 self.pedStage = True
                 self.stagesSinceLastPedStage = 0
-                currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
+                if 'selly' in self.model:
+                    currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
+                else:
+                    currentStage = self.junctionData.stages[self.currentStageIndex].controlString
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
@@ -233,7 +267,10 @@ class CDOTS(signalControl.signalControl):
                 nextStageIndex = self.stageOptimiser.getNextStageIndex()
                 self.pedStage = False
                 currentStage = self.pedCtrlString
-                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                if 'selly' in self.model:
+                    nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                else:
+                    nextStage = self.junctionData.stages[nextStageIndex].controlString
                 self.currentStageIndex = nextStageIndex
                 self.updateStageCalls()
             # No ped action, normal cycle
@@ -241,8 +278,12 @@ class CDOTS(signalControl.signalControl):
                 if self.sync:
                     self.stageOptimiser.getSyncVector()
                 nextStageIndex = self.stageOptimiser.getNextStageIndex()
-                currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
-                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                if 'selly' in self.model:
+                    currentStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
+                    nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                else:
+                    currentStage = self.junctionData.stages[self.currentStageIndex].controlString
+                    nextStage = self.junctionData.stages[nextStageIndex].controlString
                 self.currentStageIndex = nextStageIndex
                 self.stagesSinceLastPedStage += 1
                 self.updateStageCalls()
@@ -348,14 +389,24 @@ class CDOTS(signalControl.signalControl):
 
     def getActiveLanes(self, stageIndexOverride=None):
         # Get the current control string to find the green lights
-        if stageIndexOverride is None:
-            stageCtrlString = self.junctionData\
-                                  .stages[self.mode][self.currentStageIndex]\
-                                  .controlString
+        if 'selly' in self.model:
+            if stageIndexOverride is None:
+                stageCtrlString = self.junctionData\
+                                      .stages[self.mode][self.currentStageIndex]\
+                                      .controlString
+            else:
+                stageCtrlString = self.junctionData\
+                                      .stages[self.mode][stageIndexOverride]\
+                                      .controlString
         else:
-            stageCtrlString = self.junctionData\
-                                  .stages[self.mode][stageIndexOverride]\
-                                  .controlString
+            if stageIndexOverride is None:
+                stageCtrlString = self.junctionData\
+                                      .stages[self.currentStageIndex]\
+                                      .controlString
+            else:
+                stageCtrlString = self.junctionData\
+                                      .stages[stageIndexOverride]\
+                                      .controlString
         try:
             # search dict to see if stage known already, if not work it out
             activeLanes = self.activeLanes[stageCtrlString]
@@ -369,7 +420,11 @@ class CDOTS(signalControl.signalControl):
     def getActiveLanesDict(self):
         # Get the current control string to find the green lights
         activeLanesDict = {}
-        for n, stage in enumerate(self.junctionData.stages[self.mode]):
+        if 'selly' in self.model:
+            stageInfo = self.junctionData.stages[self.mode]
+        else:
+            stageInfo = self.junctionData.stages
+        for n, stage in enumerate(stageInfo):
             activeLanes = self.getLanesFromString(stage.controlString)
             # Get a list of the unique active lanes
             # activeLanes = sigTools.unique(activeLanes)
@@ -553,6 +608,9 @@ class CDOTS(signalControl.signalControl):
                 gpsExtend = distance/vData['speed']
                 gpsExtend = sigTools.ceilRound(distance/vData['speed'], 0.1)
 
+                # 2 second typical time headway between vehicles, HEOMM journey
+                # is unreliable if greater than 1.67 free flow. 2*1.67 = 3.34s
+                # taking the ceiling value of this threshold we get 4s.
                 if gpsExtend > 2*self.threshold:
                     gpsExtend = 0.0
             else:
@@ -719,7 +777,10 @@ class CDOTS(signalControl.signalControl):
         return self.junctionData.id
 
     def getStageID(self):
-        return self.junctionData.stages[self.mode][self.currentStageIndex].id
+        if 'selly' in self.model:
+            return self.junctionData.stages[self.mode][self.currentStageIndex].id
+        else:
+            return self.junctionData.stages[self.currentStageIndex].id
 
     def getSyncString(self):
         return self.getID() + '_' + self.getStageID()
@@ -731,7 +792,7 @@ class CDOTS(signalControl.signalControl):
         return means
 
     def updateStageAvg(self, time):
-        stageID = self.junctionData.stages[self.mode][self.currentStageIndex].id
+        stageID = self.getStageID()
         intID = int(stageID)
         self.stageAvgs[stageID][self.stageAvgIndexer[intID]] = time
         self.stageAvgIndexer[intID] += 1

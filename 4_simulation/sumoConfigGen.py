@@ -26,7 +26,7 @@ def sumoConfigGen(modelname='simpleT',
     </input>
     <output>
         <!--<summary-output value="{expPath}summary_R{Nrun:03d}_CVP{cvp:03d}.xml"/>-->
-        <tripinfo-output value="{expPath}tripinfo_R{Nrun:03d}_CVP{cvp:03d}.xml"/>
+        <!--<tripinfo-output value="{expPath}tripinfo_R{Nrun:03d}_CVP{cvp:03d}.xml"/>-->
         <!--emission-output value="{expPath}emissions_R{Nrun:03d}_CVP{cvp:03d}.xml"/>-->
         <!--<vehroute-output value="{expPath}vehroute_R{Nrun:03d}_CVP{cvp:03d}.xml"/-->
         <!--queue-output value="{expPath}queuedata_R{Nrun:03d}_CVP{cvp:03d}.xml"/-->
@@ -88,7 +88,7 @@ def optConfigGen(modelname='simpleT',
     </input>
     <output>
         <!--<summary-output value="{expPath}summary_R{Nrun:03d}_CVP{cvp:03d}.xml"/>-->
-        <tripinfo-output value="{expPath}tripinfo_R{Nrun:03d}_CVP{cvp:03d}.xml"/>
+        <!--tripinfo-output value="{expPath}tripinfo_R{Nrun:03d}_CVP{cvp:03d}.xml"/-->
         <!--emission-output value="{expPath}emissions_R{Nrun:03d}_CVP{cvp:03d}.xml"/>-->
         <!--<vehroute-output value="{expPath}vehroute_R{Nrun:03d}_CVP{cvp:03d}.xml"/-->
         <!--queue-output value="{expPath}queuedata_R{Nrun:03d}_CVP{cvp:03d}.xml"/-->

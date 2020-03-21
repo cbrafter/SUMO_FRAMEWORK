@@ -21,11 +21,19 @@ import random
 timer = sigTools.simTimer()
 timer.start()
 models = ['sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
-tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA', 'CDOTS', 'CDOTSslow']
+tlControllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'HVA',
+                 'CDOTS', 'CDOTSslow', 'SynCDOTS', 'SynCDOTSslow']
 pedStage = [True, False]
 CAVratios = np.linspace(0, 1, 11)
-runIDs = list(range(1,51))
-activationArrays = list(product(*([[1]]*1+[[0,1]]*7)))
+runIDs = list(range(31,51))
+activationArrays = list(product(*([[1]]*1+[[0,1]]*6))) # All 7-bit arrays
+activationArrays = [(1,1,1,1,0,0,1), # Top 5 both
+                    (1,1,0,1,0,0,1), # Top 4 CDOTS
+                    (1,1,1,1,0,0,0), # Top 4 CDOTSslow
+                    (1,1,0,1,0,0,0)] # Top 3 both
+syncFactors = [0.25, 0.5, 0.75, 1.0]
+syncModes = ['PS','P','Ps']
+#activationArrays = [a for a in activationArrays if not a[-1]]
 PBS_ARRAYID = int(sys.argv[-1])
 nproc = 16
 nsims = 32
@@ -33,18 +41,18 @@ startIndex = PBS_ARRAYID * nsims
 stopIndex = (PBS_ARRAYID + 1) * nsims
 
 configs = []
-
 # TRANSYT configurations
-configs = list(product(models, tlControllers[:1], CAVratios[:1], runIDs, pedStage)) # 2
+#configs += list(product(models, ['TRANSYT'], CAVratios[:1], runIDs, pedStage)) # 2
 # MATS configurations
-configs += list(product(models, tlControllers[1:-2], CAVratios, runIDs, pedStage)) # 198
+#configs += list(product(models, ['GPSVA', 'GPSVAslow', 'HVA'], CAVratios, runIDs, pedStage)) # 198
 # CDOTS configurations
-configs += list(product(models[1:-1], tlControllers[-2:], CAVratios,
-                       runIDs[:1], pedStage[-1:], activationArrays))
+#configs += list(product(models, ['CDOTS', 'CDOTSslow'], CAVratios,
+#                        runIDs, pedStage, activationArrays))
 # configs = list(product(['sellyOak_avg'], tlControllers[:1], CAVratios[:1], runIDs, pedStage))
 # configs += list(product(['sellyOak_avg'], tlControllers[1:], CAVratios, runIDs, pedStage))
-
-#sort configurations to process most intensive case first
+configs += list(product(models, ['SynCDOTS', 'SynCDOTSslow'], CAVratios, runIDs, 
+                       pedStage, activationArrays[-1:], syncFactors, syncModes[:1]))
+# sort configurations to process most intensive case first
 # configs.sort(key=lambda x: x[3], reverse=False)
 # randomise configs so that long running jobs aren't bunched
 random.seed(1)

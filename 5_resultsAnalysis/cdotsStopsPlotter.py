@@ -55,22 +55,25 @@ def plotPercentile(data, scale, style='k-', alpha_val=1):
     yerr = bands[1, :]
     return xerr, yerr
 
-lineStyle = {'TRANSYT': 'vk',
-             'GPSVAslow': '^C0',             
-             'CDOTS': 'vC1',
-             'CDOTSslow': 'vC2',
-             'GPSVA': '*C3',
-             'HVA': 'oC4'}
+lineStyle = {'TRANSYT': 'sk-',
+             'GPSVA': 'vC3--',
+             'GPSVAslow': '^C0--',             
+             'CDOTS': '*C1-',
+             'CDOTSslow': 'oC2-',
+             'HVA': 'XC4'}
 
-models = ['sellyOak_avg', 'sellyOak_lo', 'sellyOak_hi']
+models = ['sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
 modMap = {'sellyOak_avg':'Selly Oak Avg.',
           'sellyOak_lo':'Selly Oak Low',
           'sellyOak_hi':'Selly Oak High',
           'twinT': 'Twin-T','cross':'cross'}
+modLim = {'sellyOak_lo':{False:[[0, 4.5], 0.5], True:[[0, 4.5], 0.5]},
+          'sellyOak_avg':{False:[[0, 5], 0.5], True:[[0, 9], 0.5]},
+          'sellyOak_hi':{False:[[0, 7.5], 0.5], True:[[0, 12], 0.5]}}
 controllers = ['TRANSYT', 'GPSVA', 'GPSVAslow', 'CDOTS', 'CDOTSslow']
-ctrlMap = {'TRANSYT':'TRANSYT', 'GPSVA':'MATS-FT',
+ctrlMap = {'TRANSYT':'TRANSYT', 'GPSVA':'MATS',
            'GPSVAslow':'MATS-ERR', 'HVA':'MATS-HA',
-           'CDOTS':'CDOTS', 'CDOTSslow':'CDOTSslow'}
+           'CDOTS':'CDOTS', 'CDOTSslow':'CDOTS-ERR'}
 
 activationArrays = ['1111001', # Top 5 both
                     '1101001', # Top 4 CDOTS
@@ -96,8 +99,8 @@ for model in models:
         # subset plot data
         label = ctrlMap[controller]
         if 'CDOTS' in controller:
-            file = '{}{}-{}-{}-tripinfo.csv'.format(controller, pedString, model, activationArrays[0])
-            label += '-' + activationArrays[0]
+            file = '{}{}-{}-{}-tripinfo.csv'.format(controller, pedString, model, activationArrays[-1])
+            #label += '-' + activationArrays[0]
         else:
             file = '{}{}-{}-tripinfo.csv'.format(controller, pedString, model)
         data = pd.read_csv('/hardmem/results/outputCSV/'+file,
@@ -128,7 +131,7 @@ for model in models:
         errLims = [meanDelay-err[:, 1], err[:, 0]-meanDelay]
         lines.append(plt.errorbar(cvp, meanDelay,
                                   yerr=errLims,
-                                  fmt=lineStyle[controller]+'-',
+                                  fmt=lineStyle[controller],
                                   linewidth=2, markersize=12,
                                   label=controller,
                                   capsize=9, capthick=3, elinewidth=1))
@@ -137,31 +140,23 @@ for model in models:
         #                  color=lineStyle[controller][1:], alpha=0.3)
         labels.append(label)
     modName = modMap[model]
-    plt.title(modName+': Delay vs. CV Penetration', fontsize=tsize)
+    plt.title(modName+': Stops vs. CV Penetration', fontsize=tsize)
     plt.xlabel('Percentage CV Penetration', fontsize=axsize,
                fontweight='bold')
-    plt.ylabel('Delay [s/km]', fontsize=axsize)
+    plt.ylabel('Stops [/km]', fontsize=axsize)
     # order of magnitude of the max point
     # set x and y lims with some space around the max and min values
     plt.xticks(cvp, fontsize=ticksize, fontweight='bold')
-    maxVal = abs(max([min(l[1][0].get_ydata()[:1]) for l in lines]))
-    magnitude = 10**int(log10(maxVal))
-    yMax = roundUp(maxVal, 0.5*magnitude)+ 10
-    # double the ytick interval
-    newYticks = np.arange(0, yMax+1, 0.5*magnitude, dtype=int)
-    if len(newYticks) <= 8:
-        newYticks = np.arange(0, yMax+1, 0.25*magnitude, dtype=int)
-    elif len(newYticks) >= 18:
-        newYticks = np.arange(0, yMax+1, magnitude, dtype=int)
-    plt.yticks(newYticks, fontsize=ticksize, fontweight='bold')
-    yMin = -0.5*newYticks[1]
-    plt.ylim([yMin, yMax])
+    yMin, yMax = modLim[model][pedStage][0]
+    plt.ylim([yMin-0.1, yMax+0.1])
+    plt.yticks(np.arange(yMin, yMax+0.1, modLim[model][pedStage][1]))
     plt.xlim([-3, 103])
-    plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1,
-        loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=4)
+    for tick in plt.gca().yaxis.get_major_ticks():
+        tick.label.set_fontsize(ticksize)
+    #plt.legend(labels, prop={'size': ticksize-2}, labelspacing=1,
+    #    loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=5)
     savePDF(figuresPDF, fig)
     i += 1
-
 figuresPDF.close()
 
 '''

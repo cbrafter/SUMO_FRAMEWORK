@@ -20,9 +20,10 @@ def pct(a,b):
 pedStage = True if len(sys.argv) >= 2 else False
 pedString = '_ped' if pedStage else ''
 models = ['sellyOak_lo', 'sellyOak_avg', 'sellyOak_hi']
-controllers = ['GPSVA', 'HVA', 'GPSVAslow']
-ctrlMap = {'TRANSYT':'TRANSYT', 'GPSVA':'MATS-FT',
-           'GPSVAslow':'MATS-ERR', 'HVA':'MATS-HA'}
+controllers = ['GPSVA', 'GPSVAslow', 'CDOTS', 'CDOTSslow']
+ctrlMap = {'TRANSYT':'TRANSYT', 'GPSVA':'MATS',
+           'GPSVAslow':'MATS-ERR', 'HVA':'MATS-HA',
+           'CDOTS':'CDOTS', 'CDOTSslow':'CDOTS-ERR'}
 selectCols = ['controller','model','run','cvp','routeLength','delay', 'stops']
 cvp = np.arange(0,101, 10, dtype=int)
 i = 0
@@ -38,7 +39,8 @@ for model in models:
     # iterate controllers
     for controller in controllers:
         # subset plot data
-        file = '{}{}-{}-tripinfo.csv'.format(controller, pedString, model)
+        AA = '-1101000' if 'CDOTS' in controller else ''
+        file = '{}{}-{}-tripinfo.csv'.format(controller, pedString, model+AA)
         data = pd.read_csv('/hardmem/results/outputCSV/'+file,
                             engine='c', usecols=selectCols)
         data['delay'] = data['delay']/(data['routeLength']*0.001)

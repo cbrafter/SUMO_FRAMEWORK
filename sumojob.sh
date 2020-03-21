@@ -1,10 +1,10 @@
 #!/bin/bash
 #PBS -N CBRSUMO
 #PBS -j oe
-#PBS -l walltime=35:00:00
+#PBS -l walltime=40:00:00
 #PBS -l nodes=1:ppn=16
 #PBS -m ae -M cbr1g15@soton.ac.uk
-#PBS -t 0-89
+#PBS -t 0-372
 
 # Script to run SUMO simulations
 # Load required modules

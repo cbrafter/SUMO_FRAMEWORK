@@ -200,7 +200,10 @@ class StopCounter(object):
         self.stopSubscription()  # makes self.subkey
 
     def stopSubscription(self):
-        self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        try:
+            self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        except:
+            self.subkey = [e for e in traci.edge.getIDList() if e[0] != ':'][0]
         traci.edge.subscribeContext(self.subkey, 
                                     tc.CMD_GET_VEHICLE_VARIABLE, 
                                     1000000, 
@@ -249,7 +252,10 @@ class EmissionCounter(object):
         self.EmissionSubscription()  # makes self.subkey
 
     def EmissionSubscription(self):
-        self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        try:
+            self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        except:
+            self.subkey = [e for e in traci.edge.getIDList() if e[0] != ':'][0]
         traci.edge.subscribeContext(self.subkey, 
                                     tc.CMD_GET_VEHICLE_VARIABLE, 
                                     1000000, 
@@ -341,6 +347,59 @@ class EmissionCounter(object):
                 # Don't write terminating comma
                 dataStr = dataStr[:-1] + '\n'
                 f.write(dataStr)
+
+
+class RouteMonitor(object):
+    def __init__(self, routeXML):
+        self.distDict = defaultdict(list)
+        self.DISTANCE = tc.VAR_DISTANCE
+        self.routeSubscription()  # makes self.subkey
+        self.getTargetVehIDs(routeXML)
+
+    def routeSubscription(self):
+        self.subkey = [e for e in traci.edge.getIDList() if ':' not in e][0]
+        traci.edge.subscribeContext(self.subkey, 
+                                    tc.CMD_GET_VEHICLE_VARIABLE, 
+                                    1000000, 
+                                    varIDs=(self.DISTANCE,))
+
+    def getSubscriptionResults(self):
+        return traci.edge.getContextSubscriptionResults(self.subkey)
+
+    def getTargetVehIDs(self, routeXML):
+        #regex = re.compile('<vehicle.*id="(.+?)".*\n.*edges="edge(140|246|116|117|93).*edge(30|180|267|25|83)"')
+        regex = re.compile('<vehicle.*id="(.+?)".*\n.*edges="edge(117|140).*edge(30|180|267|25|83)"')
+        self.targetVehIDs = []
+        self.OD = {}
+        with open(routeXML, 'r') as rfile:
+            data = ''.join(rfile.readlines())
+            targetData = regex.findall(data)
+        for vehID, origin, destination in targetData:
+            self.targetVehIDs.append(vehID)
+            self.OD[vehID] = {'O': origin, 'D': destination}
+
+    def getDistances(self, time):
+        self.subResults = self.getSubscriptionResults()
+        try:
+            timeSec = time/1000.0
+            for vehID in self.subResults.keys():
+                if vehID in self.targetVehIDs:
+                    data = [timeSec, self.subResults[vehID][self.DISTANCE]]
+                    self.distDict[vehID].append(data)
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
+
+    def writeDistances(self, filename):
+        with open(filename, 'w') as f:
+            f.write('vehID,time,distance,origin,destination\n')
+            vehIDs = self.distDict.keys()
+            vehIDs.sort()
+            for vehID in vehIDs:
+                for time, distance in self.distDict[vehID]:
+                    origin, destination = self.OD[vehID]['O'], self.OD[vehID]['D']
+                    f.write('{},{},{},{},{}\n'.format(vehID, time, distance, origin, destination))
 
 
 class PIMonitor(object):

@@ -28,10 +28,16 @@ class HybridVAControl(signalControl.signalControl):
         self.TIME_MS = self.firstCalled
         self.TIME_SEC = 0.001 * self.TIME_MS
         self.mode = self.getMode()  # TRANSYT flow mode
-        self.Nstages = len(self.junctionData.stages[self.mode])
+        self.model = model
         self.currentStageIndex = 0
-        traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
-            self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
+        if 'selly' not in self.model:
+            self.Nstages = len(self.junctionData.stages)
+            traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
+                self.junctionData.stages[self.currentStageIndex].controlString)
+        else:
+            self.Nstages = len(self.junctionData.stages[self.mode])
+            traci.trafficlights.setRedYellowGreenState(self.junctionData.id, 
+                self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         self.setModelName(model)
         self.scanRange = scanRange  #  max range of effect by junction
         self.jcnPosition = np.array(traci.junction.getPosition(self.junctionData.id))
@@ -46,6 +52,7 @@ class HybridVAControl(signalControl.signalControl):
         self.stageTime = 0.0
         self.minGreenTime = 2*self.intergreen
         self.maxGreenTime = 10*self.intergreen
+        # self.maxGreenTime = int(120.0/self.Nstages)
         # self.secondsPerMeterTraffic = 0.45
         # self.nearVehicleCatchDistance = 28 # 2sec gap at speed limit 13.89m/s
         self.extendTime = 1.5 # 5 m in 10 m/s (acceptable journey 1.333)
@@ -76,7 +83,10 @@ class HybridVAControl(signalControl.signalControl):
         # Pedestrian parameters
         self.pedTime = 1000 * sigTools.getJunctionDiameter(self.junctionData.id)/1.2
         self.pedStage = False
-        self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
+        if 'selly' not in self.model:
+            self.pedCtrlString = 'r'*len(self.junctionData.stages[self.currentStageIndex].controlString)
+        else:
+            self.pedCtrlString = 'r'*len(self.junctionData.stages[self.mode][self.currentStageIndex].controlString)
         juncsWithPedStages = ['junc0', 'junc1', 'junc4', 
                               'junc5', 'junc6', 'junc7']
         if self.junctionData.id in juncsWithPedStages and pedStageActive:
@@ -104,6 +114,8 @@ class HybridVAControl(signalControl.signalControl):
                 250, 
                 varIDs=(tc.LAST_STEP_TIME_SINCE_DETECTION,))
 
+        self.stageData = []
+
     def process(self, time=None):
         self.TIME_MS = time if time is not None else self.getCurrentSUMOtime()
         self.TIME_SEC = 0.001 * self.TIME_MS
@@ -122,14 +134,14 @@ class HybridVAControl(signalControl.signalControl):
         # If there's no ITS enabled vehicles present use VA ctrl
         self.numCAVs = len(self.CAM.receiveData)
         isControlInterval = not self.TIME_MS % 1000
-        elapsedTime = self.getElapsedTime()
-        Tremaining = self.stageTime - elapsedTime
+        self.elapsedTime = self.getElapsedTime()
+        Tremaining = self.stageTime - self.elapsedTime
         if self.pedStage:
             pass
         elif Tremaining <= 5.0:
             # get loop extend
             try:
-                if self.loopIO and self.numCAVs > 0:
+                if self.loopIO and (('selly' not in self.model) or (self.numCAVs > 0)):
                     loopExtend = self.getLoopExtension()
                 else:
                     loopExtend = None
@@ -157,11 +169,14 @@ class HybridVAControl(signalControl.signalControl):
                 updateTime = gpsExtend
             # No loop or CV data
             else:
-                fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
-                updateTime = max(0.0, fixedTime-elapsedTime)
+                if 'selly' in self.model:
+                    fixedTime = self.junctionData.stages[self.mode][self.currentStageIndex].period
+                else:
+                    fixedTime = self.junctionData.stages[self.currentStageIndex].period
+                updateTime = max(0.0, fixedTime-self.elapsedTime)
             self.updateStageTime(updateTime)
         # If we've just changed stage get the queuing information
-        elif elapsedTime <= 0.11 and self.numCAVs > 0:
+        elif self.elapsedTime <= 0.11 and self.numCAVs > 0:
             try:
                 queueExtend = self.getQueueExtension()
                 self.updateStageTime(queueExtend)
@@ -169,8 +184,8 @@ class HybridVAControl(signalControl.signalControl):
                 pass
             # print(self.junctionData.id, self.stageTime)
         # run GPS extend only to check if queue cancelation needed
-        elif elapsedTime > self.minGreenTime\
-          and np.isclose(elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
+        elif self.elapsedTime > self.minGreenTime\
+          and np.isclose(self.elapsedTime%2.7, 0., atol=0.05) and self.numCAVs > 0:
             # print('checking')
             gpsExtend = self.getGPSextension()
         # process stage as normal
@@ -184,6 +199,17 @@ class HybridVAControl(signalControl.signalControl):
         elif self.pedStage and (self.TIME_MS - self.lastCalled) < self.pedTime:
             pass
         else:
+            # Log stage times
+            if 'selly' in self.model:
+                self.stageData.append((self.junctionData.id,
+                                       self.junctionData.stages[self.mode][self.currentStageIndex].id,
+                                       self.TIME_SEC,
+                                       self.elapsedTime))
+            else:
+                self.stageData.append((self.junctionData.id,
+                                       self.junctionData.stages[self.currentStageIndex].id,
+                                       self.TIME_SEC,
+                                       self.elapsedTime))
             # Transition to next stage
             nextStageIndex = (self.currentStageIndex + 1) % self.Nstages
             # change mode only at this point to avoid changing the stage time
@@ -192,18 +218,29 @@ class HybridVAControl(signalControl.signalControl):
             # We have completed one cycle, DO ped stage
             if self.hasPedStage and nextStageIndex == 0 and not self.pedStage:
                 self.pedStage = True
-                lastStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
+                if 'selly' in self.model:
+                    lastStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
+                else:
+                    lastStage = self.junctionData.stages[self.currentStageIndex].controlString
                 nextStage = self.pedCtrlString
             # Completed ped stage, resume signalling
             elif self.hasPedStage and self.pedStage:
                 self.pedStage = False
                 lastStage = self.pedCtrlString
-                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                if 'selly' in self.model:
+                    nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                else:
+                    nextStage = self.junctionData.stages[nextStageIndex].controlString
                 self.currentStageIndex = nextStageIndex
             # No ped action, normal cycle
             else:
-                lastStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
-                nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                if 'selly' in self.model:
+                    lastStage = self.junctionData.stages[self.mode][self.currentStageIndex].controlString
+                    nextStage = self.junctionData.stages[self.mode][nextStageIndex].controlString
+                else:
+                    lastStage = self.junctionData.stages[self.currentStageIndex].controlString
+                    nextStage = self.junctionData.stages[nextStageIndex].controlString
+
                 self.currentStageIndex = nextStageIndex
             
             self.transitionObject.newTransition(
@@ -218,18 +255,18 @@ class HybridVAControl(signalControl.signalControl):
 
     def updateStageTime(self, updateTime):
         # update time is the seconds to add
-        elapsedTime = self.getElapsedTime()
-        Tremaining = self.stageTime - elapsedTime
-        self.stageTime = elapsedTime + max(updateTime, Tremaining)
+        self.elapsedTime = self.getElapsedTime()
+        Tremaining = self.stageTime - self.elapsedTime
+        self.stageTime = self.elapsedTime + max(updateTime, Tremaining)
         self.stageTime = max(self.minGreenTime, self.stageTime)
         self.stageTime = float(min(self.stageTime, self.maxGreenTime))
 
     def cancelQueueExtend(self):
         # cancels queue extend if traffic queue can't move
-        elapsedTime = self.getElapsedTime()
-        if elapsedTime >= self.minGreenTime:
+        self.elapsedTime = self.getElapsedTime()
+        if self.elapsedTime >= self.minGreenTime:
             # x = self.stageTime
-            self.stageTime = elapsedTime
+            self.stageTime = self.elapsedTime
             # print(self.junctionData.id, x, self.stageTime)
 
     def getElapsedTime(self):
@@ -329,9 +366,14 @@ class HybridVAControl(signalControl.signalControl):
 
     def getActiveLanes(self):
         # Get the current control string to find the green lights
-        stageCtrlString = self.junctionData\
-                              .stages[self.mode][self.currentStageIndex]\
-                              .controlString
+        if 'selly' in self.model:
+            stageCtrlString = self.junctionData\
+                                  .stages[self.mode][self.currentStageIndex]\
+                                  .controlString
+        else:
+            stageCtrlString = self.junctionData\
+                                  .stages[self.currentStageIndex]\
+                                  .controlString
         try:
             # search dict to see if stage known already, if not work it out
             activeLanes = self.activeLanes[stageCtrlString]
@@ -348,7 +390,11 @@ class HybridVAControl(signalControl.signalControl):
     def getActiveLanesDict(self):
         # Get the current control string to find the green lights
         activeLanesDict = {}
-        for n, stage in enumerate(self.junctionData.stages[self.mode]):
+        if 'selly' in self.model:
+            stageInfo = self.junctionData.stages[self.mode]
+        else:
+            stageInfo = self.junctionData.stages
+        for n, stage in enumerate(stageInfo):
             activeLanes = self.getLanesFromString(stage.controlString)
             # Get a list of the unique active lanes
             # activeLanes = sigTools.unique(activeLanes)

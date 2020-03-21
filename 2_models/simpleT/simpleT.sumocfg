@@ -1,15 +1,15 @@
 <configuration>
     <input>
         <net-file value="simpleT.net.xml"/>
-        <route-files value="/hardmem/ROUTEFILES/simpleT_R001_CVP000.rou.xml"/>
+        <route-files value="/hardmem/ROUTEFILES/simpleT_R007_CVP050.rou.xml"/>
         <!--<gui-settings-file value="gui-settings.cfg"/>-->
         <additional-files value="simpleT.det.xml"/>
     </input>
     <output>
-        <!--<summary-output value="../../4_simulation/test_results/summary_R001_CVP000.xml"/>-->
-        <tripinfo-output value="../../4_simulation/test_results/tripinfo_R001_CVP000.xml"/>
-        <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R001_CVP000.xml"/-->
-        <!--queue-output value="../../4_simulation/test_results/queuedata_R001_CVP000.xml"/-->
+        <!--<summary-output value="../../4_simulation/test_results/summary_R007_CVP050.xml"/>-->
+        <tripinfo-output value="../../4_simulation/test_results/tripinfo_R007_CVP050.xml"/>
+        <!--<vehroute-output value="../../4_simulation/test_results/vehroute_R007_CVP050.xml"/-->
+        <!--queue-output value="../../4_simulation/test_results/queuedata_R007_CVP050.xml"/-->
     </output>
     <time>
         <begin value="0"/>
@@ -25,7 +25,7 @@
         <!--no-internal-links value="true"/-->
     </processing>
     <random_number>
-        <seed value="1"/>
+        <seed value="7"/>
     </random_number>
     <report>
         <no-step-log value="true"/>

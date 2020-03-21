@@ -9,7 +9,7 @@ import pandas as pd
 import traceback
 import numpy as np
 
-fileName = '/hardmem/results/outputCSV/CDOTSprelim.csv'
+fileName = '/hardmem/results/CDOTSprelim.csv'
 data = pd.read_csv(fileName)
 # data['PI'] = 0.25 *((data.delayMean/data.delayMean.max())
 #                    + (data.delayStd/data.delayStd.max())
@@ -74,4 +74,5 @@ subset.sort_values('PI').head()
 subset.sort_values('PI').tail()
 
 # Mean data srcs in top 10 
+subset = data[(data.controller=='CDOTS')&(data.cvp==100)]
 subset.sort_values('PI').head(10).activation.apply(lambda x: str(x).count('1')).mean()

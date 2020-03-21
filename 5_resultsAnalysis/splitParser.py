@@ -149,13 +149,16 @@ else:
 
 # recursive glob using ** notation to expand folders needs python3
 controllerFolders = [x for x in glob(dataFolder+'*/') if 'CDOTS' not in x]
+controllerFolders = [x for x in controllerFolders if '_ped' not in x]
 
 # define work pool
-nproc = 16
+nproc = 6
 workpool = mp.Pool(processes=nproc)
 
 for ctrlFolder in controllerFolders:
     for modelFolder in glob(ctrlFolder+'/*'):
+        if 'simpleT' not in modelFolder:
+            continue
         try:
             print('Parsing: '+ modelFolder)
             tripFiles = glob(modelFolder+'/trip*.xml')

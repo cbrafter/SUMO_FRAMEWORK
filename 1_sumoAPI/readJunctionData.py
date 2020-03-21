@@ -24,12 +24,13 @@ class readJunctionData:
         junctionData = []
         
         if self.filename.split('.')[-2] != 't15':
+            #print('NOT TRANSYT')
             for junction in self.junctionList:
                 stageData=[]
                 for stage in junction.getchildren():
-                    stageData.append(stageObj.stageObj(stage.attrib['id'],
-                                                       stage.attrib['controlString'],
-                                                       float(stage.attrib['period'])))
+                    stageData.append(stageObj(stage.attrib['id'],
+                                              stage.attrib['controlString'],
+                                              float(stage.attrib['period'])))
                 
                 junctionData.append(junctionObj(junction.attrib['id'],
                                                 stageData,

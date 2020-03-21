@@ -62,13 +62,14 @@ class stageOptimiser():
 
         self.P_dblDeckBus = 0.7  # Probability of bus being double decker
         # Max passengers on Alexander Dennis Enviro 400 (E400)
-        self.dblDeckPaxMax = 90
+        self.dblDeckPaxMax = 86
         # Max passengers on Alexander Dennis Enviro 200 (E200)
-        self.sglDeckPaxMax = 76
+        self.sglDeckPaxMax = 45
 
         # Distribution of passengers in a car, mean occupancy = 1.55 as in lit
+        # See Table NTS0905 car occupancy in hte UK since 2002
         # self.passengerDist = 12*[1] + 6*[2] + [3, 4]
-        self.carOccupancyDist = sigTools.weightedRandomDraw([1,2,3,4], 1.55)[0]
+        self.carOccupancyDist = sigTools.weightedRandomDraw([1,2,3,4], 1.6)[0]
         self.occupancyDict = {}
 
     def getNextStageIndex(self, mode='REL'):
@@ -449,7 +450,10 @@ class stageOptimiser():
     def getStageIDMap(self):
         # map stage list index to stage ID
         stageIdMap = {}
-        stageData = self.sigCtrl.junctionData.stages[self.sigCtrl.mode]
+        if 'selly' in self.sigCtrl.model:
+            stageData = self.sigCtrl.junctionData.stages[self.sigCtrl.mode]
+        else:
+            stageData = self.sigCtrl.junctionData.stages
         for i, stage in enumerate(stageData):
             stageIdMap[stage.id] = i
         return stageIdMap

@@ -225,7 +225,30 @@ def optimiser(config):
     Xmin = minimize(optFunc, inits, method='Nelder-Mead', tol=0.01, options=opts)
     # opts = {'maxiter': 100, 'xtol': 0.1, 'ftol': 0.01}
     # Xmin = minimize(optFunc, inits, method='Powell', tol=0.01, options=opts)
-    print(config, Xmin)
+    print('Simplex', config, Xmin)
+    return activationArray, Xmin
+
+def optimiserPowell(config):
+    modelName, tlLogic, CVP, run, pedStage, activationArray, procID = config
+    initDelay, initStops = simulation(config)
+
+    def optFunc(x):
+        try:
+            delay, stops = simulation(config, weightArray=x)
+            PI = unifyPI(delay, stops, initDelay, initStops)
+            print(config, delay, stops, initDelay, initStops, PI)
+            return PI
+        except:
+            print('Fail on:', config, x)
+            return unifyPI(initDelay, initStops, initDelay, initStops)
+
+    AA = np.array(activationArray)
+    inits = np.ones_like(AA[AA > 0], dtype=float)
+    #opts = {'maxiter': 100, 'xatol': 0.1, 'fatol': 0.01, 'adaptive': True}
+    #Xmin = minimize(optFunc, inits, method='Nelder-Mead', tol=0.01, options=opts)
+    opts = {'maxiter': 100, 'xtol': 0.1, 'ftol': 0.01}
+    Xmin = minimize(optFunc, inits, method='Powell', tol=0.01, options=opts)
+    print('Powell', config, Xmin)
     return activationArray, Xmin
 
 

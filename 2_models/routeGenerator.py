@@ -15,6 +15,11 @@ def vehicleDistribution(cvp):
     Plgv = 12.3
     Phgv = 1.6
     Pbus = 0.4
+    #Pcar = 100.0
+    #Pmoto = 0.
+    #Plgv = 0.
+    #Phgv = 0.
+    #Pbus = 0.
     vtype = """    <vTypeDistribution id="vDist">
         <!--PASSENGER CAR-->
         <vType id="car" length="4.3" minGap="2.5"
@@ -100,9 +105,10 @@ def makeRoutes(config):
 # models = ['cross', 'simpleT', 'twinT', 'corridor',
 #           'sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
 models = ['sellyOak_avg', 'sellyOak_hi', 'sellyOak_lo']
+models = ['simpleT']
 runs = 51
 configs = itertools.product(models, range(runs+1))
-nproc = 6
+nproc = 1
 print('Starting route building on {} cores'.format(nproc)+' '+time.ctime())
 # define work pool
 workpool = mp.Pool(processes=nproc)

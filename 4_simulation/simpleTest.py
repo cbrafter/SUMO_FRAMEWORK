@@ -16,6 +16,7 @@ import HybridVAControl
 import actuatedControl
 import sumoConnect
 import readJunctionData
+import CDOTS
 import traci
 from sumoConfigGen import sumoConfigGen
 import numpy as np
@@ -23,11 +24,12 @@ import traci.constants as tc
 import time
 from collections import defaultdict
 import signalTools as sigTools
-
+from itertools import product
 
 timer = sigTools.simTimer()
 timer.start()
 controller = HybridVAControl.HybridVAControl
+controller = CDOTS.CDOTS
 #controller = actuatedControl.actuatedControl
 #controller = fixedTimeControl.fixedTimeControl
 #controller = TRANSYT.TRANSYT
@@ -74,17 +76,25 @@ controllerList = []
 minGreenTime = 10
 maxGreenTime = 60
 for junction in junctionData:
+    CAMmod = False
+    loopCtrl = False
+    noise = False
+    PER = 0.0
+    activationArray = list(product(*([[1]]*1+[[0,1]]*7)))[-1]
     if controller == HybridVAControl.HybridVAControl:
-        CAMmod = False
-        loopCtrl = False
-        noise = False
-        PER = 0.0
         controllerList.append(controller(junction, 
                                          loopIO=loopCtrl,
                                          CAMoverride=CAMmod,
                                          model=modelBase,
                                          PER=PER, noise=noise,
                                          pedStageActive=pedStage))
+    elif controller == CDOTS.CDOTS:
+        controllerList.append(controller(junction, 
+                                           CAMoverride=CAMmod,
+                                           model=modelBase,
+                                           PER=PER, noise=noise,
+                                           pedStageActive=pedStage,
+                                           activationArray=activationArray))
     elif controller == TRANSYT.TRANSYT:
         controllerList.append(controller(junction, pedStageActive=pedStage))
     else:
@@ -111,12 +121,16 @@ oneMinute = 60*1000  # one minute in simulation 60sec im msec
 
 while simActive:
     traci.simulationStep()
-    # subResults = traci.junction.getContextSubscriptionResults(subJunc)
-    for controller in controllerList:
-        controller.process(time=simTime)
+    simTime += timeDelta
     stopCounter.getStops()
     emissionCounter.getEmissions(simTime)
-    simTime += timeDelta
+
+    for controller in controllerList:
+        if 'CDOTS' in tlLogic:
+            controller.process(time=simTime, stopCounter=stopCounter, 
+                               emissionCounter=emissionCounter)
+        else:
+            controller.process(time=simTime)
     # reduce calls to traci to 1 per simulation min to improve performance
     # flag will always be positive int while there are vehicles no need for else
     if not simTime % oneMinute: 

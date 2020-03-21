@@ -59,25 +59,27 @@ def getStopInfo(fname):
 
 
 def trip_parser(fileName):
-    controller, model, activation, fileTxt = fileName.split('/')[-4:]
+    if 'SynCDOTS' in fileName:
+        controller, model, activation, fileTxt = fileName.split('/')[-4:]
+        activation, syncStrength, syncMode = activation.split('_')
+    else:
+        controller, model, activation, fileTxt = fileName.split('/')[-4:]
+        syncStrength, syncMode = 0.0, 'NO'
     if '_ped' in controller:
         controller = controller.split('_')[0]
         pedStage = True
     else:
         pedStage = False
-
     try:
         stopDict = getStopInfo(fileName)
     except Exception as e:
         stopDict = defaultdict(lambda: -1)
         # print(fileName, e)
-
     # print('PARSING: '+fileName)
     sys.stdout.flush()
     run, cvp = [int(x) for x in re.match('.+?R(.+?)_CVP(.+?).xml',
                                          fileTxt).groups()]
     #if cvp == 0: print(fileName)
-
     regex = '<tripinfo id="(.+?)" depart="(.+?)" departLane="(.+?)" .+? ' + \
             'departDelay="(.+?)" arrival="(.+?)" arrivalLane="(.+?)" ' + \
             '.+? duration="(.+?)" routeLength="(.+?)" .+? ' + \
@@ -114,7 +116,8 @@ def trip_parser(fileName):
         data = [controller, model, run, cvp, pedStage, depart, origin,
                 departDelay, arrival, destination, duration,
                 routeLength, timeLoss, vType, speedFactor,
-                journeyTime, connected, delay, stops]
+                journeyTime, connected, delay, stops,
+                activation, syncStrength, syncMode]
         data = ','.join(str(x) for x in data) + '\n'
         results.append(data)
     file.close()
@@ -130,7 +133,6 @@ def em_parser(fileName):
         pedStage = 0
     run, cvp = [int(x) for x in re.match('.+?R(.+?)_CVP(.+?).csv',
                                          fileTxt).groups()]
-
     results = pd.read_csv(fileName, dtype={'vehID':str}, index_col=False)
     results['controller'] = controller
     results['model'] = model
@@ -147,18 +149,21 @@ if len(sys.argv) > 1:
     outputFolder = '/scratch/cbr1g15/hardmem/outputCSV/'
 else:
     dataFolder = '/hardmem/results/'
-    outputFolder = '/hardmem/outputCSV/'
+    outputFolder = '/hardmem/results/outputCSV/'
 
 
 # recursive glob using ** notation to expand folders needs python3
 controllerFolders = glob(dataFolder+'CDOTS*/')
+# controllerFolders = [x for x in controllerFolders if '_ped' not in x]
 
 # define work pool
-nproc = 16
+nproc = 6
 workpool = mp.Pool(processes=nproc)
 
 for ctrlFolder in controllerFolders:
     for modelFolder in glob(ctrlFolder+'/*'):
+        # if 'simpleT' not in modelFolder:
+        #     continue
         for activationFolder in glob(modelFolder+'/*'):
             try:
                 print('Parsing: '+ activationFolder)
@@ -180,7 +185,8 @@ for ctrlFolder in controllerFolders:
                     cols = ['controller', 'model', 'run', 'cvp', 'pedStage', "depart", "origin",
                             "departDelay", "arrival", "destination", "duration",
                             "routeLength", "timeLoss", "vType", "speedFactor",
-                            "journeyTime", "connected", "delay", "stops"]
+                            "journeyTime", "connected", "delay", "stops",
+                            "activation", "syncStrength", 'syncMode']
                     ofile.write(','.join(cols) + '\n')
                     for line in resultData:
                         ofile.write(line)

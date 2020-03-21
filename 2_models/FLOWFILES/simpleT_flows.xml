@@ -1,10 +1,10 @@
 <flows>
-    <interval begin="0" end="10800">     
-        <flow id="eastSouth" from="2:0" to="5:6" number="1000"/>
-        <flow id="eastWest" from="2:0" to="3:7" number="2000"/>
-        <flow id="westSouth" from="7:3" to="5:6" number="1500"/>
-        <flow id="westEast" from="7:3" to="0:2" number="2700"/>
-        <flow id="southEast" from="6:5" to="0:2" number="1200"/>
-        <flow id="southWest" from="6:5" to="3:7" number="1200"/>
+    <interval begin="0" end="3600">     
+        <flow id="eastWest" from="2:0" to="3:7" number="948"/>
+        <flow id="eastSouth" from="2:0" to="5:6" number="48"/>
+        <flow id="westEast" from="7:3" to="0:2" number="750"/>
+        <flow id="westSouth" from="7:3" to="5:6" number="198"/>
+        <flow id="southEast" from="6:5" to="0:2" number="162"/>
+        <flow id="southWest" from="6:5" to="3:7" number="162"/>
     </interval>
 </flows>

@@ -140,12 +140,12 @@ def em_parser(fileName):
     results['vType'] =  results['vType'].apply(filtervType)
     return results
 
-if len(sys.argv) > 1:
-    dataFolder = sys.argv[-1]
-    outputFolder = '/scratch/cbr1g15/hardmem/outputCSV/'
-else:
-    dataFolder = '/hardmem/results/'
-    outputFolder = '/hardmem/results/outputCSV/'
+#if len(sys.argv) > 1:
+dataFolder = sys.argv[-1]
+outputFolder = '/hardmem/results/'
+#else:
+#    dataFolder = '/hardmem/results/'
+#    outputFolder = '/hardmem/results/outputCSV/'
 
 outputFile = outputFolder + 'CDOTSprelim.csv'
 # recursive glob using ** notation to expand folders needs python3

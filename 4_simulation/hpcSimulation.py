@@ -18,14 +18,20 @@ import signalTools as sigTools
 import traceback
 import numpy as np
 
-def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
+def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float),
+               routeTracking=False):
     try:
         timer = sigTools.simTimer()
         timer.start()
         if len(configList) == 6:
             modelName, tlLogic, CVP, run, pedStage, procID = configList
+        elif len(configList) == 7:
+            modelName, tlLogic, CVP, run, pedStage, activationArray,\
+                procID = configList
+            syncFactor, syncMode = 0.0, 'NO'
         else:
-            modelName, tlLogic, CVP, run, pedStage, activationArray, procID = configList
+            modelName, tlLogic, CVP, run, pedStage, activationArray,\
+                syncFactor, syncMode, procID = configList
         # split returns list so whether or not selly in name right base given 
         modelBase = modelName.split('_')[0]
         hostname = socket.gethostname()
@@ -47,13 +53,17 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
                         'HVAslow': HybridVAControl.HybridVAControl,
                         'GPSVAslow': HybridVAControl.HybridVAControl,
                         'CDOTS': CDOTS.CDOTS,
-                        'CDOTSslow': CDOTS.CDOTS}
+                        'CDOTSslow': CDOTS.CDOTS,
+                        'SynCDOTS': CDOTS.CDOTS,
+                        'SynCDOTSslow': CDOTS.CDOTS}
         tlController = tlControlMap[tlLogic]
 
         # Define output folder
         pedStr = '_ped' if pedStage else ''
         if 'CDOTS' in tlLogic:
             activStr = ''.join(str(bit) for bit in activationArray)
+            if 'SynC'in tlLogic:
+                activStr = activStr+'_'+str(int(100*syncFactor))+'_'+syncMode
             exportPath = ('/hardmem/results/{}{}/{}/{}/'
                           .format(tlLogic, pedStr, modelName, activStr))
         else:
@@ -107,16 +117,23 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
                                     PER=PER, noise=noise,
                                     pedStageActive=pedStage)
             elif 'CDOTS' in tlLogic:
+                sync = True if 'SynCDOTS' in tlLogic else False
                 ctrl = tlController(junction, 
                                     CAMoverride=CAMmod,
                                     model=modelBase,
                                     PER=PER, noise=noise,
                                     pedStageActive=pedStage,
                                     activationArray=activationArray,
-                                    weightArray=weightArray)
+                                    weightArray=weightArray, sync=sync,
+                                    syncFactor=syncFactor, syncMode=syncMode)
             else:
                 ctrl = tlController(junction, pedStageActive=pedStage)
             controllerList.append(ctrl)
+
+        # Couple synced junctions
+        if 'SynCDOTS' in tlLogic:
+            for c in controllerList:
+                c.setSyncJunctions(controllerList)
 
         # Step simulation while there are vehicles
         # we use traci method for initial value in case begin != 0
@@ -127,8 +144,15 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
         emissionCounter = sigTools.EmissionCounter()
         stopFilename = exportPath+'stops_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         emissionFilename = exportPath+'emissions_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
+        stageFilename = exportPath+'stageinfo_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
         timeDelta = int(1000*stepSize)
-        oneMinute = 60*1000  # one minute in simulation 60sec im msec
+        oneSecond = 1000  # one second in simulation (1 sec in msec)
+        oneMinute = 60*oneSecond  # one minute in simulation 60sec in msec
+
+        if routeTracking:
+            routeXML = "/hardmem/ROUTEFILES/{}_R{:03d}_CVP{:03d}.rou.xml".format(modelName, seed, int(CVP*100))
+            routeMonitor = sigTools.RouteMonitor(routeXML)
+            routeFile = exportPath+'routes_R{:03d}_CVP{:03d}.csv'.format(seed, int(CVP*100))
 
         # Flush print buffer
         sys.stdout.flush()
@@ -138,6 +162,9 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
             simTime += timeDelta
             stopCounter.getStops()
             emissionCounter.getEmissions(simTime)
+
+            if routeTracking and not simTime % oneSecond:
+                routeMonitor.getDistances(simTime)
 
             for controller in controllerList:
                 if 'CDOTS' in tlLogic:
@@ -155,6 +182,8 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
                 if timer.runtime() > timeLimit:
                     stopCounter.writeStops(stopFilename)
                     emissionCounter.writeEmissions(emissionFilename)
+                    if routeTracking:
+                        routeMonitor.writeDistances(routeFile)
                     if sigTools.isSimGridlocked(modelBase, simTime):
                         connector.disconnect()
                         raise RuntimeError("RuntimeError: GRIDLOCK")
@@ -167,7 +196,14 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
         # save stops and emissions files
         stopCounter.writeStops(stopFilename)
         emissionCounter.writeEmissions(emissionFilename)
-
+        if routeTracking:
+            routeMonitor.writeDistances(routeFile)
+        if ('VA' in tlLogic) or ('DOTS' in tlLogic):
+            with open(stageFilename, 'w') as oFile:
+                oFile.write('junction,stageID,simTime,stageDuration\n')
+                for c in controllerList:
+                    for line in c.stageData:
+                        oFile.write('{},{},{},{}\n'.format(*line))
         timer.stop()
         print('DONE: {}, {}, Run: {:03d}, CVP: {:03d}%, Ped: {} Runtime: {}, Date: {}'
               .format(modelName, tlLogic, run, int(CVP*100), pedStage,
@@ -184,6 +220,9 @@ def simulation(configList, GUIbool=False, weightArray=np.ones(7, dtype=float)):
         return (False, configList)
     finally:
         stopCounter.writeStops(stopFilename)
+        emissionCounter.writeEmissions(emissionFilename)
+        if routeTracking:
+            routeMonitor.writeDistances(routeFile)
         sys.stdout.flush()
         # remove spawned model folder
         try:

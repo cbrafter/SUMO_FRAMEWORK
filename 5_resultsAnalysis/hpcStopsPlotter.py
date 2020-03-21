@@ -126,7 +126,7 @@ for model in models:
     plt.title(modName+': Stops vs. CV Penetration', fontsize=tsize)
     plt.xlabel('Percentage CV Penetration', fontsize=axsize,
                fontweight='bold')
-    plt.ylabel('Delay [s/km]', fontsize=axsize)
+    plt.ylabel('Stops [/km]', fontsize=axsize)
     # order of magnitude of the max point
     # set x and y lims with some space around the max and min values
     plt.xticks(cvp, fontsize=ticksize, fontweight='bold')

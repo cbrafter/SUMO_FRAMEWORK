@@ -20,13 +20,18 @@ import random
 ###############################################################################
 timer = sigTools.simTimer()
 timer.start()
+activationArrays = list(product(*([[1]]*1+[[0,1]]*6)))
 
-# Test configurations, don't run TRANSYT for lo and hi cases
-config = ['sellyOak_hi', 'GPSVAslow', 0.0, 9, True, 13]
+# Test configurations
+# modelName, tlLogic, CVP, run, pedStage, (activationArray), procID
+#config = ['sellyOak_lo', 'GPSVA', 1.0, 1, True, 5]
+config = ['sellyOak_hi', 'TRANSYT', 0.0, 1, True, 9]
+config = ['sellyOak_hi', 'CDOTS', 1.0, 1, True, (1,1,0,1,0,0,0), 9]
+#config = ['sellyOak_hi', 'SynCDOTS', 1.0, 1, False, (1,1,0,1,0,0,0), 0.3, 'PS', 9]
 
 # Run simualtions in parallel.
 try:
-    result = simulation(config, GUIbool=True)
+    result = simulation(config, GUIbool=False)
 except Exception as e:
     print(e)
     traceback.print_exc()
@@ -34,11 +39,4 @@ except Exception as e:
 finally:
     timer.stop()
     # Inform of failed expermiments
-    if all([r[0] for r in result]):
-        print('Simulations complete, no errors, exectime: '+timer.strTime())
-    else:
-        print('Simulations aborted, exectime: '+timer.strTime())
-        print('Failed Experiment Runs:')
-        for r in result:
-            if not r[0]:
-                print(r[1])
+    print('Simulations complete, exectime: '+timer.strTime())
