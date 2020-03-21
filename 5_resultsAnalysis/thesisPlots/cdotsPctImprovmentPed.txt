@@ -1,0 +1,46 @@
+sellyOak_lo: MATS     vs. TRANSYT @  10% CVP: Delay  77%, Stops  -4%
+sellyOak_lo: MATS-ERR vs. TRANSYT @  10% CVP: Delay  39%, Stops   4%
+sellyOak_lo: CDOTS    vs. TRANSYT @  10% CVP: Delay  81%, Stops  11%
+sellyOak_lo: CDOTS-ERR vs.TRANSYT @  10% CVP: Delay  57%, Stops  10%
+
+sellyOak_lo: MATS     vs. TRANSYT @  50% CVP: Delay  85%, Stops  17%
+sellyOak_lo: MATS-ERR vs. TRANSYT @  50% CVP: Delay  81%, Stops  19%
+sellyOak_lo: CDOTS    vs. TRANSYT @  50% CVP: Delay  89%, Stops  28%
+sellyOak_lo: CDOTS-ERR vs.TRANSYT @  50% CVP: Delay  84%, Stops  27%
+
+sellyOak_lo: MATS     vs. TRANSYT @ 100% CVP: Delay  87%, Stops  23%
+sellyOak_lo: MATS-ERR vs. TRANSYT @ 100% CVP: Delay  85%, Stops  25%
+sellyOak_lo: CDOTS    vs. TRANSYT @ 100% CVP: Delay  91%, Stops  32%
+sellyOak_lo: CDOTS-ERR vs.TRANSYT @ 100% CVP: Delay  88%, Stops  33%
+
+
+sellyOak_avg: MATS     vs. TRANSYT @  10% CVP: Delay  72%, Stops -72%
+sellyOak_avg: MATS-ERR vs. TRANSYT @  10% CVP: Delay  27%, Stops   6%
+sellyOak_avg: CDOTS    vs. TRANSYT @  10% CVP: Delay  92%, Stops   7%
+sellyOak_avg: CDOTS-ERR vs.TRANSYT @  10% CVP: Delay  44%, Stops  12%
+
+sellyOak_avg: MATS     vs. TRANSYT @  50% CVP: Delay  94%, Stops  25%
+sellyOak_avg: MATS-ERR vs. TRANSYT @  50% CVP: Delay  93%, Stops  23%
+sellyOak_avg: CDOTS    vs. TRANSYT @  50% CVP: Delay  96%, Stops  35%
+sellyOak_avg: CDOTS-ERR vs.TRANSYT @  50% CVP: Delay  94%, Stops  33%
+
+sellyOak_avg: MATS     vs. TRANSYT @ 100% CVP: Delay  95%, Stops  32%
+sellyOak_avg: MATS-ERR vs. TRANSYT @ 100% CVP: Delay  94%, Stops  33%
+sellyOak_avg: CDOTS    vs. TRANSYT @ 100% CVP: Delay  97%, Stops  41%
+sellyOak_avg: CDOTS-ERR vs.TRANSYT @ 100% CVP: Delay  96%, Stops  41%
+
+
+sellyOak_hi: MATS     vs. TRANSYT @  10% CVP: Delay -34%, Stops -192%
+sellyOak_hi: MATS-ERR vs. TRANSYT @  10% CVP: Delay  29%, Stops  20%
+sellyOak_hi: CDOTS    vs. TRANSYT @  10% CVP: Delay  90%, Stops  -5%
+sellyOak_hi: CDOTS-ERR vs.TRANSYT @  10% CVP: Delay  40%, Stops  33%
+
+sellyOak_hi: MATS     vs. TRANSYT @  50% CVP: Delay  96%, Stops  39%
+sellyOak_hi: MATS-ERR vs. TRANSYT @  50% CVP: Delay  94%, Stops  28%
+sellyOak_hi: CDOTS    vs. TRANSYT @  50% CVP: Delay  98%, Stops  53%
+sellyOak_hi: CDOTS-ERR vs.TRANSYT @  50% CVP: Delay  97%, Stops  51%
+
+sellyOak_hi: MATS     vs. TRANSYT @ 100% CVP: Delay  97%, Stops  51%
+sellyOak_hi: MATS-ERR vs. TRANSYT @ 100% CVP: Delay  97%, Stops  52%
+sellyOak_hi: CDOTS    vs. TRANSYT @ 100% CVP: Delay  98%, Stops  59%
+sellyOak_hi: CDOTS-ERR vs.TRANSYT @ 100% CVP: Delay  98%, Stops  59%
